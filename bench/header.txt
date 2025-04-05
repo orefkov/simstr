@@ -1,0 +1,22 @@
+<html><head>
+    <meta charset="UTF-8"/>
+    <link href="results.css" rel="stylesheet" />
+    <title>SimStr benchmarks results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script>
+        function hl() {
+            document.querySelectorAll('.tooltiptext.code').forEach((el) => {
+                hljs.highlightElement(el);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var scriptTag = document.createElement('script');
+            scriptTag.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+            scriptTag.onload = hl;
+            scriptTag.onreadystatechange = hl;
+            document.body.appendChild(scriptTag);
+        });
+    </script>
+</head>
+<body><h2>SimStr benchmarks results</h2>
+All times in ns.
