@@ -1,0 +1,3145 @@
+<html><head>
+    <meta charset="UTF-8"/>
+    <link href="results.css" rel="stylesheet" />
+    <title>SimStr benchmarks results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script>
+        function hl() {
+            document.querySelectorAll('.tooltiptext.code').forEach((el) => {
+                hljs.highlightElement(el);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var scriptTag = document.createElement('script');
+            scriptTag.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+            scriptTag.onload = hl;
+            scriptTag.onreadystatechange = hl;
+            document.body.appendChild(scriptTag);
+        });
+    </script>
+</head>
+<body><h2>SimStr benchmarks results</h2>
+All times in ns.
+<div class="test_platforms"><h3>Test configurations:</h3><ul>
+<li><span class="platform">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</span><span class="tooltip">32 X 2494.22 MHz CPU s<span class="tooltiptext">CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 32 KiB (x16)
+  L2 Unified 256 KiB (x16)
+  L3 Unified 40960 KiB (x1)
+Load Average: 0.71, 0.41, 0.17</span></span></li>
+<li><span class="platform">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</span><span class="tooltip">32 X 2494.22 MHz CPU s<span class="tooltiptext">CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 32 KiB (x16)
+  L2 Unified 256 KiB (x16)
+  L3 Unified 40960 KiB (x1)
+Load Average: 0.00, 0.00, 0.00</span></span></li>
+<li><span class="platform">Xeon E5-2682 v4, Windows 10, Clang 19</span><span class="tooltip">32 X 2511.57 MHz CPU s<span class="tooltiptext">CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 32 KiB (x16)
+  L2 Unified 256 KiB (x16)
+  L3 Unified 40960 KiB (x1)</span></span></li>
+<li><span class="platform">Xeon E5-2682 v4, Windows 10, MSVC-19</span><span class="tooltip">32 X 2500.89 MHz CPU s<span class="tooltiptext">CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 32 KiB (x16)
+  L2 Unified 256 KiB (x16)
+  L3 Unified 40960 KiB (x1)</span></span></li>
+<li><span class="platform">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</span><span class="tooltip">32 X 2513.96 MHz CPU s<span class="tooltiptext">Chrome webasm</span></span></li>
+</ul></div>
+
+
+<div class="benchset"><h4>Create Empty Str</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Пустые строки, ничего необычного.</span></span></td><td class="benchmarkresult">1.09</td><td class="benchmarkresult">1.09</td><td class="benchmarkresult">1.08</td><td class="benchmarkresult">2.26</td><td class="benchmarkresult">2.58</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.353</td><td class="benchmarkresult">0.761</td><td class="benchmarkresult">0.386</td><td class="benchmarkresult">1.84</td><td class="benchmarkresult">2.51</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.353</td><td class="benchmarkresult">0.186</td><td class="benchmarkresult">0.354</td><td class="benchmarkresult">1.48</td><td class="benchmarkresult">2.14</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.740</td><td class="benchmarkresult">0.729</td><td class="benchmarkresult">0.744</td><td class="benchmarkresult">2.18</td><td class="benchmarkresult">2.76</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1.13</td><td class="benchmarkresult">1.11</td><td class="benchmarkresult">1.12</td><td class="benchmarkresult">2.61</td><td class="benchmarkresult">3.08</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40> e;<span class="tooltiptext code">template&lt;typename T>
+void CreateEmpty(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1.12</td><td class="benchmarkresult">1.15</td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">2.60</td><td class="benchmarkresult">3.09</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Create Str from short literal (9 symbols)</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string e      = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Короткий литерал помещается во внутренний буфер std::string,
+время тратится только на копирование 10 байтов.</span></span></td><td class="benchmarkresult">1.83</td><td class="benchmarkresult">11.9</td><td class="benchmarkresult">1.79</td><td class="benchmarkresult">2.93</td><td class="benchmarkresult">3.41</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view e = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">И string_view, и ssa - по сути одно и то же:
+указатель на текст и его длина.</span></span></td><td class="benchmarkresult">0.728</td><td class="benchmarkresult">0.720</td><td class="benchmarkresult">0.714</td><td class="benchmarkresult">1.83</td><td class="benchmarkresult">2.18</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa e              = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.359</td><td class="benchmarkresult">0.772</td><td class="benchmarkresult">0.357</td><td class="benchmarkresult">1.83</td><td class="benchmarkresult">2.16</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa e          = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">stringa при инициализации константным литералом так же
+сохраняет только указатель на текст и его длину.</span></span></td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">1.13</td><td class="benchmarkresult">1.11</td><td class="benchmarkresult">2.17</td><td class="benchmarkresult">3.02</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> e     = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Внутреннего буфера хватает для размещения символов,
+время уходит только на копирование байтов.</span></span></td><td class="benchmarkresult">1.84</td><td class="benchmarkresult">1.86</td><td class="benchmarkresult">1.90</td><td class="benchmarkresult">2.50</td><td class="benchmarkresult">3.98</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40> e     = &quot;Test text&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateShortLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string = TEST_TEXT;
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1.95</td><td class="benchmarkresult">1.83</td><td class="benchmarkresult">1.90</td><td class="benchmarkresult">2.18</td><td class="benchmarkresult">3.84</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Create Str from long literal (30 symbols)</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string e      = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Вот тут уже литерал не помещается во внутренний буфер,
+возникает аллокация и копирование 30-и байтов.
+Но как же отстает аллокация под Windows от Linux'а, 20 vs 70 ns...</span></span></td><td class="benchmarkresult">19.5</td><td class="benchmarkresult">29.4</td><td class="benchmarkresult">74.1</td><td class="benchmarkresult">73.6</td><td class="benchmarkresult">58.3</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view e = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">string_view и ssa по прежнему ничего не делают, кроме
+запоминания указателя на текст и его размера.</span></span></td><td class="benchmarkresult">0.723</td><td class="benchmarkresult">0.749</td><td class="benchmarkresult">0.739</td><td class="benchmarkresult">1.75</td><td class="benchmarkresult">2.23</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa e              = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.368</td><td class="benchmarkresult">0.733</td><td class="benchmarkresult">0.369</td><td class="benchmarkresult">1.81</td><td class="benchmarkresult">2.16</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa e          = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">stringa на константных литералах не отстает!</span></span></td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">1.11</td><td class="benchmarkresult">1.06</td><td class="benchmarkresult">2.18</td><td class="benchmarkresult">2.99</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> e     = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">lstringa<20> может вместить в себя до 23 символов,
+Очевидно, что для 30-и символов уже нужна аллокация.</span></span></td><td class="benchmarkresult">21.1</td><td class="benchmarkresult">19.2</td><td class="benchmarkresult">78.3</td><td class="benchmarkresult">77.8</td><td class="benchmarkresult">56.5</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40> e     = &quot;123456789012345678901234567890&quot;;<span class="tooltiptext code">template&lt;typename T>
+void CreateLongLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        T empty_string{LONG_TEXT};
+        benchmark::DoNotOptimize(empty_string);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А в lstringa<40> влезает до 47 символов, так что просто
+копируется 30 байтов.</span></span></td><td class="benchmarkresult">1.94</td><td class="benchmarkresult">2.83</td><td class="benchmarkresult">2.53</td><td class="benchmarkresult">2.95</td><td class="benchmarkresult">5.19</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Create copy of Str with 9 symbols</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string e      = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Строка в пределах SSO, так что просто копирует байты.</span></span></td><td class="benchmarkresult">5.93</td><td class="benchmarkresult">7.06</td><td class="benchmarkresult">1.80</td><td class="benchmarkresult">4.73</td><td class="benchmarkresult">3.78</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view e = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.354</td><td class="benchmarkresult">0.362</td><td class="benchmarkresult">0.364</td><td class="benchmarkresult">3.67</td><td class="benchmarkresult">2.33</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa e              = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">ssa и string_view не владеют строкой, копируется
+только информация о строке.</span></span></td><td class="benchmarkresult">0.360</td><td class="benchmarkresult">0.382</td><td class="benchmarkresult">0.365</td><td class="benchmarkresult">3.67</td><td class="benchmarkresult">2.28</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa e          = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Копирование stringa происходит быстро,
+особенно если она инициализирована литералом.</span></span></td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">1.30</td><td class="benchmarkresult">4.03</td><td class="benchmarkresult">4.05</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> e     = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">В обоих случаях хватает внутреннего буфера.</span></span></td><td class="benchmarkresult">4.83</td><td class="benchmarkresult">4.86</td><td class="benchmarkresult">5.03</td><td class="benchmarkresult">8.42</td><td class="benchmarkresult">14.5</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40> e     = &quot;Test text&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyShortString(benchmark::State&amp; state) {
+    T x{TEST_TEXT};
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Только копируются байты.</span></span></td><td class="benchmarkresult">4.58</td><td class="benchmarkresult">4.43</td><td class="benchmarkresult">5.90</td><td class="benchmarkresult">9.07</td><td class="benchmarkresult">15.1</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Create copy of Str with 30 symbols</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string e      = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Копирования длинной строки вызывает аллокацию,
+SSO уже не хватает. И снова как же отстаёт аллокация под Windows...</span></span></td><td class="benchmarkresult">22.8</td><td class="benchmarkresult">24.1</td><td class="benchmarkresult">76.7</td><td class="benchmarkresult">92.2</td><td class="benchmarkresult">105</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view e = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.733</td><td class="benchmarkresult">0.783</td><td class="benchmarkresult">0.807</td><td class="benchmarkresult">1.88</td><td class="benchmarkresult">2.25</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa e              = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">0.374</td><td class="benchmarkresult">0.737</td><td class="benchmarkresult">0.382</td><td class="benchmarkresult">1.82</td><td class="benchmarkresult">2.16</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa e          = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А вот у stringa копирование литерала не зависит от его длины,
+сравни с предыдущим бенчмарком.</span></span></td><td class="benchmarkresult">1.11</td><td class="benchmarkresult">1.07</td><td class="benchmarkresult">1.84</td><td class="benchmarkresult">3.01</td><td class="benchmarkresult">3.19</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> e     = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Не влезает, аллокация.</span></span></td><td class="benchmarkresult">19.1</td><td class="benchmarkresult">25.9</td><td class="benchmarkresult">91.6</td><td class="benchmarkresult">77.7</td><td class="benchmarkresult">69.9</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40> e     = &quot;123456789012345678901234567890&quot;; auto c{e};<span class="tooltiptext code">template&lt;typename T>
+void CopyLongString(benchmark::State&amp; state) {
+    T x = LONG_TEXT;
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Уложили во внутренний буфер.</span></span></td><td class="benchmarkresult">4.66</td><td class="benchmarkresult">4.79</td><td class="benchmarkresult">4.78</td><td class="benchmarkresult">6.51</td><td class="benchmarkresult">15.0</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Find 9 symbols text in end of 99 symbols text</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Здесь "победила дружба", у всех типов по колонке примерно одинаково.
+Однако, Windows и Linux явно в разных весовых категориях.</span></span></td><td class="benchmarkresult">6.89</td><td class="benchmarkresult">6.65</td><td class="benchmarkresult">40.4</td><td class="benchmarkresult">39.4</td><td class="benchmarkresult">135</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">7.39</td><td class="benchmarkresult">7.66</td><td class="benchmarkresult">38.2</td><td class="benchmarkresult">40.4</td><td class="benchmarkresult">126</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">7.04</td><td class="benchmarkresult">6.70</td><td class="benchmarkresult">18.2</td><td class="benchmarkresult">27.3</td><td class="benchmarkresult">114</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">7.82</td><td class="benchmarkresult">7.90</td><td class="benchmarkresult">18.0</td><td class="benchmarkresult">28.2</td><td class="benchmarkresult">98.5</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20>::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.83</td><td class="benchmarkresult">8.50</td><td class="benchmarkresult">18.3</td><td class="benchmarkresult">21.2</td><td class="benchmarkresult">97.0</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;40>::find;<span class="tooltiptext code">template&lt;typename T>
+void Find(benchmark::State&amp; state) {
+    T x{LONG_TEXT LONG_TEXT LONG_TEXT TEST_TEXT};
+    for (auto _: state) {
+        int i = (int)x.find(TEST_TEXT);
+    #ifdef CHECK_RESULT
+        if (i != 90) {
+            state.SkipWithError(&quot;not find?&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(i);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">7.49</td><td class="benchmarkresult">7.27</td><td class="benchmarkresult">18.2</td><td class="benchmarkresult">23.0</td><td class="benchmarkresult">95.1</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Copy not literal Str with N symbols</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/15<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.53</td><td class="benchmarkresult">6.54</td><td class="benchmarkresult">1.84</td><td class="benchmarkresult">4.76</td><td class="benchmarkresult">108</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/16<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Явно виден скачок, где заканчивается SSO и начинается аллокация.
+Обратите внимание, что WASM - 32-битный, и там размер
+SSO у std::string меньше, насколько я помню, 11 символов + 0.</span></span></td><td class="benchmarkresult">23.2</td><td class="benchmarkresult">30.9</td><td class="benchmarkresult">78.7</td><td class="benchmarkresult">81.0</td><td class="benchmarkresult">108</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/23<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Дальше просто добавляется время на копирование байтов.</span></span></td><td class="benchmarkresult">23.7</td><td class="benchmarkresult">29.6</td><td class="benchmarkresult">79.4</td><td class="benchmarkresult">83.6</td><td class="benchmarkresult">108</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/24<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">22.9</td><td class="benchmarkresult">24.6</td><td class="benchmarkresult">77.3</td><td class="benchmarkresult">80.3</td><td class="benchmarkresult">112</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/32<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">23.6</td><td class="benchmarkresult">24.7</td><td class="benchmarkresult">81.7</td><td class="benchmarkresult">91.9</td><td class="benchmarkresult">123</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/64<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">22.8</td><td class="benchmarkresult">27.5</td><td class="benchmarkresult">84.3</td><td class="benchmarkresult">86.0</td><td class="benchmarkresult">111</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/128<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">27.1</td><td class="benchmarkresult">25.7</td><td class="benchmarkresult">84.5</td><td class="benchmarkresult">87.0</td><td class="benchmarkresult">111</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/256<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">31.3</td><td class="benchmarkresult">25.7</td><td class="benchmarkresult">86.3</td><td class="benchmarkresult">89.6</td><td class="benchmarkresult">133</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/512<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">34.0</td><td class="benchmarkresult">29.0</td><td class="benchmarkresult">89.2</td><td class="benchmarkresult">89.4</td><td class="benchmarkresult">140</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/1024<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">38.7</td><td class="benchmarkresult">33.1</td><td class="benchmarkresult">95.4</td><td class="benchmarkresult">96.6</td><td class="benchmarkresult">135</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/2048<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">121</td><td class="benchmarkresult">111</td><td class="benchmarkresult">132</td><td class="benchmarkresult">130</td><td class="benchmarkresult">173</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string copy{str_with_len_N};/4096<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Чем длиннее строка, тем дольше создаётся копия.</span></span></td><td class="benchmarkresult">141</td><td class="benchmarkresult">147</td><td class="benchmarkresult">172</td><td class="benchmarkresult">194</td><td class="benchmarkresult">208</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/15<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Здесь stringa инициализируется не литералом,
+а значит, должна сама хранить символы.</span></span></td><td class="benchmarkresult">1.10</td><td class="benchmarkresult">1.13</td><td class="benchmarkresult">1.27</td><td class="benchmarkresult">5.05</td><td class="benchmarkresult">4.09</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/16<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Под WASM SSO у stringa составляет 15 символов. Кроме того,
+собиралось без поддержки потоков, поэтому возможно атомарный
+инкремент заменён на обычный, судя по времени.</span></span></td><td class="benchmarkresult">1.12</td><td class="benchmarkresult">1.08</td><td class="benchmarkresult">1.26</td><td class="benchmarkresult">5.01</td><td class="benchmarkresult">8.78</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/23<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">SSO в stringa до 23 символов, и даже 23
+копируются быстрее, чем 15 в std::string.</span></span></td><td class="benchmarkresult">1.14</td><td class="benchmarkresult">1.16</td><td class="benchmarkresult">1.38</td><td class="benchmarkresult">4.90</td><td class="benchmarkresult">8.67</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/24<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Всё, не влезаем в SSO, а значит, используем shared буфер.
+Добавляется время на атомарный инкремент счётчика.</span></span></td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">16.7</td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">18.4</td><td class="benchmarkresult">8.66</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/32<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.4</td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">15.7</td><td class="benchmarkresult">18.2</td><td class="benchmarkresult">8.71</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/64<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.0</td><td class="benchmarkresult">16.4</td><td class="benchmarkresult">15.8</td><td class="benchmarkresult">18.2</td><td class="benchmarkresult">8.83</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/128<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.0</td><td class="benchmarkresult">16.2</td><td class="benchmarkresult">15.7</td><td class="benchmarkresult">18.3</td><td class="benchmarkresult">8.55</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/256<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.2</td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">16.1</td><td class="benchmarkresult">18.3</td><td class="benchmarkresult">8.73</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/512<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.4</td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">15.8</td><td class="benchmarkresult">18.3</td><td class="benchmarkresult">8.65</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/1024<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16.0</td><td class="benchmarkresult">16.0</td><td class="benchmarkresult">15.7</td><td class="benchmarkresult">18.5</td><td class="benchmarkresult">8.73</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/2048<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">16.1</td><td class="benchmarkresult">15.8</td><td class="benchmarkresult">18.3</td><td class="benchmarkresult">8.79</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa copy{str_with_len_N};/4096<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">И как видно, кроме инкремента нет накладных расходов,
+время копирования не зависит от длины строки.</span></span></td><td class="benchmarkresult">15.9</td><td class="benchmarkresult">16.0</td><td class="benchmarkresult">16.4</td><td class="benchmarkresult">18.5</td><td class="benchmarkresult">8.57</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/15<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">lstringa<16> использует SSO до 23 символов.
+А в WASM 32-битная архитектура, SSO до 19 символов.</span></span></td><td class="benchmarkresult">4.76</td><td class="benchmarkresult">4.36</td><td class="benchmarkresult">4.83</td><td class="benchmarkresult">8.21</td><td class="benchmarkresult">14.3</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/16<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">4.62</td><td class="benchmarkresult">4.54</td><td class="benchmarkresult">4.84</td><td class="benchmarkresult">8.46</td><td class="benchmarkresult">14.0</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/23<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">4.45</td><td class="benchmarkresult">4.89</td><td class="benchmarkresult">4.85</td><td class="benchmarkresult">8.19</td><td class="benchmarkresult">72.3</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/24<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">И после начинает вести себя при копировании, как std::string.</span></span></td><td class="benchmarkresult">23.5</td><td class="benchmarkresult">25.5</td><td class="benchmarkresult">80.3</td><td class="benchmarkresult">76.3</td><td class="benchmarkresult">74.7</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/32<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">24.0</td><td class="benchmarkresult">25.2</td><td class="benchmarkresult">81.6</td><td class="benchmarkresult">78.0</td><td class="benchmarkresult">75.9</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/64<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">26.9</td><td class="benchmarkresult">25.6</td><td class="benchmarkresult">81.7</td><td class="benchmarkresult">81.1</td><td class="benchmarkresult">74.2</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/128<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">31.8</td><td class="benchmarkresult">30.2</td><td class="benchmarkresult">85.6</td><td class="benchmarkresult">86.2</td><td class="benchmarkresult">76.2</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/256<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">34.1</td><td class="benchmarkresult">43.9</td><td class="benchmarkresult">82.9</td><td class="benchmarkresult">85.8</td><td class="benchmarkresult">100</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/512<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">30.5</td><td class="benchmarkresult">30.2</td><td class="benchmarkresult">95.4</td><td class="benchmarkresult">92.3</td><td class="benchmarkresult">94.9</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/1024<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">85.3</td><td class="benchmarkresult">92.2</td><td class="benchmarkresult">95.3</td><td class="benchmarkresult">97.2</td><td class="benchmarkresult">98.6</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/2048<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">101</td><td class="benchmarkresult">94.4</td><td class="benchmarkresult">136</td><td class="benchmarkresult">126</td><td class="benchmarkresult">132</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> copy{str_with_len_N};/4096<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">118</td><td class="benchmarkresult">119</td><td class="benchmarkresult">187</td><td class="benchmarkresult">191</td><td class="benchmarkresult">169</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/8<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А вот lstringa<512> имеет гораздо больший внутренний
+буфер и копирует символы без аллокации.</span></span></td><td class="benchmarkresult">4.79</td><td class="benchmarkresult">5.03</td><td class="benchmarkresult">4.99</td><td class="benchmarkresult">8.15</td><td class="benchmarkresult">14.9</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/16<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">4.77</td><td class="benchmarkresult">4.86</td><td class="benchmarkresult">4.76</td><td class="benchmarkresult">8.56</td><td class="benchmarkresult">14.1</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/32<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">4.58</td><td class="benchmarkresult">4.41</td><td class="benchmarkresult">8.25</td><td class="benchmarkresult">11.8</td><td class="benchmarkresult">16.6</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/64<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.43</td><td class="benchmarkresult">6.57</td><td class="benchmarkresult">7.78</td><td class="benchmarkresult">12.3</td><td class="benchmarkresult">17.8</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/128<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">7.57</td><td class="benchmarkresult">6.22</td><td class="benchmarkresult">8.08</td><td class="benchmarkresult">12.0</td><td class="benchmarkresult">17.5</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/256<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">20.1</td><td class="benchmarkresult">8.08</td><td class="benchmarkresult">8.97</td><td class="benchmarkresult">13.6</td><td class="benchmarkresult">19.9</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/512<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Даже 512 символов копируются быстрее, чем
+одна аллокация или атомарный инкремент.</span></span></td><td class="benchmarkresult">23.2</td><td class="benchmarkresult">10.3</td><td class="benchmarkresult">11.3</td><td class="benchmarkresult">14.6</td><td class="benchmarkresult">22.4</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/1024<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А дальше уже как у всех</span></span></td><td class="benchmarkresult">90.3</td><td class="benchmarkresult">89.5</td><td class="benchmarkresult">93.8</td><td class="benchmarkresult">97.2</td><td class="benchmarkresult">99.0</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/2048<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">102</td><td class="benchmarkresult">98.3</td><td class="benchmarkresult">135</td><td class="benchmarkresult">138</td><td class="benchmarkresult">136</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> copy{str_with_len_N};/4096<span class="tooltiptext code">template&lt;typename T>
+void CopyDynString(benchmark::State&amp; state) {
+    T x(state.range(0), &#39;a&#39;);
+    for (auto _: state) {
+        T copy{x};
+        benchmark::DoNotOptimize(copy);
+        benchmark::DoNotOptimize(x);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">115</td><td class="benchmarkresult">117</td><td class="benchmarkresult">195</td><td class="benchmarkresult">186</td><td class="benchmarkresult">168</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Convert to int &#39;1234567&#39;</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string s = &quot;123456789&quot;; int res = std::strtol(s.c_str(), 0, 10);<span class="tooltiptext code">void ToIntStr0(benchmark::State&amp; state, const std::string&amp; s, int c) {
+    for (auto _: state) {
+        int res = std::strtol(s.c_str(), nullptr, 0);
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(s);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">В simstr для конвертации в число достаточно куска строки,
+нет нужды в null терминированности. Ближайший аналог такого
+поведения "std::from_chars", но он к сожалению очень ограничен
+по возможностям. Здесь я попытался произвести тесты, близкие по
+логике к работе std::from_chars</span></span></td><td class="benchmarkresult">25.8</td><td class="benchmarkresult">26.6</td><td class="benchmarkresult">31.1</td><td class="benchmarkresult">33.4</td><td class="benchmarkresult">191</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view s = &quot;123456789&quot;; std::from_chars(s.data(), s.data() + s.size(), res, 10);<span class="tooltiptext code">void ToIntFromChars10(benchmark::State&amp; state, const std::string_view&amp; s, int c) {
+#ifdef __EMSCRIPTEN__
+    state.SkipWithError(&quot;not implemented&quot;);
+#else
+    for (auto _: state) {
+        int res = 0;
+        std::from_chars(s.data(), s.data() + s.size(), res, 10);
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(s);
+    }
+#endif
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">from_chars требует точного указания основания счисления,
+не допускает знаков плюс, пробелов, префиксов 0x и т.п.</span></span></td><td class="benchmarkresult">15.0</td><td class="benchmarkresult">11.9</td><td class="benchmarkresult">12.6</td><td class="benchmarkresult">18.0</td><td class="benchmarkresult">n/imp</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa s = &quot;123456789&quot;; int res = s.to_int&lt;int, true, 10, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr10(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 10, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Здесь для to_int заданы такие же ограничения - проверять переполнение,
+десятичная система, без лидирующих пробелов и знака плюс</span></span></td><td class="benchmarkresult">11.9</td><td class="benchmarkresult">10.6</td><td class="benchmarkresult">12.9</td><td class="benchmarkresult">15.3</td><td class="benchmarkresult">28.1</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa s = &quot;123456789&quot;; int res = s.to_int&lt;int, true, 10, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr10(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 10, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.84</td><td class="benchmarkresult">7.48</td><td class="benchmarkresult">7.69</td><td class="benchmarkresult">16.4</td><td class="benchmarkresult">20.2</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> s = &quot;123456789&quot;; int res = s.to_int&lt;int, true, 10, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr10(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 10, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.77</td><td class="benchmarkresult">10.7</td><td class="benchmarkresult">14.0</td><td class="benchmarkresult">15.0</td><td class="benchmarkresult">20.0</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Convert to unsigned &#39;abcDef&#39;</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string s = &quot;abcDef&quot;; int res = std::strtol(s.c_str(), 0, 16);<span class="tooltiptext code">void ToIntStr16(benchmark::State&amp; state, const std::string&amp; s, int c) {
+    for (auto _: state) {
+        int res = std::strtol(s.c_str(), nullptr, 16);
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(s);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Всё то же, только для 16ричной системы</span></span></td><td class="benchmarkresult">24.3</td><td class="benchmarkresult">23.2</td><td class="benchmarkresult">33.5</td><td class="benchmarkresult">37.1</td><td class="benchmarkresult">143</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string_view s = &quot;abcDef&quot;; std::from_chars(s.data(), s.data() + s.size(), res, 16);<span class="tooltiptext code">void ToIntFromChars16(benchmark::State&amp; state, const std::string_view&amp; s, int c) {
+#ifdef __EMSCRIPTEN__
+    state.SkipWithError(&quot;not implemented&quot;);
+#else
+    for (auto _: state) {
+        int res = 0;
+        std::from_chars(s.data(), s.data() + s.size(), res, 16);
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(s);
+    }
+#endif
+}</span></span></td><td></td><td class="benchmarkresult">11.6</td><td class="benchmarkresult">15.3</td><td class="benchmarkresult">8.39</td><td class="benchmarkresult">13.7</td><td class="benchmarkresult">n/imp</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa s = &quot;abcDef&quot;; int res = s.to_int&lt;int, true, 16, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr16(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 16, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">12.2</td><td class="benchmarkresult">9.66</td><td class="benchmarkresult">11.2</td><td class="benchmarkresult">15.0</td><td class="benchmarkresult">29.3</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa s = &quot;abcDef&quot;; int res = s.to_int&lt;int, true, 16, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr16(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 16, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">5.15</td><td class="benchmarkresult">9.68</td><td class="benchmarkresult">5.45</td><td class="benchmarkresult">14.2</td><td class="benchmarkresult">15.8</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;20> s = &quot;abcDef&quot;; int res = s.to_int&lt;int, true, 16, false><span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr16(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int, true, 16, false, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">6.60</td><td class="benchmarkresult">10.2</td><td class="benchmarkresult">10.3</td><td class="benchmarkresult">13.5</td><td class="benchmarkresult">15.0</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Convert to int &#39;    1234567&#39;</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string s = &quot;    123456789&quot;; int res = std::strtol(s.c_str(), 0, 0);<span class="tooltiptext code">void ToIntStr0(benchmark::State&amp; state, const std::string&amp; s, int c) {
+    for (auto _: state) {
+        int res = std::strtol(s.c_str(), nullptr, 0);
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(s);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А здесь уже парсинг произвольного числа.</span></span></td><td class="benchmarkresult">29.9</td><td class="benchmarkresult">30.9</td><td class="benchmarkresult">43.1</td><td class="benchmarkresult">44.9</td><td class="benchmarkresult">204</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa s = &quot;    123456789&quot;; int res = s.to_int&lt;int>; // Check overflow<span class="tooltiptext code">template&lt;typename T>
+void ToIntSimStr0(benchmark::State&amp; state, T t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t. template to_int&lt;int>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">10.7</td><td class="benchmarkresult">14.1</td><td class="benchmarkresult">20.0</td><td class="benchmarkresult">19.8</td><td class="benchmarkresult">38.2</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa s = &quot;    123456789&quot;; int res = s.to_int&lt;int, false>; // No check overflow<span class="tooltiptext code">void ToIntNoOverflow(benchmark::State&amp; state, ssa t, int c) {
+    for (auto _: state) {
+        int res = std::get&lt;0>(t.to_int&lt;int, false>());
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">12.8</td><td class="benchmarkresult">13.1</td><td class="benchmarkresult">12.8</td><td class="benchmarkresult">14.9</td><td class="benchmarkresult">45.3</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Append const literal of 16 bytes 64 times, 1024 total length</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::stringstream str; ... str &lt;&lt; &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">void AppendStreamConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        std::string result;
+        std::stringstream str;
+        for (size_t c = 0; c &lt; 64; c++) {
+            str &lt;&lt; TEXT_16;
+        }
+        result = str.str();
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(str);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1319</td><td class="benchmarkresult">1353</td><td class="benchmarkresult">5193</td><td class="benchmarkresult">5897</td><td class="benchmarkresult">10818</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str; ... str += &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">void AppendStdStringConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        std::string result;
+        for (size_t c = 0; c &lt; 64; c++) {
+            result += TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">417</td><td class="benchmarkresult">363</td><td class="benchmarkresult">1040</td><td class="benchmarkresult">1235</td><td class="benchmarkresult">1134</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;8> str; ... str += &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 64; c++) {
+            result += TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">400</td><td class="benchmarkresult">377</td><td class="benchmarkresult">798</td><td class="benchmarkresult">924</td><td class="benchmarkresult">1091</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;128> str; ... str += &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 64; c++) {
+            result += TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Чем больше внутренний буфер, тем меньше раз требуется
+аллокация, тем быстрее результат.</span></span></td><td class="benchmarkresult">272</td><td class="benchmarkresult">275</td><td class="benchmarkresult">391</td><td class="benchmarkresult">629</td><td class="benchmarkresult">744</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> str; ... str += &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 64; c++) {
+            result += TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">269</td><td class="benchmarkresult">243</td><td class="benchmarkresult">246</td><td class="benchmarkresult">350</td><td class="benchmarkresult">507</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;1024> str; ... str += &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringConstLiteral(benchmark::State&amp; state) {
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 64; c++) {
+            result += TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">158</td><td class="benchmarkresult">137</td><td class="benchmarkresult">135</td><td class="benchmarkresult">229</td><td class="benchmarkresult">402</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Append string of 16 bytes and const literal of 16 bytes 32 times, 1024 total length</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::stringstream str; ... str &lt;&lt; str_var &lt;&lt; &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">void AppendStreamStrConstLiteral(benchmark::State&amp; state) {
+    std::string s1 = TEXT_16;
+    for (auto _: state) {
+        std::string result;
+        std::stringstream s;
+        for (size_t c = 0; c &lt; 32; c++) {
+            s &lt;&lt; s1 &lt;&lt; TEXT_16;
+        }
+        result = s.str();
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1336</td><td class="benchmarkresult">1346</td><td class="benchmarkresult">4876</td><td class="benchmarkresult">5849</td><td class="benchmarkresult">10426</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str; ... str += str_var + &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">void AppendStdStrStrConstLiteral(benchmark::State&amp; state) {
+    std::string p1 = TEXT_16;
+    for (auto _: state) {
+        std::string result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1289</td><td class="benchmarkresult">1229</td><td class="benchmarkresult">3858</td><td class="benchmarkresult">4006</td><td class="benchmarkresult">3752</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;8> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteral(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">470</td><td class="benchmarkresult">449</td><td class="benchmarkresult">751</td><td class="benchmarkresult">817</td><td class="benchmarkresult">1219</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;128> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteral(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">384</td><td class="benchmarkresult">405</td><td class="benchmarkresult">482</td><td class="benchmarkresult">531</td><td class="benchmarkresult">951</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteral(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">326</td><td class="benchmarkresult">335</td><td class="benchmarkresult">330</td><td class="benchmarkresult">373</td><td class="benchmarkresult">737</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;1024> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteral(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">223</td><td class="benchmarkresult">264</td><td class="benchmarkresult">192</td><td class="benchmarkresult">288</td><td class="benchmarkresult">641</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Append string of 16 bytes and const literal of 16 bytes 2048 times, 65536 total length</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::stringstream str; ... str &lt;&lt; str_var &lt;&lt; &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">void AppendStreamStrConstLiteralBig(benchmark::State&amp; state) {
+    std::string s1 = TEXT_16;
+    for (auto _: state) {
+        std::string result;
+        std::stringstream s;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            s &lt;&lt; s1 &lt;&lt; TEXT_16;
+        }
+        result = s.str();
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">100311</td><td class="benchmarkresult">101916</td><td class="benchmarkresult">216184</td><td class="benchmarkresult">283421</td><td class="benchmarkresult">537891</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str; ... str += str_var + &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">void AppendStdStrStrConstLiteralBig(benchmark::State&amp; state) {
+    std::string p1 = TEXT_16;
+    for (auto _: state) {
+        std::string result;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">70492</td><td class="benchmarkresult">73712</td><td class="benchmarkresult">185641</td><td class="benchmarkresult">192706</td><td class="benchmarkresult">196278</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;8> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteralBig(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">33500</td><td class="benchmarkresult">36498</td><td class="benchmarkresult">20172</td><td class="benchmarkresult">24607</td><td class="benchmarkresult">44949</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;128> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteralBig(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16898</td><td class="benchmarkresult">18029</td><td class="benchmarkresult">19561</td><td class="benchmarkresult">22242</td><td class="benchmarkresult">44780</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteralBig(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">17448</td><td class="benchmarkresult">17180</td><td class="benchmarkresult">16776</td><td class="benchmarkresult">21445</td><td class="benchmarkresult">44604</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;1024> str; ... str += str_var + &quot;abbaabbaabbaabba&quot;; 2048 times<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstringStrConstLiteralBig(benchmark::State&amp; state) {
+    stringa p1 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 2048; c++) {
+            result += p1 + TEXT_16;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024 * 64) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(p1);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">16918</td><td class="benchmarkresult">17836</td><td class="benchmarkresult">18060</td><td class="benchmarkresult">22436</td><td class="benchmarkresult">45486</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Append 2 string of 16 bytes 32 times, 1024 total length</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::stringstream str; ... str &lt;&lt; str_var1 &lt;&lt; str_var2;<span class="tooltiptext code">void AppendStream2String(benchmark::State&amp; state) {
+    std::string s1 = TEXT_16;
+    std::string s2 = TEXT_16;
+    for (auto _: state) {
+        std::string result;
+        std::stringstream s;
+        for (size_t c = 0; c &lt; 32; c++) {
+            s &lt;&lt; s1 &lt;&lt; s2;
+        }
+        result = s.str();
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1554</td><td class="benchmarkresult">1383</td><td class="benchmarkresult">4595</td><td class="benchmarkresult">5578</td><td class="benchmarkresult">10731</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str; ... str += str_var1 + str_var2;<span class="tooltiptext code">void AppendStdStr2String(benchmark::State&amp; state) {
+    std::string s1 = TEXT_16;
+    std::string s2 = TEXT_16;
+    
+    for (auto _: state) {
+        std::string result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += s1 + s2;
+        }
+    #ifdef CHECK_RESULT
+        if (result.size() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1433</td><td class="benchmarkresult">1383</td><td class="benchmarkresult">4595</td><td class="benchmarkresult">4095</td><td class="benchmarkresult">4089</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;16> str; ... str += str_var1 + str_var2;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstring2String(benchmark::State&amp; state) {
+    stra s1 = TEXT_16;
+    stra s2 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += s1 + s2;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">543</td><td class="benchmarkresult">635</td><td class="benchmarkresult">833</td><td class="benchmarkresult">937</td><td class="benchmarkresult">1515</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;128> str; ... str += str_var1 + str_var2;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstring2String(benchmark::State&amp; state) {
+    stra s1 = TEXT_16;
+    stra s2 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += s1 + s2;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">467</td><td class="benchmarkresult">500</td><td class="benchmarkresult">555</td><td class="benchmarkresult">650</td><td class="benchmarkresult">1292</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;512> str; ... str += str_var1 + str_var2;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstring2String(benchmark::State&amp; state) {
+    stra s1 = TEXT_16;
+    stra s2 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += s1 + s2;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">420</td><td class="benchmarkresult">481</td><td class="benchmarkresult">434</td><td class="benchmarkresult">483</td><td class="benchmarkresult">953</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;1024> str; ... str += str_var1 + str_var2;<span class="tooltiptext code">template&lt;unsigned N>
+void AppendLstring2String(benchmark::State&amp; state) {
+    stra s1 = TEXT_16;
+    stra s2 = TEXT_16;
+    for (auto _: state) {
+        lstringa&lt;N> result;
+        for (size_t c = 0; c &lt; 32; c++) {
+            result += s1 + s2;
+        }
+    #ifdef CHECK_RESULT
+        if (result.length() != 1024) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(s1);
+        benchmark::DoNotOptimize(s2);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">304</td><td class="benchmarkresult">386</td><td class="benchmarkresult">318</td><td class="benchmarkresult">366</td><td class="benchmarkresult">826</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Append text, number, text</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::stringstream str; str &lt;&lt; &quot;test = &quot; &lt;&lt; k &lt;&lt; &quot; times&quot;;<span class="tooltiptext code">void AppendStreamStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            std::stringstream t;
+            t &lt;&lt; &quot;test = &quot; &lt;&lt; k &lt;&lt; &quot; times&quot;;
+            std::string result = t.str();
+        #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+        #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">3263</td><td class="benchmarkresult">3337</td><td class="benchmarkresult">11639</td><td class="benchmarkresult">12555</td><td class="benchmarkresult">17354</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str = &quot;test = &quot; + std::to_string(k) + &quot; times&quot;;<span class="tooltiptext code">void AppendStdStringStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            std::string result = &quot;test = &quot; + std::to_string(k) + &quot; times&quot;;
+        #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+        #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">462</td><td class="benchmarkresult">491</td><td class="benchmarkresult">1054</td><td class="benchmarkresult">1223</td><td class="benchmarkresult">2933</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">char buf[100]; sprintf(buf, &quot;test = %u times&quot;, k); std::string str = buf;<span class="tooltiptext code">void AppendSprintfStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            char buf[100];
+            std::sprintf(buf, &quot;test = %u times&quot;, k);
+            std::string result = buf;
+        #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+        #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1357</td><td class="benchmarkresult">1843</td><td class="benchmarkresult">2789</td><td class="benchmarkresult">2777</td><td class="benchmarkresult">6779</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::string str = std::format(&quot;test = {} times&quot;, k);<span class="tooltiptext code">void AppendFormatStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            std::string result = std::format(&quot;test = {} times&quot;, k);
+        #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+        #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1206</td><td class="benchmarkresult">1506</td><td class="benchmarkresult">1901</td><td class="benchmarkresult">2475</td><td class="benchmarkresult">4196</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;8> str; str.format(&quot;test = {} times&quot;, k);<span class="tooltiptext code">template&lt;typename T>
+void AppendSimStrStrNumStrF(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            T result;
+            result.format(&quot;test = {} times&quot;, k);
+    #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+    #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">В simstr format с первого раза не помещается в такую строку без аллокации.</span></span></td><td class="benchmarkresult">1394</td><td class="benchmarkresult">1795</td><td class="benchmarkresult">2083</td><td class="benchmarkresult">2596</td><td class="benchmarkresult">6127</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;32> str; str.format(&quot;test = {} times&quot;, k);<span class="tooltiptext code">template&lt;typename T>
+void AppendSimStrStrNumStrF(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            T result;
+            result.format(&quot;test = {} times&quot;, k);
+    #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+    #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А в такую помещается. Используйте сразу буфера подходящего размера.</span></span></td><td class="benchmarkresult">966</td><td class="benchmarkresult">1292</td><td class="benchmarkresult">1008</td><td class="benchmarkresult">1489</td><td class="benchmarkresult">4211</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;8> str = &quot;test = &quot; + k + &quot; times&quot;;<span class="tooltiptext code">template&lt;typename T>
+void AppendSimStrStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            T result = &quot;test = &quot;_ss + k + &quot; times&quot;;
+    #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+    #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Результат не помещается в SSO, возникает аллокация.</span></span></td><td class="benchmarkresult">294</td><td class="benchmarkresult">307</td><td class="benchmarkresult">809</td><td class="benchmarkresult">875</td><td class="benchmarkresult">1240</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">lstringa&lt;32> str = &quot;test = &quot; + k + &quot; times&quot;;<span class="tooltiptext code">template&lt;typename T>
+void AppendSimStrStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            T result = &quot;test = &quot;_ss + k + &quot; times&quot;;
+    #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+    #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">А здесь и ниже - результат укладывается в SSO.
+Ещё раз - используйте сразу буфера подходящего размера.</span></span></td><td class="benchmarkresult">147</td><td class="benchmarkresult">135</td><td class="benchmarkresult">127</td><td class="benchmarkresult">184</td><td class="benchmarkresult">542</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">stringa str = &quot;test = &quot; + k + &quot; times&quot;;<span class="tooltiptext code">template&lt;typename T>
+void AppendSimStrStrNumStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        for (unsigned k = 1; k &lt;= 1&#39;000&#39;000&#39;000; k *= 10) {
+            T result = &quot;test = &quot;_ss + k + &quot; times&quot;;
+    #ifdef CHECK_RESULT
+            if (!result.starts_with(&quot;test = &quot;) || !result.ends_with(&quot; times&quot;)) {
+                state.SkipWithError(&quot;not equal&quot;);
+                break;
+            }
+    #endif
+            benchmark::DoNotOptimize(result);
+            benchmark::DoNotOptimize(k);
+        }
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Под WASM размер SSO 15 символов, что явно не хватает для размещения
+результата, отсюда и такое время.</span></span></td><td class="benchmarkresult">123</td><td class="benchmarkresult">163</td><td class="benchmarkresult">126</td><td class="benchmarkresult">182</td><td class="benchmarkresult">1113</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Split text and convert to int</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">std::string::find + substr + std::strtol<span class="tooltiptext code">void SplitConvertIntStdString(benchmark::State&amp; state) {
+    std::string numbers = NUMBER_LIST;
+    for (auto _: state) {
+        int total = 0;
+        for (size_t start = 0; start &lt; numbers.length(); ) {
+            int delim = numbers.find(&quot;-!-&quot;, start);
+            if (delim == std::string::npos) {
+                delim = numbers.size();
+            }
+            std::string part = numbers.substr(start, delim - start);
+            total += std::strtol(part.c_str(), nullptr, 0);
+            start = delim + 3;
+        }
+    #ifdef CHECK_RESULT
+        if (total != 218) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(total);
+        benchmark::DoNotOptimize(numbers);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">258</td><td class="benchmarkresult">264</td><td class="benchmarkresult">552</td><td class="benchmarkresult">564</td><td class="benchmarkresult">1646</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">ssa::splitter + ssa::as_int<span class="tooltiptext code">void SplitConvertIntSimStr(benchmark::State&amp; state) {
+    stra numbers = NUMBER_LIST;
+    for (auto _: state) {
+        int total = 0;
+        for (auto splitter = numbers.splitter(&quot;-!-&quot;); !splitter.isDone();) {
+            total += splitter.next().as_int&lt;int>();
+        }
+    #ifdef CHECK_RESULT
+        if (total != 218) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(total);
+        benchmark::DoNotOptimize(numbers);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">144</td><td class="benchmarkresult">164</td><td class="benchmarkresult">154</td><td class="benchmarkresult">278</td><td class="benchmarkresult">513</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Replace symbols in text ~400 symbols</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">Naive (and wrong) replace symbols with std::string find + replace<span class="tooltiptext code">void ReplaceSymbolsStdStringNaiveWrong(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+    std::vector&lt;std::pair&lt;u8s, std::string_view>> repl = {
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;}
+    };
+
+    auto repl_all = [](std::string&amp; str, char s, std::string_view repl) {
+        size_t start_pos = 0;
+        while((start_pos = str.find(s, start_pos)) != std::string::npos) {
+            str.replace(start_pos, 1, repl);
+            start_pos += repl.length();
+        }
+    };
+    for (auto _: state) {
+        std::string result{source};
+        for (const auto&amp; r : repl) {
+            repl_all(result, r.first, r.second);
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Это наивная реализация, которая неверно отработает на
+таких заменах, как 'a'->'b' и 'b'->'a'. Но если замены не конфликтуют,
+то работает быстро.</span></span></td><td class="benchmarkresult">953</td><td class="benchmarkresult">826</td><td class="benchmarkresult">1257</td><td class="benchmarkresult">1322</td><td class="benchmarkresult">4352</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace symbols with std::string find_first_of + replace<span class="tooltiptext code">void ReplaceSymbolsStdStringNaiveRight(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+    std::vector&lt;std::pair&lt;u8s, std::string_view>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        std::string result{source};
+        std::string pattern;
+        for (const auto&amp; r : repl) {
+            pattern += r.first;
+        }
+        size_t start_pos = 0;
+        while((start_pos = result.find_first_of(pattern, start_pos)) != std::string::npos) {
+            size_t idx = pattern.find(result[start_pos]);
+            result.replace(start_pos, 1, repl[idx].second);
+            start_pos += repl[idx].second.length();
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Дальше уже правильные реализации, не зависящие от конфликтующих замен.</span></span></td><td class="benchmarkresult">2494</td><td class="benchmarkresult">2299</td><td class="benchmarkresult">1736</td><td class="benchmarkresult">1972</td><td class="benchmarkresult">8189</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace symbols with std::string_view find_first_of + copy<span class="tooltiptext code">void ReplaceSymbolsStdString(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+                      
+    const std::string_view repl_from = &quot;-&lt;>&#39;\&quot;&amp;&quot;;
+    const std::string_view repl_to[] = {&quot;&quot;, &quot;&amp;lt;&quot;, &quot;&amp;gt;&quot;, &quot;&amp;#39;&quot;, &quot;&amp;quot;&quot;, &quot;&amp;amp;&quot;};
+
+    for (auto _: state) {
+        std::string result;
+
+        for (size_t start = 0; start &lt; source.size();) {
+            size_t idx = source.find_first_of(repl_from, start);
+            if (idx == std::string::npos) {
+                result += source.substr(start);
+                break;
+            }
+            if (idx > start) {
+                result += source.substr(start, idx - start);
+            }
+            size_t what = repl_from.find(source[idx]);
+            result += repl_to[what];
+
+            start = idx + 1;
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl_from);
+        benchmark::DoNotOptimize(repl_to);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">2573</td><td class="benchmarkresult">2587</td><td class="benchmarkresult">1959</td><td class="benchmarkresult">2209</td><td class="benchmarkresult">8148</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace runtime symbols with string expressions and without remembering all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ReplaceSymbolsDynPatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+
+    std::vector&lt;std::pair&lt;u8s, ssa>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        stringa result = expr_replace_symbols&lt;u8s, UseVector>{source, repl};
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1413</td><td class="benchmarkresult">1596</td><td class="benchmarkresult">1642</td><td class="benchmarkresult">1664</td><td class="benchmarkresult">4635</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace runtime symbols with simstr and memorization of all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ReplaceSymbolsDynPatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+
+    std::vector&lt;std::pair&lt;u8s, ssa>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        stringa result = expr_replace_symbols&lt;u8s, UseVector>{source, repl};
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1065</td><td class="benchmarkresult">1142</td><td class="benchmarkresult">1214</td><td class="benchmarkresult">1357</td><td class="benchmarkresult">3352</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace const symbols with string expressions and without remembering all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ReplaceSymbolsCons2PatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+
+    for (auto _: state) {
+        stringa result = e_repl_const_symbols&lt;UseVector>(source,
+            &#39;-&#39;, &quot;&quot;,
+            &#39;&lt;&#39;, &quot;&amp;lt;&quot;,
+            &#39;>&#39;, &quot;&amp;gt;&quot;,
+            &#39;\&#39;&#39;, &quot;&amp;#39;&quot;,
+            &#39;\&quot;&#39;, &quot;&amp;quot;&quot;,
+            &#39;&amp;&#39;, &quot;&amp;amp;&quot;
+        );
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1257</td><td class="benchmarkresult">1301</td><td class="benchmarkresult">1325</td><td class="benchmarkresult">1458</td><td class="benchmarkresult">3847</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace const symbols with string expressions and memorization of all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ReplaceSymbolsCons2PatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        &quot; ksjd-fksjd \&quot;dkjfs-jkhdf dfj &#39; kdkd \&quot;dkfdkfkdjf&quot;
+        ;
+
+    for (auto _: state) {
+        stringa result = e_repl_const_symbols&lt;UseVector>(source,
+            &#39;-&#39;, &quot;&quot;,
+            &#39;&lt;&#39;, &quot;&amp;lt;&quot;,
+            &#39;>&#39;, &quot;&amp;gt;&quot;,
+            &#39;\&#39;&#39;, &quot;&amp;#39;&quot;,
+            &#39;\&quot;&#39;, &quot;&amp;quot;&quot;,
+            &#39;&amp;&#39;, &quot;&amp;amp;&quot;
+        );
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+            &quot; ksjdfksjd &amp;quot;dkjfsjkhdf dfj &amp;#39; kdkd &amp;quot;dkfdkfkdjf&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">831</td><td class="benchmarkresult">837</td><td class="benchmarkresult">1145</td><td class="benchmarkresult">1162</td><td class="benchmarkresult">2768</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Replace symbols in text ~40 symbols</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">Short Naive (and wrong) replace symbols with std::string find + replace<span class="tooltiptext code">void ShortReplaceSymbolsStdStringNaiveWrong(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+    std::vector&lt;std::pair&lt;u8s, std::string_view>> repl = {
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;}
+    };
+
+    auto repl_all = [](std::string&amp; str, char s, std::string_view repl) {
+        size_t start_pos = 0;
+        while((start_pos = str.find(s, start_pos)) != std::string::npos) {
+            str.replace(start_pos, 1, repl);
+            start_pos += repl.length();
+        }
+    };
+    for (auto _: state) {
+        std::string result{source};
+        for (const auto&amp; r : repl) {
+            repl_all(result, r.first, r.second);
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">158</td><td class="benchmarkresult">156</td><td class="benchmarkresult">348</td><td class="benchmarkresult">369</td><td class="benchmarkresult">753</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace symbols with std::string find_first_of + replace<span class="tooltiptext code">void ShortReplaceSymbolsStdStringNaiveRight(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+    std::vector&lt;std::pair&lt;u8s, std::string_view>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        std::string result{source};
+        std::string pattern;
+        for (const auto&amp; r : repl) {
+            pattern += r.first;
+        }
+        size_t start_pos = 0;
+        while((start_pos = result.find_first_of(pattern, start_pos)) != std::string::npos) {
+            size_t idx = pattern.find(result[start_pos]);
+            result.replace(start_pos, 1, repl[idx].second);
+            start_pos += repl[idx].second.length();
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">311</td><td class="benchmarkresult">295</td><td class="benchmarkresult">337</td><td class="benchmarkresult">441</td><td class="benchmarkresult">1141</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace symbols with std::string_view find_first_of + copy<span class="tooltiptext code">void ShortReplaceSymbolsStdString(benchmark::State&amp; state) {
+    std::string_view source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+                      
+    const std::string_view repl_from = &quot;-&lt;>&#39;\&quot;&amp;&quot;;
+    const std::string_view repl_to[] = {&quot;&quot;, &quot;&amp;lt;&quot;, &quot;&amp;gt;&quot;, &quot;&amp;#39;&quot;, &quot;&amp;quot;&quot;, &quot;&amp;amp;&quot;};
+
+    for (auto _: state) {
+        std::string result;
+
+        for (size_t start = 0; start &lt; source.size();) {
+            size_t idx = source.find_first_of(repl_from, start);
+            if (idx == std::string::npos) {
+                result += source.substr(start);
+                break;
+            }
+            if (idx > start) {
+                result += source.substr(start, idx - start);
+            }
+            size_t what = repl_from.find_first_of(source[idx]);
+            result += repl_to[what];
+
+            start = idx + 1;
+        }
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl_from);
+        benchmark::DoNotOptimize(repl_to);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">326</td><td class="benchmarkresult">325</td><td class="benchmarkresult">300</td><td class="benchmarkresult">328</td><td class="benchmarkresult">1119</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace runtime symbols with string expressions and without remembering all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ShortReplaceSymbolsDynPatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+
+    std::vector&lt;std::pair&lt;u8s, ssa>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        stringa result = expr_replace_symbols&lt;u8s, UseVector>{source, repl};
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">194</td><td class="benchmarkresult">191</td><td class="benchmarkresult">314</td><td class="benchmarkresult">317</td><td class="benchmarkresult">728</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace runtime symbols with simstr and memorization of all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ShortReplaceSymbolsDynPatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+
+    std::vector&lt;std::pair&lt;u8s, ssa>> repl = {
+        {&#39;-&#39;, &quot;&quot;},
+        {&#39;&lt;&#39;, &quot;&amp;lt;&quot;},
+        {&#39;>&#39;, &quot;&amp;gt;&quot;},
+        {&#39;\&#39;&#39;, &quot;&amp;#39;&quot;},
+        {&#39;\&quot;&#39;, &quot;&amp;quot;&quot;},
+        {&#39;&amp;&#39;, &quot;&amp;amp;&quot;},
+    };
+
+    for (auto _: state) {
+        stringa result = expr_replace_symbols&lt;u8s, UseVector>{source, repl};
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">174</td><td class="benchmarkresult">170</td><td class="benchmarkresult">405</td><td class="benchmarkresult">359</td><td class="benchmarkresult">621</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace const symbols with string expressions and without remembering all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ShortReplaceSymbolsCons2PatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+
+    for (auto _: state) {
+        stringa result = e_repl_const_symbols&lt;UseVector>(source,
+            &#39;-&#39;, &quot;&quot;,
+            &#39;&lt;&#39;, &quot;&amp;lt;&quot;,
+            &#39;>&#39;, &quot;&amp;gt;&quot;,
+            &#39;\&#39;&#39;, &quot;&amp;#39;&quot;,
+            &#39;\&quot;&#39;, &quot;&amp;quot;&quot;,
+            &#39;&amp;&#39;, &quot;&amp;amp;&quot;
+        );
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">209</td><td class="benchmarkresult">172</td><td class="benchmarkresult">274</td><td class="benchmarkresult">299</td><td class="benchmarkresult">500</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">Short replace const symbols with string expressions and memorization of all search results<span class="tooltiptext code">template&lt;bool UseVector>
+void ShortReplaceSymbolsCons2PatternSimStr(benchmark::State&amp; state) {
+    stra source =
+        &quot;abcdefg124 &lt; jhsfjsh sjdfsh jfhjd &amp;&amp; jdjdj >&quot;
+        ;
+
+    for (auto _: state) {
+        stringa result = e_repl_const_symbols&lt;UseVector>(source,
+            &#39;-&#39;, &quot;&quot;,
+            &#39;&lt;&#39;, &quot;&amp;lt;&quot;,
+            &#39;>&#39;, &quot;&amp;gt;&quot;,
+            &#39;\&#39;&#39;, &quot;&amp;#39;&quot;,
+            &#39;\&quot;&#39;, &quot;&amp;quot;&quot;,
+            &#39;&amp;&#39;, &quot;&amp;amp;&quot;
+        );
+
+#ifdef CHECK_RESULT
+        if (result
+            !=
+            &quot;abcdefg124 &amp;lt; jhsfjsh sjdfsh jfhjd &amp;amp;&amp;amp; jdjdj &amp;gt;&quot;
+        ) {
+            state.SkipWithError(&quot;not equal&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">160</td><td class="benchmarkresult">130</td><td class="benchmarkresult">288</td><td class="benchmarkresult">337</td><td class="benchmarkresult">462</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Replace All Str</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 64 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllLongerStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;----&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+    
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Тут проверяется тяжелый случай - замена подстроки на более
+длинную. Обычная реализация несколько раз передвигает хвост.</span></span></td><td class="benchmarkresult">143</td><td class="benchmarkresult">166</td><td class="benchmarkresult">240</td><td class="benchmarkresult">258</td><td class="benchmarkresult">643</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 64 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Count>
+void ReplaceAllLongerSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">132</td><td class="benchmarkresult">147</td><td class="benchmarkresult">317</td><td class="benchmarkresult">429</td><td class="benchmarkresult">656</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 64 str by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllLongerSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">106</td><td class="benchmarkresult">108</td><td class="benchmarkresult">192</td><td class="benchmarkresult">248</td><td class="benchmarkresult">389</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 256 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllLongerStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;----&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+    
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">509</td><td class="benchmarkresult">478</td><td class="benchmarkresult">723</td><td class="benchmarkresult">778</td><td class="benchmarkresult">2165</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 256 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Count>
+void ReplaceAllLongerSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">413</td><td class="benchmarkresult">442</td><td class="benchmarkresult">615</td><td class="benchmarkresult">721</td><td class="benchmarkresult">1631</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 256 str by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllLongerSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">417</td><td class="benchmarkresult">426</td><td class="benchmarkresult">503</td><td class="benchmarkresult">589</td><td class="benchmarkresult">1523</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 512 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllLongerStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;----&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+    
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1019</td><td class="benchmarkresult">989</td><td class="benchmarkresult">1349</td><td class="benchmarkresult">1492</td><td class="benchmarkresult">3792</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 512 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Count>
+void ReplaceAllLongerSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">762</td><td class="benchmarkresult">829</td><td class="benchmarkresult">1106</td><td class="benchmarkresult">1212</td><td class="benchmarkresult">3108</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 512 str by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllLongerSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">784</td><td class="benchmarkresult">790</td><td class="benchmarkresult">895</td><td class="benchmarkresult">1006</td><td class="benchmarkresult">2914</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 1024 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllLongerStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;----&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+    
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">2281</td><td class="benchmarkresult">2100</td><td class="benchmarkresult">3114</td><td class="benchmarkresult">3178</td><td class="benchmarkresult">7838</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 1024 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Count>
+void ReplaceAllLongerSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1590</td><td class="benchmarkresult">1710</td><td class="benchmarkresult">1889</td><td class="benchmarkresult">2036</td><td class="benchmarkresult">5744</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 1024 str by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllLongerSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1478</td><td class="benchmarkresult">1818</td><td class="benchmarkresult">1708</td><td class="benchmarkresult">1859</td><td class="benchmarkresult">5759</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 2048 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllLongerStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;----&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+    
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Чем длиннее строка, тем больше замедляется std::string</span></span></td><td class="benchmarkresult">6282</td><td class="benchmarkresult">7050</td><td class="benchmarkresult">7681</td><td class="benchmarkresult">7559</td><td class="benchmarkresult">17873</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 2048 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Count>
+void ReplaceAllLongerSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">2947</td><td class="benchmarkresult">4100</td><td class="benchmarkresult">3695</td><td class="benchmarkresult">3881</td><td class="benchmarkresult">10805</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to ---- in 2048 str by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllLongerSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;----&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">2870</td><td class="benchmarkresult">3672</td><td class="benchmarkresult">3263</td><td class="benchmarkresult">3571</td><td class="benchmarkresult">11194</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 64 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllEqualStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;--&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td><span class="tooltip info">&nbsp;>>&nbsp;<span class="tooltiptext">Идеальный случай замены - на подстроку такой же длины</span></span></td><td class="benchmarkresult">113</td><td class="benchmarkresult">121</td><td class="benchmarkresult">181</td><td class="benchmarkresult">196</td><td class="benchmarkresult">510</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 64 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Long>
+void ReplaceAllEqualSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    lstringa&lt;2048> big_source{Long, source}, big_sample{Long, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;--&quot;);
+
+        #ifdef CHECK_RESULT
+    if (result.to_str() != big_sample) {
+        std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+        state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">92.8</td><td class="benchmarkresult">94.9</td><td class="benchmarkresult">177</td><td class="benchmarkresult">226</td><td class="benchmarkresult">411</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 64 by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllEqualSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    ssa pattern = &quot;bb&quot;;
+    ssa repl = &quot;--&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;--&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">75.8</td><td class="benchmarkresult">81.1</td><td class="benchmarkresult">145</td><td class="benchmarkresult">172</td><td class="benchmarkresult">277</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 256 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllEqualStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;--&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">375</td><td class="benchmarkresult">371</td><td class="benchmarkresult">467</td><td class="benchmarkresult">514</td><td class="benchmarkresult">1577</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 256 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Long>
+void ReplaceAllEqualSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    lstringa&lt;2048> big_source{Long, source}, big_sample{Long, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;--&quot;);
+
+        #ifdef CHECK_RESULT
+    if (result.to_str() != big_sample) {
+        std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+        state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">285</td><td class="benchmarkresult">289</td><td class="benchmarkresult">446</td><td class="benchmarkresult">499</td><td class="benchmarkresult">1244</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 256 by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllEqualSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    ssa pattern = &quot;bb&quot;;
+    ssa repl = &quot;--&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;--&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">265</td><td class="benchmarkresult">251</td><td class="benchmarkresult">353</td><td class="benchmarkresult">367</td><td class="benchmarkresult">893</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 512 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllEqualStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;--&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">748</td><td class="benchmarkresult">781</td><td class="benchmarkresult">829</td><td class="benchmarkresult">907</td><td class="benchmarkresult">3174</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 512 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Long>
+void ReplaceAllEqualSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    lstringa&lt;2048> big_source{Long, source}, big_sample{Long, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;--&quot;);
+
+        #ifdef CHECK_RESULT
+    if (result.to_str() != big_sample) {
+        std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+        state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">575</td><td class="benchmarkresult">514</td><td class="benchmarkresult">720</td><td class="benchmarkresult">833</td><td class="benchmarkresult">2385</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 512 by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllEqualSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    ssa pattern = &quot;bb&quot;;
+    ssa repl = &quot;--&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;--&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">428</td><td class="benchmarkresult">455</td><td class="benchmarkresult">536</td><td class="benchmarkresult">621</td><td class="benchmarkresult">1687</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 1024 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllEqualStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;--&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1417</td><td class="benchmarkresult">1399</td><td class="benchmarkresult">1586</td><td class="benchmarkresult">1708</td><td class="benchmarkresult">6036</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 1024 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Long>
+void ReplaceAllEqualSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    lstringa&lt;2048> big_source{Long, source}, big_sample{Long, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;--&quot;);
+
+        #ifdef CHECK_RESULT
+    if (result.to_str() != big_sample) {
+        std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+        state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1070</td><td class="benchmarkresult">1065</td><td class="benchmarkresult">1423</td><td class="benchmarkresult">1506</td><td class="benchmarkresult">4451</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 1024 by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllEqualSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    ssa pattern = &quot;bb&quot;;
+    ssa repl = &quot;--&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;--&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">918</td><td class="benchmarkresult">950</td><td class="benchmarkresult">920</td><td class="benchmarkresult">1106</td><td class="benchmarkresult">3205</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 2048 std::string<span class="tooltiptext code">template&lt;size_t Long>
+void ReplaceAllEqualStdString(benchmark::State&amp; state) {
+    std::string_view source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    std::string_view sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    std::string_view pattern = &quot;bb&quot;;
+    std::string_view repl = &quot;--&quot;;
+
+    std::string big_source, big_sample;
+    for (int i = 0; i &lt; Long; i++) {
+        big_source += source;
+        big_sample += sample;
+    }
+
+    for (auto _: state) {
+        std::string result{big_source};
+        size_t start_pos = 0;
+        while((start_pos = result.find(pattern, start_pos)) != std::string::npos) {
+            result.replace(start_pos, pattern.length(), repl);
+            start_pos += repl.length();
+        }
+#ifdef CHECK_RESULT
+        if (result != big_sample) {
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">3065</td><td class="benchmarkresult">2871</td><td class="benchmarkresult">3127</td><td class="benchmarkresult">3408</td><td class="benchmarkresult">11405</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 2048 lstringa&lt;8><span class="tooltiptext code">template&lt;size_t N, size_t Long>
+void ReplaceAllEqualSimString(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    lstringa&lt;2048> big_source{Long, source}, big_sample{Long, sample};
+
+    for (auto _: state) {
+        lstringa&lt;N> result = big_source;
+        result.replace(&quot;bb&quot;, &quot;--&quot;);
+
+        #ifdef CHECK_RESULT
+    if (result.to_str() != big_sample) {
+        std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+        state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">2188</td><td class="benchmarkresult">1933</td><td class="benchmarkresult">2801</td><td class="benchmarkresult">2809</td><td class="benchmarkresult">8894</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">replace bb to -- in 2048 by init stringa<span class="tooltiptext code">template&lt;size_t Count>
+void ReplaceAllEqualSimStringExpr(benchmark::State&amp; state) {
+    ssa source = &quot;aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba&quot;;
+    ssa sample = &quot;aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a&quot;;
+    ssa pattern = &quot;bb&quot;;
+    ssa repl = &quot;--&quot;;
+    
+    lstringa&lt;2048> big_source{Count, source}, big_sample{Count, sample};
+
+    for (auto _: state) {
+        stringa result = e_repl(big_source.to_str(), &quot;bb&quot;, &quot;--&quot;);
+
+#ifdef CHECK_RESULT
+        if (result.to_str() != big_sample) {
+            std::cout &lt;&lt; result.length() &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; &quot;\n\n&quot; &lt;&lt; big_sample.length() &lt;&lt; &quot;: &quot; &lt;&lt; big_sample &lt;&lt; &quot;\n\n&quot;;
+            state.SkipWithError(&quot;error in replace&quot;);
+            break;
+        }
+#endif
+        benchmark::DoNotOptimize(result);
+        benchmark::DoNotOptimize(source);
+        benchmark::DoNotOptimize(pattern);
+        benchmark::DoNotOptimize(repl);
+    }
+}</span></span></td><td></td><td class="benchmarkresult">1690</td><td class="benchmarkresult">1795</td><td class="benchmarkresult">1986</td><td class="benchmarkresult">2124</td><td class="benchmarkresult">6316</td></tr>
+</tbody></table></div>
+
+<div class="benchset"><h4>Hash Map insert and find</h4>
+<table><thead><tr><th>Benchmark name</th><th width="5%">Comment</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, Clang-21</th><th width="8%">Xeon E5-2682 v4, WSL Ubuntu 22, GCC-13</th><th width="8%">Xeon E5-2682 v4, Windows 10, Clang 19</th><th width="8%">Xeon E5-2682 v4, Windows 10, MSVC-19</th><th width="8%">Xeon E5-2682 v4, wasm, Chrome 135, Clang-21</th></tr></thead><tbody>
+<tr><td class="benchmarkname"><span class="tooltip">hashStrMapA&lt;size_t> emplace &amp; find stringa;<span class="tooltiptext code">void HashMapSimStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        hashStrMapA&lt;size_t> store;
+        for (size_t idx = 0; idx &lt; bs_sim.size(); idx++) {
+            store.try_emplace(bs_sim[idx], idx);
+        }
+#ifdef CHECK_RESULT
+        if (store.size() != bs_sim.size()) {
+            state.SkipWithError(&quot;bad inserts&quot;);
+        }
+#endif
+        for (size_t idx = 0; idx &lt; bs_sim.size(); idx++) {
+            auto find = store.find(bs_sim[idx]);
+            size_t res = find->second;
+#ifdef CHECK_RESULT
+            if (res != idx) {
+                state.SkipWithError(&quot;bad find&quot;);
+            }
+#endif
+            benchmark::DoNotOptimize(res);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">3022978</td><td class="benchmarkresult">2968724</td><td class="benchmarkresult">3763043</td><td class="benchmarkresult">4146280</td><td class="benchmarkresult">4069719</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::unordered_map&lt;std::string, size_t> emplace &amp; find std::string;<span class="tooltiptext code">void HashMapStdStr(benchmark::State&amp; state) {
+    for (auto _: state) {
+        std::unordered_map&lt;std::string, size_t> store;
+        for (size_t idx = 0; idx &lt; bs_std.size(); idx++) {
+            store.try_emplace(bs_std[idx], idx);
+        }
+#ifdef CHECK_RESULT
+        if (store.size() != bs_std.size()) {
+            state.SkipWithError(&quot;bad inserts&quot;);
+        }
+#endif
+        for (size_t idx = 0; idx &lt; bs_std.size(); idx++) {
+            auto find = store.find(bs_std[idx]);
+            size_t res = find->second;
+#ifdef CHECK_RESULT
+            if (res != idx) {
+                state.SkipWithError(&quot;bad find&quot;);
+            }
+#endif
+            benchmark::DoNotOptimize(res);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">3494058</td><td class="benchmarkresult">3583298</td><td class="benchmarkresult">6196878</td><td class="benchmarkresult">6035304</td><td class="benchmarkresult">5841652</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">hashStrMapA&lt;size_t> emplace &amp; find ssa;<span class="tooltiptext code">void HashMapSimSsa(benchmark::State&amp; state) {
+    for (auto _: state) {
+        hashStrMapA&lt;size_t> store;
+        for (size_t idx = 0; idx &lt; bs_sim.size(); idx++) {
+            store.emplace(bs_sim[idx], idx);
+        }
+#ifdef CHECK_RESULT
+        if (store.size() != bs_sim.size()) {
+            state.SkipWithError(&quot;bad inserts&quot;);
+        }
+#endif
+        for (size_t idx = 0; idx &lt; bs_sim.size(); idx++) {
+            ssa key = bs_sim[idx];
+            auto find = store.find(key);
+            size_t res = find->second;
+#ifdef CHECK_RESULT
+            if (res != idx) {
+                state.SkipWithError(&quot;bad find&quot;);
+            }
+#endif
+            benchmark::DoNotOptimize(res);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">3065605</td><td class="benchmarkresult">3021803</td><td class="benchmarkresult">3601522</td><td class="benchmarkresult">4109444</td><td class="benchmarkresult">3988392</td></tr>
+<tr><td class="benchmarkname"><span class="tooltip">std::unordered_map&lt;std::string, size_t> emplace &amp; find std::string_view;<span class="tooltiptext code">void HashMapStdStrView(benchmark::State&amp; state) {
+    for (auto _: state) {
+        std::unordered_map&lt;std::string, size_t> store;
+        for (size_t idx = 0; idx &lt; bs_std.size(); idx++) {
+            store.emplace(bs_std[idx], idx);
+        }
+#ifdef CHECK_RESULT
+        if (store.size() != bs_std.size()) {
+            state.SkipWithError(&quot;bad inserts&quot;);
+        }
+#endif
+        for (size_t idx = 0; idx &lt; bs_std.size(); idx++) {
+            std::string_view key = bs_std[idx];
+            auto find = store.find(std::string{key});
+            size_t res = find->second;
+#ifdef CHECK_RESULT
+            if (res != idx) {
+                state.SkipWithError(&quot;bad find&quot;);
+            }
+#endif
+            benchmark::DoNotOptimize(res);
+        }
+    }
+}</span></span></td><td></td><td class="benchmarkresult">4209651</td><td class="benchmarkresult">4066207</td><td class="benchmarkresult">6796957</td><td class="benchmarkresult">6849164</td><td class="benchmarkresult">6594896</td></tr>
+</tbody></table></div></body></html>
