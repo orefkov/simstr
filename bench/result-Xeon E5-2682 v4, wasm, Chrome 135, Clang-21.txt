@@ -1,0 +1,203 @@
+Run on (32 X 2513.96 MHz CPU s)
+Chrome webasm
+-------------------------------------------------------------------------------------------------------------------------------------------
+Benchmark                                                                                                 Time             CPU   Iterations
+-------------------------------------------------------------------------------------------------------------------------------------------
+-----  Create Empty Str ---------                                                                     0.000 ns        0.000 ns   1000000000
+std::string e;                                                                                         2.58 ns         2.58 ns    262738106
+std::string_view e;                                                                                    2.51 ns         2.51 ns    272384139
+ssa e;                                                                                                 2.14 ns         2.14 ns    326347934
+stringa e;                                                                                             2.76 ns         2.76 ns    257703494
+lstringa<20> e;                                                                                        3.08 ns         3.08 ns    236802490
+lstringa<40> e;                                                                                        3.09 ns         3.09 ns    238663485
+-----  Create Str from short literal (9 symbols) --------                                             0.000 ns        0.000 ns   1000000000
+std::string e      = "Test text";                                                                      3.41 ns         3.41 ns    207539618
+std::string_view e = "Test text";                                                                      2.18 ns         2.18 ns    318928401
+ssa e              = "Test text";                                                                      2.16 ns         2.16 ns    307563875
+stringa e          = "Test text";                                                                      3.02 ns         3.02 ns    231983960
+lstringa<20> e     = "Test text";                                                                      3.98 ns         3.98 ns    182750924
+lstringa<40> e     = "Test text";                                                                      3.84 ns         3.84 ns    139692676
+-----  Create Str from long literal (30 symbols) ---------                                            0.000 ns        0.000 ns   1000000000
+std::string e      = "123456789012345678901234567890";                                                 58.3 ns         58.3 ns     11140288
+std::string_view e = "123456789012345678901234567890";                                                 2.23 ns         2.23 ns    319722298
+ssa e              = "123456789012345678901234567890";                                                 2.16 ns         2.16 ns    327171602
+stringa e          = "123456789012345678901234567890";                                                 2.99 ns         2.99 ns    242348705
+lstringa<20> e     = "123456789012345678901234567890";                                                 56.5 ns         56.5 ns     12077295
+lstringa<40> e     = "123456789012345678901234567890";                                                 5.19 ns         5.19 ns    133231823
+-----  Create copy of Str with 9 symbols ---------                                                    0.000 ns        0.000 ns   1000000000
+std::string e      = "Test text"; auto c{e};                                                           3.78 ns         3.78 ns    181612983
+std::string_view e = "Test text"; auto c{e};                                                           2.33 ns         2.33 ns    316319845
+ssa e              = "Test text"; auto c{e};                                                           2.28 ns         2.28 ns    314105584
+stringa e          = "Test text"; auto c{e};                                                           4.05 ns         4.05 ns    138641315
+lstringa<20> e     = "Test text"; auto c{e};                                                           14.5 ns         14.5 ns     47711550
+lstringa<40> e     = "Test text"; auto c{e};                                                           15.1 ns         15.1 ns     44515103
+-----  Create copy of Str with 30 symbols ---------                                                   0.000 ns        0.000 ns   1000000000
+std::string e      = "123456789012345678901234567890"; auto c{e};                                       105 ns          105 ns      5154829
+std::string_view e = "123456789012345678901234567890"; auto c{e};                                      2.25 ns         2.25 ns    316957211
+ssa e              = "123456789012345678901234567890"; auto c{e};                                      2.16 ns         2.17 ns    330898863
+stringa e          = "123456789012345678901234567890"; auto c{e};                                      3.19 ns         3.19 ns    233902496
+lstringa<20> e     = "123456789012345678901234567890"; auto c{e};                                      69.9 ns         69.9 ns      8844526
+lstringa<40> e     = "123456789012345678901234567890"; auto c{e};                                      15.0 ns         15.0 ns     53611090
+-----  Find 9 symbols text in end of 99 symbols text ---------                                        0.000 ns        0.000 ns   1000000000
+std::string::find;                                                                                      135 ns          135 ns      5632443
+std::string_view::find;                                                                                 126 ns          126 ns      5791825
+ssa::find;                                                                                              114 ns          114 ns      5637660
+stringa::find;                                                                                         98.5 ns         98.5 ns      7320261
+lstringa<20>::find;                                                                                    97.0 ns         97.0 ns      7575758
+lstringa<40>::find;                                                                                    95.1 ns         95.1 ns      7563071
+-------  Copy not literal Str with N symbols ---------                                                0.000 ns        0.000 ns   1000000000
+std::string copy{str_with_len_N};/15                                                                    108 ns          108 ns      5815403
+std::string copy{str_with_len_N};/16                                                                    108 ns          108 ns      6290156
+std::string copy{str_with_len_N};/23                                                                    108 ns          108 ns      6167129
+std::string copy{str_with_len_N};/24                                                                    112 ns          112 ns      6701771
+std::string copy{str_with_len_N};/32                                                                    123 ns          123 ns      5241875
+std::string copy{str_with_len_N};/64                                                                    111 ns          111 ns      6172840
+std::string copy{str_with_len_N};/128                                                                   111 ns          111 ns      6348343
+std::string copy{str_with_len_N};/256                                                                   133 ns          133 ns      5638114
+std::string copy{str_with_len_N};/512                                                                   140 ns          140 ns      5390005
+std::string copy{str_with_len_N};/1024                                                                  135 ns          135 ns      4753820
+std::string copy{str_with_len_N};/2048                                                                  173 ns          173 ns      4410560
+std::string copy{str_with_len_N};/4096                                                                  208 ns          208 ns      3476620
+stringa copy{str_with_len_N};/15                                                                       4.09 ns         4.09 ns    168067227
+stringa copy{str_with_len_N};/16                                                                       8.78 ns         8.78 ns     77549438
+stringa copy{str_with_len_N};/23                                                                       8.67 ns         8.67 ns     80432035
+stringa copy{str_with_len_N};/24                                                                       8.66 ns         8.66 ns     81833061
+stringa copy{str_with_len_N};/32                                                                       8.71 ns         8.71 ns     78212291
+stringa copy{str_with_len_N};/64                                                                       8.83 ns         8.83 ns     81414282
+stringa copy{str_with_len_N};/128                                                                      8.55 ns         8.55 ns     81461655
+stringa copy{str_with_len_N};/256                                                                      8.73 ns         8.73 ns     79473206
+stringa copy{str_with_len_N};/512                                                                      8.65 ns         8.65 ns     79369579
+stringa copy{str_with_len_N};/1024                                                                     8.73 ns         8.73 ns     80635871
+stringa copy{str_with_len_N};/2048                                                                     8.79 ns         8.79 ns     79441639
+stringa copy{str_with_len_N};/4096                                                                     8.57 ns         8.57 ns     77885953
+lstringa<16> copy{str_with_len_N};/15                                                                  14.3 ns         14.3 ns     47945205
+lstringa<16> copy{str_with_len_N};/16                                                                  14.0 ns         14.0 ns     48483169
+lstringa<16> copy{str_with_len_N};/23                                                                  72.3 ns         72.3 ns      9776536
+lstringa<16> copy{str_with_len_N};/24                                                                  74.7 ns         74.7 ns     10058917
+lstringa<16> copy{str_with_len_N};/32                                                                  75.9 ns         75.9 ns      9522514
+lstringa<16> copy{str_with_len_N};/64                                                                  74.2 ns         74.2 ns      9857072
+lstringa<16> copy{str_with_len_N};/128                                                                 76.2 ns         76.2 ns      7634004
+lstringa<16> copy{str_with_len_N};/256                                                                  100 ns          100 ns      6559220
+lstringa<16> copy{str_with_len_N};/512                                                                 94.9 ns         94.9 ns      6910168
+lstringa<16> copy{str_with_len_N};/1024                                                                98.6 ns         98.6 ns      6629730
+lstringa<16> copy{str_with_len_N};/2048                                                                 132 ns          132 ns      5455750
+lstringa<16> copy{str_with_len_N};/4096                                                                 169 ns          169 ns      4245769
+lstringa<512> copy{str_with_len_N};/8                                                                  14.9 ns         14.9 ns     48392672
+lstringa<512> copy{str_with_len_N};/16                                                                 14.1 ns         14.1 ns     51807719
+lstringa<512> copy{str_with_len_N};/32                                                                 16.6 ns         16.6 ns     42779441
+lstringa<512> copy{str_with_len_N};/64                                                                 17.8 ns         17.8 ns     42172485
+lstringa<512> copy{str_with_len_N};/128                                                                17.5 ns         17.5 ns     35735253
+lstringa<512> copy{str_with_len_N};/256                                                                19.9 ns         19.9 ns     36686670
+lstringa<512> copy{str_with_len_N};/512                                                                22.4 ns         22.4 ns     31649862
+lstringa<512> copy{str_with_len_N};/1024                                                               99.0 ns         99.0 ns      7056807
+lstringa<512> copy{str_with_len_N};/2048                                                                136 ns          136 ns      5400193
+lstringa<512> copy{str_with_len_N};/4096                                                                168 ns          168 ns      4156523
+-----  Convert to int '1234567'  ---------                                                            0.000 ns        0.000 ns   1000000000
+std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);                                   191 ns          191 ns      3615889
+std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);       n/imp ns 
+stringa s = "123456789"; int res = s.to_int<int, true, 10, false>                                      28.1 ns         28.1 ns     24559680
+ssa s = "123456789"; int res = s.to_int<int, true, 10, false>                                          20.2 ns         20.2 ns     34509108
+lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>                                 20.0 ns         20.0 ns     34720500
+-----  Convert to unsigned 'abcDef'  ---------                                                        0.000 ns        0.000 ns   1000000000
+std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);                                      143 ns          143 ns      4295269
+std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);          n/imp ns 
+stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>                                         29.3 ns         29.3 ns     24025261
+ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>                                             15.8 ns         15.8 ns     46824309
+lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>                                    15.0 ns         15.0 ns     47406203
+-----  Convert to int '    1234567'  ---------                                                        0.000 ns        0.000 ns   1000000000
+std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);                                204 ns          204 ns      3104695
+stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow                                38.2 ns         38.2 ns     18392496
+ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow                          45.3 ns         45.3 ns     13858642
+-- Append const literal of 16 bytes 64 times, 1024 total length --                                    0.000 ns        0.000 ns   1000000000
+std::stringstream str; ... str << "abbaabbaabbaabba";                                                 10818 ns        10818 ns        62475
+std::string str; ... str += "abbaabbaabbaabba";                                                        1134 ns         1134 ns       592267
+lstringa<8> str; ... str += "abbaabbaabbaabba";                                                        1091 ns         1091 ns       610075
+lstringa<128> str; ... str += "abbaabbaabbaabba";                                                       744 ns          744 ns       902353
+lstringa<512> str; ... str += "abbaabbaabbaabba";                                                       507 ns          507 ns      1339713
+lstringa<1024> str; ... str += "abbaabbaabbaabba";                                                      402 ns          402 ns      1805380
+-- Append string of 16 bytes and const literal of 16 bytes 32 times, 1024 total length --             0.000 ns        0.000 ns   1000000000
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba";                                      10426 ns        10427 ns        60527
+std::string str; ... str += str_var + "abbaabbaabbaabba";                                              3752 ns         3752 ns       196850
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";                                              1219 ns         1219 ns       548267
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";                                             951 ns          951 ns       725201
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";                                             737 ns          737 ns       856741
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";                                            641 ns          641 ns      1037652
+-- Append string of 16 bytes and const literal of 16 bytes 2048 times, 65536 total length --          0.000 ns        0.000 ns   1000000000
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba"; 2048 times                          537891 ns       537895 ns         1387
+std::string str; ... str += str_var + "abbaabbaabbaabba"; 2048 times                                 196278 ns       196281 ns         2950
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times                                  44949 ns        44950 ns        13142
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times                                44780 ns        44780 ns        14977
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times                                44604 ns        44604 ns        15369
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times                               45486 ns        45486 ns        16067
+-- Append 2 string of 16 bytes 32 times, 1024 total length --                                         0.000 ns        0.000 ns   1000000000
+std::stringstream str; ... str << str_var1 << str_var2;                                               10731 ns        10731 ns        61631
+std::string str; ... str += str_var1 + str_var2;                                                       4089 ns         4089 ns       129104
+lstringa<16> str; ... str += str_var1 + str_var2;                                                      1515 ns         1515 ns       498771
+lstringa<128> str; ... str += str_var1 + str_var2;                                                     1292 ns         1292 ns       556085
+lstringa<512> str; ... str += str_var1 + str_var2;                                                      953 ns          953 ns       763068
+lstringa<1024> str; ... str += str_var1 + str_var2;                                                     826 ns          826 ns       904393
+-- Append text, number, text --                                                                       0.000 ns        0.000 ns   1000000000
+std::stringstream str; str << "test = " << k << " times";                                             17354 ns        17354 ns        33117
+std::string str = "test = " + std::to_string(k) + " times";                                            2933 ns         2933 ns       227195
+char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;                              6779 ns         6779 ns       101383
+std::string str = std::format("test = {} times", k);                                                   4196 ns         4196 ns       158003
+lstringa<8> str; str.format("test = {} times", k);                                                     6127 ns         6128 ns       119210
+lstringa<32> str; str.format("test = {} times", k);                                                    4211 ns         4211 ns       148187
+lstringa<8> str = "test = " + k + " times";                                                            1240 ns         1240 ns       490832
+lstringa<32> str = "test = " + k + " times";                                                            542 ns          542 ns       986680
+stringa str = "test = " + k + " times";                                                                1113 ns         1113 ns       602773
+-- Split text and convert to int --                                                                   0.000 ns        0.000 ns   1000000000
+std::string::find + substr + std::strtol                                                               1646 ns         1646 ns       452240
+ssa::splitter + ssa::as_int                                                                             513 ns          513 ns      1242126
+-- Replace symbols in text ~400 symbols --                                                            0.000 ns        0.000 ns   1000000000
+Naive (and wrong) replace symbols with std::string find + replace                                      4352 ns         4352 ns       165547
+replace symbols with std::string find_first_of + replace                                               8189 ns         8189 ns        68440
+replace symbols with std::string_view find_first_of + copy                                             8148 ns         8148 ns        87642
+replace runtime symbols with string expressions and without remembering all search results             4635 ns         4635 ns       133118
+replace runtime symbols with simstr and memorization of all search results                             3352 ns         3352 ns       189450
+replace const symbols with string expressions and without remembering all search results               3847 ns         3847 ns       176249
+replace const symbols with string expressions and memorization of all search results                   2768 ns         2768 ns       275282
+-- Replace symbols in text ~40 symbols --                                                             0.000 ns        0.000 ns   1000000000
+Short Naive (and wrong) replace symbols with std::string find + replace                                 753 ns          753 ns       789088
+Short replace symbols with std::string find_first_of + replace                                         1141 ns         1141 ns       668960
+Short replace symbols with std::string_view find_first_of + copy                                       1119 ns         1119 ns       564289
+Short replace runtime symbols with string expressions and without remembering all search results        728 ns          728 ns       892459
+Short replace runtime symbols with simstr and memorization of all search results                        621 ns          621 ns      1007774
+Short replace const symbols with string expressions and without remembering all search results          500 ns          500 ns      1345636
+Short replace const symbols with string expressions and memorization of all search results              462 ns          462 ns      1501308
+-----  Replace All Str ---------                                                                      0.000 ns        0.000 ns   1000000000
+replace bb to ---- in 64 std::string                                                                    643 ns          643 ns      1173217
+replace bb to ---- in 64 lstringa<8>                                                                    656 ns          656 ns       987306
+replace bb to ---- in 64 str by init stringa                                                            389 ns          389 ns      1743397
+replace bb to ---- in 256 std::string                                                                  2165 ns         2165 ns       343980
+replace bb to ---- in 256 lstringa<8>                                                                  1631 ns         1631 ns       436749
+replace bb to ---- in 256 str by init stringa                                                          1523 ns         1523 ns       481629
+replace bb to ---- in 512 std::string                                                                  3792 ns         3792 ns       177940
+replace bb to ---- in 512 lstringa<8>                                                                  3108 ns         3108 ns       240641
+replace bb to ---- in 512 str by init stringa                                                          2914 ns         2914 ns       228452
+replace bb to ---- in 1024 std::string                                                                 7838 ns         7839 ns        86946
+replace bb to ---- in 1024 lstringa<8>                                                                 5744 ns         5744 ns       105058
+replace bb to ---- in 1024 str by init stringa                                                         5759 ns         5759 ns       101744
+replace bb to ---- in 2048 std::string                                                                17873 ns        17873 ns        38951
+replace bb to ---- in 2048 lstringa<8>                                                                10805 ns        10805 ns        66746
+replace bb to ---- in 2048 str by init stringa                                                        11194 ns        11194 ns        64103
+replace bb to -- in 64 std::string                                                                      510 ns          510 ns      1333587
+replace bb to -- in 64 lstringa<8>                                                                      411 ns          411 ns      1628002
+replace bb to -- in 64 by init stringa                                                                  277 ns          277 ns      2658968
+replace bb to -- in 256 std::string                                                                    1577 ns         1577 ns       446187
+replace bb to -- in 256 lstringa<8>                                                                    1244 ns         1244 ns       608140
+replace bb to -- in 256 by init stringa                                                                 893 ns          893 ns       764109
+replace bb to -- in 512 std::string                                                                    3174 ns         3175 ns       226809
+replace bb to -- in 512 lstringa<8>                                                                    2385 ns         2385 ns       309010
+replace bb to -- in 512 by init stringa                                                                1687 ns         1687 ns       405492
+replace bb to -- in 1024 std::string                                                                   6036 ns         6036 ns       125448
+replace bb to -- in 1024 lstringa<8>                                                                   4451 ns         4451 ns       162274
+replace bb to -- in 1024 by init stringa                                                               3205 ns         3205 ns       216534
+replace bb to -- in 2048 std::string                                                                  11405 ns        11405 ns        64205
+replace bb to -- in 2048 lstringa<8>                                                                   8894 ns         8894 ns        76203
+replace bb to -- in 2048 by init stringa                                                               6316 ns         6316 ns       116871
+-----  Hash Map insert and find ---------                                                             0.000 ns        0.000 ns   1000000000
+hashStrMapA<size_t> emplace & find stringa;                                                         4069719 ns      4069775 ns          178
+std::unordered_map<std::string, size_t> emplace & find std::string;                                 5841652 ns      5841696 ns          115
+hashStrMapA<size_t> emplace & find ssa;                                                             3988392 ns      3988392 ns          171
+std::unordered_map<std::string, size_t> emplace & find std::string_view;                            6594896 ns      6594948 ns           96
