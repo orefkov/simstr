@@ -1,0 +1,3 @@
+[submodule "ThirdParty/simdutf"]
+	path = ThirdParty/simdutf
+	url = https://github.com/simdutf/simdutf.git
