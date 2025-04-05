@@ -1,0 +1,270 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <link href="results.css" rel="stylesheet" />
+    <title>SimStr benchmarks results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let bench_sets = {};
+        let activeBuilder = buildTestsByPlatformsBar;
+        let buildAsLine = {
+            "Copy not literal Str with N symbols": "Length of the copied string",
+            "Replace All Str To Longer Size": "Length of the string to be replaced",
+            "Replace All Str To Same Size": "Length of the string to be replaced"
+        };
+        function hl() {
+            document.querySelectorAll('.tooltiptext.code').forEach((el) => {
+                hljs.highlightElement(el);
+            });
+        }
+        function addBarChart(id, data) {
+            let canvas = document.getElementById('chart' + id);
+            new Chart(canvas, {
+                type: 'bar',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            title: {
+                                text: "Time (ns)",
+                                display: true
+                            }
+                        }
+                    },
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    family: "'Cascadia Code', Consolas, 'Courier New', Courier, monospace"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        function platformChecked(idx) {
+            return document.getElementById('pl' + idx).checked;
+        }
+        function buildPlatformsByTestsBar(bsName) {
+            if (buildAsLine[bsName]) {
+                buildPlatformsByTestsLine(bsName, buildAsLine[bsName]);
+                return;
+            }
+            let data = { labels: [], datasets: [] };
+            for (const i in platform_names) {
+                if (platformChecked(i))
+                    data.datasets.push({ label: platform_names[i], data: [], borderWidth: 1 });
+            }
+            let bs = bench_sets[bsName];
+            for (const test of bs.tests) {
+                data.labels.push(test.name);
+                let ds = 0;
+                for (const i in test.data) {
+                    if (platformChecked(i)) {
+                        data.datasets[ds++].data.push(test.data[i]);
+                    }
+                }
+            }
+            addBarChart(bs.id, data);
+        }
+        function buildTestsByPlatformsBar(bsName) {
+            if (buildAsLine[bsName], buildAsLine[bsName]) {
+                buildTestsByPlatformsLine(bsName, buildAsLine[bsName]);
+                return;
+            }
+            let data = { labels: [], datasets: [] };
+            let bs = bench_sets[bsName];
+            for (const test of bs.tests) {
+                data.datasets.push({ label: test.name, data: [], borderWidth: 1 });
+            }
+            for (const i in platform_names) {
+                if (platformChecked(i)) {
+                    data.labels.push(platform_names[i]);
+                    for (const j in bs.tests) {
+                        data.datasets[j].data.push(bs.tests[j].data[i]);
+                    }
+                }
+            }
+            addBarChart(bs.id, data);
+        }
+        function buildCanvas(plCount) {
+            document.querySelectorAll("canvas.bench_chart").forEach(e => e.remove());
+            for (var bs_name in bench_sets) {
+                let bs = bench_sets[bs_name];
+                if (plCount) {
+                    let canvas = document.createElement('canvas');
+                    canvas.id = "chart" + bs.id;
+                    canvas.classList.add('bench_chart');
+                    let h = 20 * plCount * bs.tests.length;
+                    canvas.style.width = "100%";
+                    canvas.style.height = h + "px";
+                    canvas.height = h * devicePixelRatio;
+                    document.getElementById(bs.id).after(canvas);
+                }
+            }
+        }
+        function addLineChart(canvas, data, title, scaleTitle) {
+            new Chart(canvas, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                text: scaleTitle,
+                                display: true
+                            }
+                        },
+                        x: {
+                            title: {
+                                text: "Time (ns)",
+                                display: true
+                            }
+                        }
+                    },
+                    indexAxis: 'y',
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title,
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    family: "'Cascadia Code', Consolas, 'Courier New', Courier, monospace"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        function buildTestsByPlatformsLineOne(bs, canvas, plIdx, scaleTitle) {
+            let data = { datasets: [] };
+            let prevTest = '';
+            let curData = undefined;
+            for (const test of bs.tests) {
+                let m = test.name.match(/(.+)[\/\|](\d+)$/);
+                if (m[1] != prevTest) {
+                    prevTest = m[1];
+                    curData = { label: prevTest, data: [], borderWidth: 1 };
+                    data.datasets.push(curData);
+                }
+                curData.data.push([test.data[plIdx], m[2]]);
+            }
+            addLineChart(canvas, data, platform_names[plIdx], scaleTitle);
+        }
+        function buildTestsByPlatformsLine(bsName, scaleTitle) {
+            let bs = bench_sets[bsName];
+            let canvas = document.getElementById('chart' + bs.id);
+            let after = null;
+
+            for (const i in platform_names) {
+                if (platformChecked(i)) {
+                    if (!canvas) {
+                        canvas = document.createElement('canvas');
+                        canvas.classList.add('bench_chart');
+                        canvas.style.width = "100%";
+                        after.after(canvas);
+                    }
+                    canvas.style.height = "300px";
+                    canvas.height = 300 * devicePixelRatio;
+                    buildTestsByPlatformsLineOne(bs, canvas, i, scaleTitle);
+                    after = canvas;
+                    canvas = null;
+                }
+            }
+        }
+        function buildPlatformsByTestsLineOne(bs, canvas, after, testData, title, scaleTitle) {
+            let data = { datasets: [] };
+            for (const i in platform_names) {
+                if (platformChecked(i)) {
+                    ds = {label: platform_names[i], data: []};
+                    for (const test of testData) {
+                        ds.data.push([test.data[i], test.count]);
+                    }
+                    data.datasets.push(ds);
+                }
+            }
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.classList.add('bench_chart');
+                canvas.style.width = "100%";
+                after.after(canvas);
+            }
+            canvas.style.height = "300px";
+            canvas.height = 300 * devicePixelRatio;
+            addLineChart(canvas, data, title, scaleTitle);
+            return canvas;
+        }
+        function buildPlatformsByTestsLine(bsName, scaleTitle) {
+            let bs = bench_sets[bsName];
+            let canvas = document.getElementById('chart' + bs.id);
+            let after = null;
+            let data = [];
+            let prevTest = '';
+            for (const test of bs.tests) {
+                let m = test.name.match(/(.+)[\/\|](\d+)$/);
+                if (m[1] != prevTest) {
+                    if (data.length) {
+                        after = buildPlatformsByTestsLineOne(bs, canvas, after, data, prevTest, scaleTitle);
+                        canvas = null;
+                    }
+                    prevTest = m[1];
+                    data = [];
+                }
+                data.push({count: m[2], data: test.data});
+            }
+            if (data.length) {
+                buildPlatformsByTestsLineOne(bs, canvas, after, data, prevTest, scaleTitle);
+            }
+        }
+        function buildCharts() {
+            let plCount = 0;
+            for (const i in platform_names) {
+                if (platformChecked(i))
+                    plCount++;
+            }
+            buildCanvas(plCount);
+            for (var bs_name in bench_sets) {
+                activeBuilder(bs_name);
+            }
+        }
+        function switchGrouping() {
+            activeBuilder = document.getElementById('gbp').checked ? buildTestsByPlatformsBar : buildPlatformsByTestsBar;
+            buildCharts();
+        }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            if (!hljs) {
+                let scriptTag = document.createElement('script');
+                scriptTag.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+                scriptTag.onload = hl;
+                scriptTag.onreadystatechange = hl;
+                document.body.appendChild(scriptTag);
+            } else {
+                hl();
+            }
+            if (!Chart) {
+                let scriptTag = document.createElement('script');
+                scriptTag.src = "https://cdn.jsdelivr.net/npm/chart.js";
+                scriptTag.onload = buildCharts;
+                scriptTag.onreadystatechange = buildCharts;
+                document.body.appendChild(scriptTag);
+            } else {
+                buildCharts();
+            }
+        });
+    </script>
+</head><body><div class="header"><h2>SimStr benchmarks results</h2>
+<span>All times in ns.</span>
+<span><a href="https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp">Source for benchmarks</a></span>

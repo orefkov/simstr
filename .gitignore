@@ -1,0 +1,9 @@
+_build/
+build/
+out/
+!.gitignore
+*.ipch
+*.VC.*
+.vs/
+.vscode/
+CMakeUserPresets.json

@@ -1,0 +1,351 @@
+- std::string e;
+Пустые строки, ничего необычного.
+
+- std::string_view e;
+- ssa e;
+- stringa e;
+- lstringa<20> e;
+- lstringa<40> e;
+
+- std::string e      = "Test text";
+Короткий литерал помещается во внутренний буфер std::string,
+время тратится только на копирование 10 байтов.
+
+- std::string_view e = "Test text";
+И string_view, и ssa - по сути одно и то же:
+указатель на текст и его длина.
+
+- ssa e              = "Test text";
+- stringa e          = "Test text";
+stringa при инициализации константным литералом так же
+сохраняет только указатель на текст и его длину.
+
+- lstringa<20> e     = "Test text";
+Внутреннего буфера хватает для размещения символов,
+время уходит только на копирование байтов.
+
+- lstringa<40> e     = "Test text";
+- std::string e      = "123456789012345678901234567890";
+Вот тут уже литерал не помещается во внутренний буфер,
+возникает аллокация и копирование 30-и байтов.
+Но как же отстает аллокация под Windows от Linux'а, 20 vs 70 ns...
+
+
+- std::string_view e = "123456789012345678901234567890";
+string_view и ssa по прежнему ничего не делают, кроме
+запоминания указателя на текст и его размера.
+
+- ssa e              = "123456789012345678901234567890";
+- stringa e          = "123456789012345678901234567890";
+stringa на константных литералах не отстает!
+
+- lstringa<20> e     = "123456789012345678901234567890";
+lstringa<20> может вместить в себя до 23 символов,
+Очевидно, что для 30-и символов уже нужна аллокация.
+
+- lstringa<40> e     = "123456789012345678901234567890";
+А в lstringa<40> влезает до 47 символов, так что просто
+копируется 30 байтов.
+
+- std::string e      = "Test text"; auto c{e};
+Строка в пределах SSO, так что просто копирует байты.
+
+- std::string_view e = "Test text"; auto c{e};
+- ssa e              = "Test text"; auto c{e};
+ssa и string_view не владеют строкой, копируется
+только информация о строке.
+
+- stringa e          = "Test text"; auto c{e};
+Копирование stringa происходит быстро,
+особенно если она инициализирована литералом.
+
+- lstringa<20> e     = "Test text"; auto c{e};
+В обоих случаях хватает внутреннего буфера.
+
+- lstringa<40> e     = "Test text"; auto c{e};
+Только копируются байты.
+
+- std::string e      = "123456789012345678901234567890"; auto c{e};
+Копирования длинной строки вызывает аллокацию,
+SSO уже не хватает. И снова как же отстаёт аллокация под Windows...
+
+- std::string_view e = "123456789012345678901234567890"; auto c{e};
+- ssa e              = "123456789012345678901234567890"; auto c{e};
+- stringa e          = "123456789012345678901234567890"; auto c{e};
+А вот у stringa копирование литерала не зависит от его длины,
+сравни с предыдущим бенчмарком.
+
+- lstringa<20> e     = "123456789012345678901234567890"; auto c{e};
+Не влезает, аллокация.
+
+- lstringa<40> e     = "123456789012345678901234567890"; auto c{e};
+Уложили во внутренний буфер.
+
+- std::string::find;
+Здесь "победила дружба", у всех типов по колонке примерно одинаково.
+Однако, Windows и Linux явно в разных весовых категориях.
+
+- std::string_view::find;
+- ssa::find;
+- stringa::find;
+- lstringa<20>::find;
+- lstringa<40>::find;
+- std::string copy{str_with_len_N};/15
+- std::string copy{str_with_len_N};/16
+Явно виден скачок, где заканчивается SSO и начинается аллокация.
+Обратите внимание, что WASM - 32-битный, и там размер
+SSO у std::string меньше, насколько я помню, 11 символов + 0.
+
+- std::string copy{str_with_len_N};/23
+Дальше просто добавляется время на копирование байтов.
+
+- std::string copy{str_with_len_N};/24
+- std::string copy{str_with_len_N};/32
+- std::string copy{str_with_len_N};/64
+- std::string copy{str_with_len_N};/128
+- std::string copy{str_with_len_N};/256
+- std::string copy{str_with_len_N};/512
+- std::string copy{str_with_len_N};/1024
+- std::string copy{str_with_len_N};/2048
+- std::string copy{str_with_len_N};/4096
+Чем длиннее строка, тем дольше создаётся копия.
+
+- stringa copy{str_with_len_N};/15
+Здесь stringa инициализируется не литералом,
+а значит, должна сама хранить символы.
+
+- stringa copy{str_with_len_N};/16
+Под WASM SSO у stringa составляет 15 символов. Кроме того,
+собиралось без поддержки потоков, поэтому возможно атомарный
+инкремент заменён на обычный, судя по времени.
+
+- stringa copy{str_with_len_N};/23
+SSO в stringa до 23 символов, и даже 23
+копируются быстрее, чем 15 в std::string.
+
+- stringa copy{str_with_len_N};/24
+Всё, не влезаем в SSO, а значит, используем shared буфер.
+Добавляется время на атомарный инкремент счётчика.
+
+- stringa copy{str_with_len_N};/32
+- stringa copy{str_with_len_N};/64
+- stringa copy{str_with_len_N};/128
+- stringa copy{str_with_len_N};/256
+- stringa copy{str_with_len_N};/512
+- stringa copy{str_with_len_N};/1024
+- stringa copy{str_with_len_N};/2048
+- stringa copy{str_with_len_N};/4096
+И как видно, кроме инкремента нет накладных расходов,
+время копирования не зависит от длины строки.
+
+- lstringa<16> copy{str_with_len_N};/15
+lstringa<16> использует SSO до 23 символов.
+А в WASM 32-битная архитектура, SSO до 19 символов.
+
+- lstringa<16> copy{str_with_len_N};/16
+- lstringa<16> copy{str_with_len_N};/23
+- lstringa<16> copy{str_with_len_N};/24
+И после начинает вести себя при копировании, как std::string.
+
+- lstringa<16> copy{str_with_len_N};/32
+- lstringa<16> copy{str_with_len_N};/64
+- lstringa<16> copy{str_with_len_N};/128
+- lstringa<16> copy{str_with_len_N};/256
+- lstringa<16> copy{str_with_len_N};/512
+- lstringa<16> copy{str_with_len_N};/1024
+- lstringa<16> copy{str_with_len_N};/2048
+- lstringa<16> copy{str_with_len_N};/4096
+- lstringa<512> copy{str_with_len_N};/8
+А вот lstringa<512> имеет гораздо больший внутренний
+буфер и копирует символы без аллокации.
+
+- lstringa<512> copy{str_with_len_N};/16
+- lstringa<512> copy{str_with_len_N};/32
+- lstringa<512> copy{str_with_len_N};/64
+- lstringa<512> copy{str_with_len_N};/128
+- lstringa<512> copy{str_with_len_N};/256
+- lstringa<512> copy{str_with_len_N};/512
+Даже 512 символов копируются быстрее, чем
+одна аллокация или атомарный инкремент.
+
+- lstringa<512> copy{str_with_len_N};/1024
+А дальше уже как у всех
+
+- lstringa<512> copy{str_with_len_N};/2048
+- lstringa<512> copy{str_with_len_N};/4096
+
+- std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);
+В simstr для конвертации в число достаточно куска строки,
+нет нужды в null терминированности. Ближайший аналог такого
+поведения "std::from_chars", но он к сожалению очень ограничен
+по возможностям. Здесь я попытался произвести тесты, близкие по
+логике к работе std::from_chars
+
+- std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);
+from_chars требует точного указания основания счисления,
+не допускает знаков плюс, пробелов, префиксов 0x и т.п.
+
+- stringa s = "123456789"; int res = s.to_int<int, true, 10, false>
+Здесь для to_int заданы такие же ограничения - проверять переполнение,
+десятичная система, без лидирующих пробелов и знака плюс
+
+- ssa s = "123456789"; int res = s.to_int<int, true, 10, false>
+- lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>
+- std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);
+Всё то же, только для 16ричной системы
+
+- std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);
+- stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>
+- ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>
+- lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>
+- std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);
+А здесь уже парсинг произвольного числа.
+
+- stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow
+- ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow
+- std::stringstream str; ... str << "abbaabbaabbaabba";
+- std::string str; ... str += "abbaabbaabbaabba";
+- lstringa<8> str; ... str += "abbaabbaabbaabba";
+- lstringa<128> str; ... str += "abbaabbaabbaabba";
+Чем больше внутренний буфер, тем меньше раз требуется
+аллокация, тем быстрее результат.
+
+- lstringa<512> str; ... str += "abbaabbaabbaabba";
+- lstringa<1024> str; ... str += "abbaabbaabbaabba";
+- std::stringstream str; ... str << str_var << "abbaabbaabbaabba";
+- std::string str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";
+- std::stringstream str; ... str << str_var << "abbaabbaabbaabba";
+- std::string str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";
+- lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";
+- std::stringstream str; ... str << str_var1 << str_var2;
+- std::string str; ... str += str_var1 + str_var2;
+- lstringa<16> str; ... str += str_var1 + str_var2;
+- lstringa<128> str; ... str += str_var1 + str_var2;
+- lstringa<512> str; ... str += str_var1 + str_var2;
+- lstringa<1024> str; ... str += str_var1 + str_var2;
+- std::stringstream str; str << "test = " << k << " times";
+- std::string str = "test = " + std::to_string(k) + " times";
+- char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;
+- std::string str = std::format("test = {} times", k);
+- lstringa<8> str; str.format("test = {} times", k);
+В simstr format с первого раза не помещается в такую строку без аллокации.
+
+- lstringa<32> str; str.format("test = {} times", k);
+А в такую помещается. Используйте сразу буфера подходящего размера.
+
+- lstringa<8> str = "test = " + k + " times";
+Результат не помещается в SSO, возникает аллокация.
+
+- lstringa<32> str = "test = " + k + " times";
+А здесь и ниже - результат укладывается в SSO.
+Ещё раз - используйте сразу буфера подходящего размера.
+
+- stringa str = "test = " + k + " times";
+Под WASM размер SSO 15 символов, что явно не хватает для размещения
+результата, отсюда и такое время.
+
+- std::string::find + substr + std::strtol
+- ssa::splitter + ssa::as_int
+
+- Naive (and wrong) replace symbols with std::string find + replace
+Это наивная реализация, которая неверно отработает на
+таких заменах, как 'a'->'b' и 'b'->'a'. Но если замены не конфликтуют,
+то работает быстро.
+
+- replace symbols with std::string find_first_of + replace
+Дальше уже правильные реализации, не зависящие от конфликтующих замен.
+
+- replace symbols with std::string_view find_first_of + copy
+- replace runtime symbols with string expressions and without remembering all search results
+- replace runtime symbols with simstr and memorization of all search results
+- replace const symbols with string expressions and without remembering all search results
+- replace const symbols with string expressions and memorization of all search results
+- Short Naive (and wrong) replace symbols with std::string find + replace
+- Short replace symbols with std::string find_first_of + replace
+- Short replace symbols with std::string_view find_first_of + copy
+- Short replace runtime symbols with string expressions and without remembering all search results
+- Short replace runtime symbols with simstr and memorization of all search results
+- Short replace const symbols with string expressions and without remembering all search results
+- Short replace const symbols with string expressions and memorization of all search results
+
+- replace bb to ---- in 64 std::string
+Тут проверяется тяжелый случай - замена подстроки на более
+длинную. Обычная реализация несколько раз передвигает хвост.
+
+- replace bb to ---- in 64 lstringa<8>
+- replace bb to ---- in 64 str by init stringa
+- replace bb to ---- in 256 std::string
+- replace bb to ---- in 256 lstringa<8>
+- replace bb to ---- in 256 str by init stringa
+- replace bb to ---- in 512 std::string
+- replace bb to ---- in 512 lstringa<8>
+- replace bb to ---- in 512 str by init stringa
+- replace bb to ---- in 1024 std::string
+- replace bb to ---- in 1024 lstringa<8>
+- replace bb to ---- in 1024 str by init stringa
+- replace bb to ---- in 2048 std::string
+Чем длиннее строка, тем больше замедляется std::string
+
+- replace bb to ---- in 2048 lstringa<8>
+- replace bb to ---- in 2048 str by init stringa
+- replace bb to -- in 64 std::string
+Идеальный случай замены - на подстроку такой же длины
+
+- replace bb to -- in 64 lstringa<8>
+- replace bb to -- in 64 by init stringa
+- replace bb to -- in 256 std::string
+- replace bb to -- in 256 lstringa<8>
+- replace bb to -- in 256 by init stringa
+- replace bb to -- in 512 std::string
+- replace bb to -- in 512 lstringa<8>
+- replace bb to -- in 512 by init stringa
+- replace bb to -- in 1024 std::string
+- replace bb to -- in 1024 lstringa<8>
+- replace bb to -- in 1024 by init stringa
+- replace bb to -- in 2048 std::string
+- replace bb to -- in 2048 lstringa<8>
+- replace bb to -- in 2048 by init stringa
+- hashStrMapA<size_t> emplace & find stringa;
+Вставляем в hashStrMapA 10000 stringa длиной от 30 до 50
+символов, а потом ищем их в ней
+
+- std::unordered_map<std::string, size_t> emplace & find std::string;
+То же самое c std::string и std::unordered_map
+
+- hashStrMapA<size_t> emplace & find ssa;
+Теперь вставляем stringa, а ищем ssa
+
+- std::unordered_map<std::string, size_t> emplace & find std::string_view;
+Вставляем std::string, а ищем std::string_view
+
+- Build func full name std::string;
+Обыденная задача, подобные часто могут встретится в работе:
+По неким данным сгенерировать текст. В этом случае по данным
+о неких функциях сформировать их полное имя с типами параметров и
+возвращаемого значения. Алгоритм на std::string.
+
+- Build func full name std::string 1;
+Почти тот же алгоритм, но несколько последовательных
++= к строке заменены на одно += + + +.
+
+- Build func full name std::stream;
+Строим имя функции через std::ostringstream и <<
+
+- Build func full name stringa;
+Реализация на simstr строках и строковых выражениях.
+Инфа о параметрах добавляется в текущую строку
+
+- Build func full name stringa 1;
+Реализация на simstr строках и строковых выражениях.
+Инфа о параметрах добавляется во временную строку, а потом
+разом добавляется в текущую строку. Позволяет операции в цикле
+записать в одну строку, но чуть проигрывает по времени выполнения.
+
+- Пусто

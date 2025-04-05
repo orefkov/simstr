@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Файл с описанием визуализации simstr строк для Visual Studio -->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="simstr::simple_str&lt;*&gt;">
+    <DisplayString Condition="0xCCCCCCCC==(unsigned)str">[unknown]</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1">l={len}, {str,[len]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2">l={len}, {str,[len]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4">l={len}, {str,[len]nas32}</DisplayString>
+    <DisplayString>[unknown]</DisplayString>
+  </Type>
+  <Type Name="simstr::sstring&lt;*&gt;">
+    <DisplayString Condition="sizeof($T1)==1 &amp;&amp; type_ == 0">inplace, l={LocalCount - localRemain_}, {buf_,[LocalCount - localRemain_]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1 &amp;&amp; type_ == 1">literal, l={bigLen_}, {cstr_,[bigLen_]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1 &amp;&amp; type_ == 2">shared, l={bigLen_}, ref={((SharedStringData&lt;$T1&gt;*)sstr_)[-1].ref_}, {sstr_,[bigLen_]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2 &amp;&amp; type_ == 0">inplace, l={LocalCount - localRemain_}, {buf_,[LocalCount - localRemain_]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2 &amp;&amp; type_ == 1">literal, l={bigLen_}, {cstr_,[bigLen_]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2 &amp;&amp; type_ == 2">shared, l={bigLen_}, ref={((SharedStringData&lt;$T1&gt;*)sstr_)[-1].ref_}, {sstr_,[bigLen_]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4 &amp;&amp; type_ == 0">inplace, l={LocalCount - localRemain_}, {buf_,[LocalCount - localRemain_]nas32}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4 &amp;&amp; type_ == 1">literal, l={bigLen_}, {cstr_,[bigLen_]nas32}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4 &amp;&amp; type_ == 2">shared, l={bigLen_}, ref={((SharedStringData&lt;$T1&gt;*)sstr_)[-1].ref_}, {sstr_,[bigLen_]nas32}</DisplayString>
+    <DisplayString>[unknown]</DisplayString>
+  </Type>
+  <Type Name="simstr::lstring&lt;*&gt;">
+    <DisplayString Condition="0xCCCCCCCC==(unsigned)data_">[unknown]</DisplayString>
+    <DisplayString Condition="data_==local_ &amp;&amp; size_==0">empty, c={(int)LocalCapacity}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1 &amp;&amp; data_==local_">inplace, l={size_}, c={(int)LocalCapacity}, {data_,[size_]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1 &amp;&amp; data_!=local_">outplace, l={size_}, c={capacity_}, {data_,[size_]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2 &amp;&amp; data_==local_">inplace, l={size_}, c={(int)LocalCapacity}, {data_,[size_]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2 &amp;&amp; data_!=local_">outplace, l={size_}, c={capacity_}, {data_,[size_]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4 &amp;&amp; data_==local_">inplace, l={size_}, c={(int)LocalCapacity}, {data_,[size_]nas32}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4 &amp;&amp; data_!=local_">outplace, l={size_}, c={capacity_}, {data_,[size_]nas32}</DisplayString>
+  </Type>
+</AutoVisualizer>

@@ -1,0 +1,105 @@
+body {
+    margin: auto;
+    font-size: 12pt;
+}
+h2 {
+    text-align: center;
+}
+table {
+    border: 1px black;
+    text-align: right;
+}
+table {
+    margin: auto;
+}
+table tr:nth-child(odd) { background: #fff; }
+table tr:nth-child(even) { background: #f2f2f2; }
+
+table th {
+    text-align: center;
+}
+
+table tr:hover td {
+    background-color: lightcyan;
+}
+div.header {
+	max-width: 960px;
+    margin: 0 auto;
+}
+
+canvas {
+	max-width: 2000px;
+    margin: 0 auto;
+}
+
+.benchset {
+	max-width: 960px;
+    padding: 1px;
+    margin: 5px auto;
+    border-radius: 3px;
+    background-color: gainsboro;    
+}
+.benchset h4{
+    text-align: left;
+    padding-left: 20px;
+}
+
+.test_platforms {
+    margin: auto;
+}
+.test_platforms ul{
+    display: table;
+}
+
+.test_platforms li {
+    display: table-row;
+}
+
+.test_platforms li:before {
+    content: "\2022";
+    padding-right: 0.5em;
+}
+
+.test_platforms span.tooltip {
+    padding-left: 20px;
+    display: table-cell;
+}
+
+span.platform {
+    display: table-cell;
+}
+.info {
+    border-radius: 3px;
+    border: solid 1px lightgrey;
+    background-color: beige;
+    color: brown;
+}
+.code {
+    font-family: 'Cascadia Code', Consolas, 'Courier New', Courier, monospace;
+}
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+.tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: beige;
+    color: black;
+    text-align: left;
+    border-radius: 6px;
+    padding: 15px;
+    position: absolute;
+    z-index: 1;
+    top: 35px;
+    right: 0;
+    white-space: pre;
+    border: 1px solid darkgray;
+    box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);;
+    transform: translate(50%);
+}
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+h4 {
+    text-align: center;
+}
