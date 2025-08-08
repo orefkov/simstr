@@ -764,9 +764,9 @@ TEST(SimStr, CreateSstringLong) {
 }
 
 TEST(SimStr, CreateSstringStrExpr) {
-    EXPECT_EQ(stringa{eea + "test" + 101 + e_c(3, 'a')}, "test101aaa");
-    EXPECT_EQ(stringu{eeu + u"test" + 1234 + e_c(3, u'a')}, u"test1234aaa");
-    EXPECT_EQ(stringw{eew + L"test" + 12345 + e_c(3, L'a')}, L"test12345aaa");
+    EXPECT_EQ(stringa{"test"_ss + 101 + e_c(3, 'a')}, "test101aaa");
+    EXPECT_EQ(stringu{u"test"_ss + 1234 + e_c(3, u'a')}, u"test1234aaa");
+    EXPECT_EQ(stringw{L"test"_ss + 12345 + e_c(3, L'a')}, L"test12345aaa");
 }
 
 TEST(SimStr, CreateSstringReplace) {
@@ -788,8 +788,8 @@ TEST(SimStr, AssignSstring) {
     EXPECT_EQ(test = test, "test");
     EXPECT_EQ(test = "next", "next");
     EXPECT_EQ(test = ssa{"other"}, "other");
-    EXPECT_EQ(test = stringa{eea + "trtr" + 10}, "trtr10");
-    EXPECT_EQ(test = eea + "trtr" + 20, "trtr20");
+    EXPECT_EQ(test = stringa{"trtr"_ss + 10}, "trtr10");
+    EXPECT_EQ(test = "trtr"_ss + 20, "trtr20");
     EXPECT_EQ(test = test(2), "tr20");
     EXPECT_EQ(test = lstringa<10>{"func"}, "func");
     EXPECT_EQ(test = lstringsa<10>{"func"}, "func");
@@ -1025,9 +1025,9 @@ TEST(SimStr, LStrAppend) {
     EXPECT_EQ(lstringa<20>{"test"}.append("ing"), "testing");
     EXPECT_EQ(lstringa<20>{"test"}.append("ing"_ss + 10), "testing10");
     EXPECT_EQ(lstringa<20>{"test"}.append_in(3, "ing"), "tesing");
-    EXPECT_EQ(lstringa<20>{"test"}.append_in(3, eea + "ing" + 10), "tesing10");
+    EXPECT_EQ(lstringa<20>{"test"}.append_in(3, "ing"_ss + 10), "tesing10");
     EXPECT_EQ(lstringa<20>{"test"} += "ing", "testing");
-    EXPECT_EQ(lstringa<20>{"test"} += eea + "ing" + 10, "testing10");
+    EXPECT_EQ(lstringa<20>{"test"} += "ing"_ss + 10, "testing10");
 }
 
 TEST(SimStr, LStrChange) {
@@ -1287,7 +1287,7 @@ TEST(SimStr, LStrFormat) {
     }
 }
 
-TEST(SimStr, LStrFormatExpressions) {
+TEST(SimStr, LStrJoinAndExpressions) {
     lstringa<100> buffer;
     buffer = e_join<true>(std::vector<ssa>{}, "<>");
     EXPECT_EQ(buffer, "");
@@ -1524,7 +1524,7 @@ struct bbbb {
         res = "my_str: "_ss + field + '\n';
         auto strs = get_strings();
         for (const auto& s : strs) {
-            res += e_repl(s, "f", "--") + e_choice(&s != &strs.back(), "\n"_ss, eea);
+            res += e_repl(s, "f", "--") + e_if(&s != &strs.back(), "\n");
         }
     }
 
