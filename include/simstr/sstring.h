@@ -6064,13 +6064,23 @@ inline constexpr simple_str_nt<u8s> utf8_bom{"\xEF\xBB\xBF", 3}; // NOLINT
 
 inline namespace literals {
 
+#ifdef _MSC_VER
+/* MSVC иногда не может сделать "text"_ss consteval, выдает ошибку C7595.
+Находил подобное https://developercommunity.visualstudio.com/t/User-defined-literals-not-constant-expre/10108165
+Пишут, что баг исправлен, но видимо не до конца.
+Без этого в тестах в двух местах не понимает "text"_ss, хотя в других местах - нормально работает*/
+#define SS_CONSTEVAL constexpr
+#else
+#define SS_CONSTEVAL consteval
+#endif
+
 /*!
  * @brief Оператор литерал в simple_str_nt
  * @param ptr - указатель на строку
  * @param l - длина строки
  * @return simple_str_nt
  */
-consteval simple_str_nt<u8s> operator""_ss(const u8s* ptr, size_t l) {
+SS_CONSTEVAL simple_str_nt<u8s> operator""_ss(const u8s* ptr, size_t l) {
     return simple_str_nt<u8s>{ptr, l};
 }
 
@@ -6080,7 +6090,7 @@ consteval simple_str_nt<u8s> operator""_ss(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return simple_str_nt
  */
-consteval simple_str_nt<uws> operator""_ss(const uws* ptr, size_t l) {
+SS_CONSTEVAL simple_str_nt<uws> operator""_ss(const uws* ptr, size_t l) {
     return simple_str_nt<uws>{ptr, l};
 }
 
@@ -6090,7 +6100,7 @@ consteval simple_str_nt<uws> operator""_ss(const uws* ptr, size_t l) {
  * @param l - длина строки
  * @return simple_str_nt
  */
-consteval simple_str_nt<u16s> operator""_ss(const u16s* ptr, size_t l) {
+SS_CONSTEVAL simple_str_nt<u16s> operator""_ss(const u16s* ptr, size_t l) {
     return simple_str_nt<u16s>{ptr, l};
 }
 
@@ -6100,7 +6110,7 @@ consteval simple_str_nt<u16s> operator""_ss(const u16s* ptr, size_t l) {
  * @param l - длина строки
  * @return simple_str_nt
  */
-consteval simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
+SS_CONSTEVAL simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
     return simple_str_nt<u32s>{ptr, l};
 }
 
