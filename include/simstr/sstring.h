@@ -41,8 +41,10 @@ const bool isx64 = sizeof(void*) == 8; // NOLINT
 
 #ifdef _MSC_VER
 #define _no_unique_address msvc::no_unique_address
+#define empty_bases __declspec(empty_bases)
 #else
 #define _no_unique_address no_unique_address
+#define empty_bases
 #endif
 
 #if defined __has_builtin
@@ -1733,12 +1735,6 @@ public:
     }
 };
 
-#ifdef _MSC_VER
-#define empty_bases __declspec(empty_bases)
-#else
-#define empty_bases
-#endif
-
 /*
 * Базовая структура с информацией о строке.
 * Это структура для невладеющих строк.
@@ -2311,24 +2307,21 @@ concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
  * какой-либо пустой класс.
  */
 template<typename K, typename Impl, typename Allocator>
-class str_storable {
+class str_storable : protected Allocator {
 public:
     using my_type = Impl;
     using traits = ch_traits<K>;
     using allocator_t = Allocator;
 
 protected:
-    [[_no_unique_address]]
-    allocator_t allocator_;
-
     /*!
      * @brief Получить аллокатор
      */
     allocator_t& allocator() {
-        return allocator_;
+        return *static_cast<Allocator*>(this);
     }
     const allocator_t& allocator() const {
-        return allocator_;
+        return *static_cast<const Allocator*>(this);
     }
 
     using uni = unicode_traits<K>;
@@ -2341,7 +2334,7 @@ protected:
     }
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    explicit constexpr str_storable(size_t size, Args&&... args) : allocator_(std::forward<Args>(args)...) {
+    explicit constexpr str_storable(size_t size, Args&&... args) : Allocator(std::forward<Args>(args)...) {
         if (size)
             d().init(size);
         else
@@ -2423,7 +2416,7 @@ public:
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     constexpr str_storable(Args&&... args) noexcept(std::is_nothrow_constructible_v<allocator_t, Args...>)
-        : allocator_(std::forward<Args>(args)...) {
+        : Allocator(std::forward<Args>(args)...) {
         d().create_empty();
     }
 
@@ -2434,7 +2427,7 @@ public:
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    constexpr str_storable(s_str other, Args&&... args) : allocator_(std::forward<Args>(args)...) {
+    constexpr str_storable(s_str other, Args&&... args) : Allocator(std::forward<Args>(args)...) {
         if (other.length()) {
             K* ptr = d().init(other.length());
             traits::copy(ptr, other.symbols(), other.length());
@@ -2450,7 +2443,7 @@ public:
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    constexpr str_storable(size_t repeat, s_str pattern, Args&&... args) : allocator_(std::forward<Args>(args)...) {
+    constexpr str_storable(size_t repeat, s_str pattern, Args&&... args) : Allocator(std::forward<Args>(args)...) {
         size_t l = pattern.length(), allLen = l * repeat;
         if (allLen) {
             K* ptr = d().init(allLen);
@@ -2470,7 +2463,7 @@ public:
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    str_storable(size_t count, K pad, Args&&... args) : allocator_(std::forward<Args>(args)...) {
+    str_storable(size_t count, K pad, Args&&... args) : Allocator(std::forward<Args>(args)...) {
         if (count) {
             K* str = d().init(count);
             traits::assign(str, count, pad);
@@ -2488,7 +2481,7 @@ public:
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    constexpr str_storable(const StrExprForType<K> auto& expr, Args&&... args) : allocator_(std::forward<Args>(args)...) {
+    constexpr str_storable(const StrExprForType<K> auto& expr, Args&&... args) : Allocator(std::forward<Args>(args)...) {
         size_t len = expr.length();
         if (len)
             *expr.place(d().init(len)) = 0;
@@ -2507,7 +2500,7 @@ public:
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     str_storable(const From& f, s_str pattern, s_str repl, size_t offset = 0, size_t maxCount = 0, Args&&... args)
-        : allocator_(std::forward<Args>(args)...) {
+        : Allocator(std::forward<Args>(args)...) {
 
         auto findes = f.find_all(pattern, offset, maxCount);
         if (!findes.size()) {
@@ -4224,6 +4217,7 @@ constexpr const size_t local_count = _local_count<sizeof(size_t), sizeof(T)>;
  * - для u16s - 32 байта, хранит строки до 15 символов + 0
  * - для u32s - 32 байта, хранит строки до 7 символов + 0
  */
+
 template<typename K, Allocatorable Allocator = allocator_string>
 class empty_bases sstring :
     public str_algs<K, simple_str<K>, sstring<K, Allocator>, false>,
@@ -5993,6 +5987,7 @@ using stringa = sstring<u8s>;
 using stringw = sstring<wchar_t>;
 using stringu = sstring<u16s>;
 using stringuu = sstring<u32s>;
+static_assert(sizeof(stringa) == 24, "Bad size of sstring");
 
 /*!
  * @brief Тип хеш-словаря для char строк, регистрозависимый поиск
