@@ -641,7 +641,8 @@ public:
      *  ```
      */
     constexpr str_piece operator()(ptrdiff_t from, ptrdiff_t len = 0) const noexcept {
-        size_t myLen = _len(), idxStart = from >= 0 ? from : myLen + from, idxEnd = len > 0 ? idxStart + len : myLen > -len ? myLen + len : 0;
+        size_t myLen = _len(), idxStart = from >= 0 ? from : myLen > -from ? myLen + from : 0,
+            idxEnd = len > 0 ? idxStart + len : myLen > -len ? myLen + len : 0;
         if (idxEnd > myLen)
             idxEnd = myLen;
         if (idxStart > idxEnd)

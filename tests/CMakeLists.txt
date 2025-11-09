@@ -3,7 +3,7 @@
 #
 
 add_executable(testStr test_str.cpp)
-target_link_libraries(testStr simstr gtest_main)
+target_link_libraries(testStr simstr_simstr gtest_main)
 add_test(NAME testStr COMMAND testStr)
 
 if (EMSCRIPTEN)

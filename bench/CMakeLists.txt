@@ -4,10 +4,10 @@
 cmake_minimum_required (VERSION 3.15)
 
 add_executable(benchStr bench_str.cpp bench.h)
-target_link_libraries(benchStr simstr benchmark::benchmark benchmark::benchmark_main)
+target_link_libraries(benchStr simstr_simstr benchmark::benchmark benchmark::benchmark_main)
 
 add_executable(process_result process_result.cpp)
-target_link_libraries(process_result simstr)
+target_link_libraries(process_result simstr_simstr)
 
 if (EMSCRIPTEN)
     #target_link_options(benchStr PRIVATE -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=128MB -sALLOW_MEMORY_GROWTH=0)

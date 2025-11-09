@@ -1,8 +1,18 @@
 ﻿cmake_minimum_required (VERSION 3.20)
+include(cmake/prelude.cmake)
 include(CMakeDependentOption)
+include(FetchContent)
 
-project ("simstr")
-set (CMAKE_CXX_STANDARD 20)
+project (
+	simstr
+    VERSION 1.0.0
+    DESCRIPTION "Yet another string library"
+    HOMEPAGE_URL "https://snegopat.ru/simstr"
+    LANGUAGES CXX
+)
+
+include(cmake/project-is-top-level.cmake)
+include(cmake/variables.cmake)
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     set (MSVC_COMPILER ON)
@@ -29,29 +39,57 @@ if (EMSCRIPTEN)
     endif()
 endif(EMSCRIPTEN)
 
-set (SIMDUTF_TOOLS OFF)
-set (SIMDUTF_TESTS OFF)
-add_subdirectory(ThirdParty/simdutf)
-
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
-
-add_library(simstr
+add_library(simstr_simstr
     src/sstring.cpp
     src/simple_unicode.cpp
 )
+add_library(simstr::simstr ALIAS simstr_simstr)
 
-target_link_libraries(simstr PUBLIC simdutf)
+target_include_directories(
+    simstr_simstr ${warning_guard}
+    PUBLIC
+    "\$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+)
+
+target_compile_features(simstr_simstr PUBLIC cxx_std_20)
+
+set_target_properties(
+    simstr_simstr PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+    VERSION "${PROJECT_VERSION}"
+    SOVERSION "${PROJECT_VERSION_MAJOR}"
+    EXPORT_NAME simstr
+    OUTPUT_NAME simstr
+)
+
+function (Simdutf)
+	set (SIMDUTF_TOOLS OFF)
+	set (SIMDUTF_TESTS OFF)
+	set (SIMDUTF_BENCHMARKS OFF)
+	FetchContent_Declare(
+	  simdutf
+	  GIT_REPOSITORY git@github.com:simdutf/simdutf.git
+	  GIT_SHALLOW TRUE
+	  GIT_TAG tags/v7.5.0
+	  FIND_PACKAGE_ARGS
+	)
+	FetchContent_MakeAvailable(simdutf)
+endfunction()
+
+Simdutf()
+ 
+target_link_libraries(simstr_simstr PUBLIC simdutf::simdutf)
 
 if (SIMSTR_SHARED)
     add_compile_definitions(SIMSTR_SHARED)
-    target_compile_definitions(simstr PRIVATE SIMSTR_EXPORT)
+    target_compile_definitions(simstr_simstr PRIVATE SIMSTR_EXPORT)
 endif(SIMSTR_SHARED)
 
 if (SIMSTR_BUILD_TESTS)
     enable_testing()
     set (BUILD_TESTS ON)
     # Load and build GTest
-    include(FetchContent)
     FetchContent_Declare(
       googletest
       # Specify the commit you depend on and update it regularly.
@@ -88,3 +126,22 @@ if (SIMSTR_BENCHMARKS)# AND CMAKE_BUILD_TYPE STREQUAL Release)
     GBencmark()
     add_subdirectory(bench)
 endif ()
+
+# ---- Install rules ----
+
+if(NOT CMAKE_SKIP_INSTALL_RULES)
+  include(cmake/install-rules.cmake)
+endif()
+
+# ---- Developer mode ----
+
+if(NOT simstr_DEVELOPER_MODE)
+  return()
+elseif(NOT PROJECT_IS_TOP_LEVEL)
+  message(
+      AUTHOR_WARNING
+      "Developer mode is intended for developers of simstr"
+  )
+endif()
+
+include(cmake/dev-mode.cmake)
