@@ -1751,4 +1751,13 @@ TEST(SimStr, InitFromLValueStdStrings) {
     EXPECT_EQ(ssa(get_string_cref()), "str");
 }
 
+TEST(SimStr, HashStrMapAt) {
+    hashStrMapA<int> test = {
+        {"Test"_h, 1}
+    };
+    EXPECT_EQ(test.find("Test")->second, 1);
+    test.at("Test") = 2;
+    EXPECT_EQ(test.find("Test")->second, 2);
+}
+
 } // namespace simstr::tests

@@ -5631,17 +5631,17 @@ public:
         return try_emplace(std::forward<Key>(key)).first->second;
     }
 
-    auto at(const StoreType<K>& key) {
+    decltype(auto) at(const StoreType<K>& key) {
         return hash_t::at(key);
     }
-    auto at(const StoreType<K>& key) const {
+    decltype(auto) at(const StoreType<K>& key) const {
         return hash_t::at(key);
     }
 
-    auto at(simple_str<K> key) {
+    decltype(auto) at(simple_str<K> key) {
         return hash_t::at(toStoreType(key));
     }
-    auto at(simple_str<K> key) const {
+    decltype(auto) at(simple_str<K> key) const {
         return hash_t::at(toStoreType(key));
     }
 
