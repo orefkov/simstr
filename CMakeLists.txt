@@ -69,7 +69,7 @@ function (Simdutf)
 	set (SIMDUTF_BENCHMARKS OFF)
 	FetchContent_Declare(
 	  simdutf
-	  GIT_REPOSITORY git@github.com:simdutf/simdutf.git
+	  GIT_REPOSITORY https://github.com/simdutf/simdutf.git
 	  GIT_SHALLOW TRUE
 	  GIT_TAG tags/v7.5.0
 	  FIND_PACKAGE_ARGS
