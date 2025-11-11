@@ -1,4 +1,6 @@
 # simstr - библиотека строковых объектов и функций
+[![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
+
 Версия 1.0.
 
 В этой библиотеке содержится реализация нескольких видов строковых объектов и различных алгоритмов для работы со строками.
@@ -65,8 +67,8 @@
 
 ## Использование
 `simstr` состоит из трёх заголовочных файлов и двух исходников. Можно подключать как CMake проект через `add_subdirectory` (библиотека `simstr`),
-можно просто включить файлы в свой проект. Для сборки также требуется [simdutf](https://github.com/simdutf/simdutf), (уже подключена к репозитарию
-как `git submodule`).
+можно просто включить файлы в свой проект. Для сборки также требуется [simdutf](https://github.com/simdutf/simdutf) (при использовании CMake
+скачивается автоматически).
 
 Для работы `simstr` требуется компилятор стандарта не ниже С++20 - используются концепты и std::format.
 Работа проверялась под Windows на MSVC-19 и Clang-19, под Linux - на GCC-13 и Clang-21.
