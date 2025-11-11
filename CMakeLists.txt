@@ -7,7 +7,7 @@ project (
 	simstr
     VERSION 1.0.0
     DESCRIPTION "Yet another string library"
-    HOMEPAGE_URL "https://snegopat.ru/simstr"
+    HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
 )
 
