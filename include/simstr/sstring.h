@@ -4656,7 +4656,7 @@ inline constexpr auto e_num(T t) {
 }
 
 template<typename K>
-simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {
+consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {
     if constexpr (std::is_same_v<K, u8s>)
         return s8;
     if constexpr (std::is_same_v<K, uws>)
