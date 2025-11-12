@@ -5389,7 +5389,7 @@ auto e_repl_const_symbols(simple_str<K> src, Repl&& ... other) {
     return expr_replace_const_symbols<K, sizeof...(Repl) / 2, UseVector>(src, std::forward<Repl>(other)...);
 }
 
-template<typename K>
+template<typename K, typename H>
 struct StoreType {
     simple_str<K> str;
     size_t hash;
@@ -5402,10 +5402,6 @@ struct StoreType {
         return *reinterpret_cast<const sstring<K>*>(node);
     }
 };
-
-using HashKeyA = StoreType<u8s>;
-using HashKeyW = StoreType<u16s>;
-using HashKeyU = StoreType<u32s>;
 
 template<bool Wide>
 struct fnv_const {
@@ -5469,7 +5465,7 @@ inline consteval size_t fnv_hash_ia_compile(const K* ptr, size_t l) {
     return fnv_hash_ia(ptr, l);
 };
 
-static_assert(std::is_trivially_copyable_v<StoreType<u8s>>, "Store type must be trivially copyable");
+static_assert(std::is_trivially_copyable_v<StoreType<u8s, int>>, "Store type must be trivially copyable");
 
 template<typename K>
 struct streql;
@@ -5525,9 +5521,9 @@ struct strhash;
  * но и не смертельный, если его нет.
  */
 template<typename K, typename T, typename H = strhash<K>, typename E = streql<K>>
-class hashStrMap : public std::unordered_map<StoreType<K>, T, H, E> {
+class hashStrMap : public std::unordered_map<StoreType<K, H>, T, H, E> {
 protected:
-    using InStore = StoreType<K>;
+    using InStore = StoreType<K, H>;
 
 public:
     using my_type = hashStrMap<K, T, H, E>;
@@ -5562,7 +5558,7 @@ public:
     };
     my_type& operator=(my_type&&) = default;
 
-    hashStrMap(std::initializer_list<std::pair<const StoreType<K>, T>>&& init) {
+    hashStrMap(std::initializer_list<std::pair<const InStore, T>>&& init) {
         for (const auto& e: init)
             emplace(e.first, e.second);
     }
@@ -5576,7 +5572,7 @@ public:
 
     // При входе хэш должен быть уже посчитан
     template<typename... ValArgs>
-    auto try_emplace(const StoreType<K>& key, ValArgs&&... args) {
+    auto try_emplace(const InStore& key, ValArgs&&... args) {
         auto it = hash_t::try_emplace(key, std::forward<ValArgs>(args)...);
         if (it.second) {
             InStore& stored = const_cast<InStore&>(it.first->first);
@@ -5586,7 +5582,7 @@ public:
         return it;
     }
 
-    static StoreType<K> toStoreType(simple_str<K> key) {
+    static InStore toStoreType(simple_str<K> key) {
         return {key, H{}(key)};
     }
 
@@ -5603,7 +5599,7 @@ public:
     }
 
     template<typename... ValArgs>
-    auto emplace(const StoreType<K>& key, ValArgs&&... args) {
+    auto emplace(const InStore& key, ValArgs&&... args) {
         auto it = try_emplace(key, std::forward<ValArgs>(args)...);
         if (!it.second) {
             it.first->second = T(std::forward<ValArgs>(args)...);
@@ -5621,7 +5617,7 @@ public:
         return it;
     }
 
-    auto& operator[](const StoreType<K>& key) {
+    auto& operator[](const InStore& key) {
         return try_emplace(key).first->second;
     }
 
@@ -5631,10 +5627,10 @@ public:
         return try_emplace(std::forward<Key>(key)).first->second;
     }
 
-    decltype(auto) at(const StoreType<K>& key) {
+    decltype(auto) at(const InStore& key) {
         return hash_t::at(key);
     }
-    decltype(auto) at(const StoreType<K>& key) const {
+    decltype(auto) at(const InStore& key) const {
         return hash_t::at(key);
     }
 
@@ -5645,7 +5641,7 @@ public:
         return hash_t::at(toStoreType(key));
     }
 
-    auto find(const StoreType<K>& key) const {
+    auto find(const InStore& key) const {
         return hash_t::find(key);
     }
 
@@ -5653,7 +5649,7 @@ public:
         return find(toStoreType(key));
     }
 
-    auto find(const StoreType<K>& key) {
+    auto find(const InStore& key) {
         return hash_t::find(key);
     }
 
@@ -5668,7 +5664,7 @@ public:
         return hash_t::erase(it);
     }
 
-    auto erase(const StoreType<K>& key) {
+    auto erase(const InStore& key) {
         auto it = hash_t::find(key);
         if (it != hash_t::end()) {
             ((sstring<K>*)it->first.node)->~sstring();
@@ -5705,7 +5701,7 @@ public:
             ((sstring<K>*)k.first.node)->~sstring();
         hash_t::clear();
     }
-    bool contains(const StoreType<K>& key) const {
+    bool contains(const InStore& key) const {
         return hash_t::find(key) != this->end();
     }
 
@@ -5716,7 +5712,8 @@ public:
 
 template<typename K>
 struct streql {
-    bool operator()(const StoreType<K>& _Left, const StoreType<K>& _Right) const {
+    template<typename H>
+    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
         return _Left.hash == _Right.hash && _Left.str == _Right.str;
     }
 };
@@ -5726,14 +5723,16 @@ struct strhash { // hash functor for basic_string
     size_t operator()(simple_str<K> _Keyval) const {
         return fnv_hash(_Keyval.symbols(), _Keyval.length());
     }
-    size_t operator()(const StoreType<K>& _Keyval) const {
+    template<typename H>
+    size_t operator()(const StoreType<K, H>& _Keyval) const {
         return _Keyval.hash;
     }
 };
 
 template<typename K>
 struct streqlia {
-    bool operator()(const StoreType<K>& _Left, const StoreType<K>& _Right) const {
+    template<typename H>
+    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
         return _Left.hash == _Right.hash && _Left.str.equal_ia(_Right.str);
     }
 };
@@ -5743,14 +5742,16 @@ struct strhashia {
     size_t operator()(simple_str<K> _Keyval) const {
         return fnv_hash_ia(_Keyval.symbols(), _Keyval.length());
     }
-    size_t operator()(const StoreType<K>& _Keyval) const {
+    template<typename H>
+    size_t operator()(const StoreType<K, H>& _Keyval) const {
         return _Keyval.hash;
     }
 };
 
 template<typename K>
 struct streqliu {
-    bool operator()(const StoreType<K>& _Left, const StoreType<K>& _Right) const {
+    template<typename H>
+    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
         return _Left.hash == _Right.hash && _Left.str.equal_iu(_Right.str);
     }
 };
@@ -5760,7 +5761,8 @@ struct strhashiu {
     size_t operator()(simple_str<K> _Keyval) const {
         return unicode_traits<K>::hashiu(_Keyval.symbols(), _Keyval.length());
     }
-    size_t operator()(const StoreType<K>& _Keyval) const {
+    template<typename H>
+    size_t operator()(const StoreType<K, H>& _Keyval) const {
         return _Keyval.hash;
     }
 };
@@ -6116,8 +6118,8 @@ SS_CONSTEVAL simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u8s> operator""_h(const u8s* ptr, size_t l) {
-    return StoreType<u8s>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval StoreType<u8s, strhash<u8s>> operator""_h(const u8s* ptr, size_t l) {
+    return StoreType<u8s, strhash<u8s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6126,8 +6128,8 @@ consteval StoreType<u8s> operator""_h(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u8s> operator""_ia(const u8s* ptr, size_t l) {
-    return StoreType<u8s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval StoreType<u8s, strhashia<u8s>> operator""_ia(const u8s* ptr, size_t l) {
+    return StoreType<u8s, strhashia<u8s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6136,8 +6138,8 @@ consteval StoreType<u8s> operator""_ia(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u8s> operator""_iu(const u8s* ptr, size_t l) {
-    return StoreType<u8s>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
+inline StoreType<u8s, strhashiu<u8s>> operator""_iu(const u8s* ptr, size_t l) {
+    return StoreType<u8s, strhashiu<u8s>>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
 }
 
 /*!
@@ -6146,8 +6148,8 @@ inline StoreType<u8s> operator""_iu(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u16s> operator""_h(const u16s* ptr, size_t l) {
-    return StoreType<u16s>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval StoreType<u16s, strhash<u16s>> operator""_h(const u16s* ptr, size_t l) {
+    return StoreType<u16s, strhash<u16s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6156,8 +6158,8 @@ consteval StoreType<u16s> operator""_h(const u16s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u16s> operator""_ia(const u16s* ptr, size_t l) {
-    return StoreType<u16s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval StoreType<u16s, strhashia<u16s>> operator""_ia(const u16s* ptr, size_t l) {
+    return StoreType<u16s, strhashia<u16s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6166,8 +6168,8 @@ consteval StoreType<u16s> operator""_ia(const u16s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u16s> operator""_iu(const u16s* ptr, size_t l) {
-    return StoreType<u16s>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
+inline StoreType<u16s, strhashiu<u16s>> operator""_iu(const u16s* ptr, size_t l) {
+    return StoreType<u16s, strhashiu<u16s>>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
 }
 
 /*!
@@ -6176,8 +6178,8 @@ inline StoreType<u16s> operator""_iu(const u16s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u32s> operator""_h(const u32s* ptr, size_t l) {
-    return StoreType<u32s>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval StoreType<u32s, strhash<u32s>> operator""_h(const u32s* ptr, size_t l) {
+    return StoreType<u32s, strhash<u32s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6186,8 +6188,8 @@ consteval StoreType<u32s> operator""_h(const u32s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u32s> operator""_ia(const u32s* ptr, size_t l) {
-    return StoreType<u32s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval StoreType<u32s, strhashia<u32s>> operator""_ia(const u32s* ptr, size_t l) {
+    return StoreType<u32s, strhashia<u32s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6196,8 +6198,8 @@ consteval StoreType<u32s> operator""_ia(const u32s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u32s> operator""_iu(const u32s* ptr, size_t l) {
-    return StoreType<u32s>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
+inline StoreType<u32s, strhashiu<u32s>> operator""_iu(const u32s* ptr, size_t l) {
+    return StoreType<u32s, strhashiu<u32s>>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
 }
 
 } // namespace literals
