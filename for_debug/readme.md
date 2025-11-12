@@ -3,7 +3,8 @@
 simstr.natvis - для использования в отладчике MSVC, и simstr_pretty_print.py для работы с gdb.
 
 # Объекты simstr в отладчиках
-Если вы работаете в MS Visual Studio - просто добавьте simstr.natvis в свой проект.
+Если вы работаете в MS Visual Studio simstr.natvis автоматически добавляется в pdb файл,
+и обеспечивает удобный просмотр строковых объектов simstr везде, где используется эта библиотека.
 
 # Объекты simstr в Visual Studio Code
 ## При работе в gdb
