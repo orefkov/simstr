@@ -99,6 +99,7 @@ if(SIMSTR_BUILD_TESTS)
         googletest
         # Specify the commit you depend on and update it regularly.
         URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
+        FIND_PACKAGE_ARGS NAMES GTest
     )
 
     # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -114,6 +115,7 @@ function(GBencmark)
         googlebench
         # Specify the commit you depend on and update it regularly.
         URL https://github.com/google/benchmark/archive/refs/tags/v1.7.0.zip
+        FIND_PACKAGE_ARGS NAMES benchmark
     )
     set(CMAKE_CXX_STANDARD 20)
     set(BENCHMARK_ENABLE_TESTING OFF)

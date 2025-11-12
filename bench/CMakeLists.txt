@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.15)
 
 add_executable(benchStr bench_str.cpp bench.h)
-target_link_libraries(benchStr simstr_simstr benchmark::benchmark benchmark::benchmark_main)
+target_link_libraries(benchStr simstr::simstr benchmark::benchmark benchmark::benchmark_main)
 
 add_executable(process_result process_result.cpp)
 target_link_libraries(process_result simstr_simstr)
