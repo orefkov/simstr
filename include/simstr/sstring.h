@@ -5723,8 +5723,7 @@ struct strhash { // hash functor for basic_string
     size_t operator()(simple_str<K> _Keyval) const {
         return fnv_hash(_Keyval.symbols(), _Keyval.length());
     }
-    template<typename H>
-    size_t operator()(const StoreType<K, H>& _Keyval) const {
+    size_t operator()(const StoreType<K, strhash<K>>& _Keyval) const {
         return _Keyval.hash;
     }
 };
@@ -5742,8 +5741,7 @@ struct strhashia {
     size_t operator()(simple_str<K> _Keyval) const {
         return fnv_hash_ia(_Keyval.symbols(), _Keyval.length());
     }
-    template<typename H>
-    size_t operator()(const StoreType<K, H>& _Keyval) const {
+    size_t operator()(const StoreType<K, strhashia<K>>& _Keyval) const {
         return _Keyval.hash;
     }
 };
@@ -5761,8 +5759,7 @@ struct strhashiu {
     size_t operator()(simple_str<K> _Keyval) const {
         return unicode_traits<K>::hashiu(_Keyval.symbols(), _Keyval.length());
     }
-    template<typename H>
-    size_t operator()(const StoreType<K, H>& _Keyval) const {
+    size_t operator()(const StoreType<K, strhashiu<K>>& _Keyval) const {
         return _Keyval.hash;
     }
 };
@@ -6112,14 +6109,18 @@ SS_CONSTEVAL simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
     return simple_str_nt<u32s>{ptr, l};
 }
 
+template<typename K> using HashKey = StoreType<K, strhash<K>>;
+template<typename K> using HashKeyIA = StoreType<K, strhashia<K>>;
+template<typename K> using HashKeyIU = StoreType<K, strhashiu<K>>;
+
 /*!
  * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
  * @param ptr - указатель на строку
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u8s, strhash<u8s>> operator""_h(const u8s* ptr, size_t l) {
-    return StoreType<u8s, strhash<u8s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval HashKey<u8s> operator""_h(const u8s* ptr, size_t l) {
+    return HashKey<u8s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6128,8 +6129,8 @@ consteval StoreType<u8s, strhash<u8s>> operator""_h(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u8s, strhashia<u8s>> operator""_ia(const u8s* ptr, size_t l) {
-    return StoreType<u8s, strhashia<u8s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval HashKeyIA<u8s> operator""_ia(const u8s* ptr, size_t l) {
+    return HashKeyIA<u8s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6138,8 +6139,8 @@ consteval StoreType<u8s, strhashia<u8s>> operator""_ia(const u8s* ptr, size_t l)
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u8s, strhashiu<u8s>> operator""_iu(const u8s* ptr, size_t l) {
-    return StoreType<u8s, strhashiu<u8s>>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
+inline HashKeyIU<u8s> operator""_iu(const u8s* ptr, size_t l) {
+    return HashKeyIU<u8s>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
 }
 
 /*!
@@ -6148,8 +6149,8 @@ inline StoreType<u8s, strhashiu<u8s>> operator""_iu(const u8s* ptr, size_t l) {
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u16s, strhash<u16s>> operator""_h(const u16s* ptr, size_t l) {
-    return StoreType<u16s, strhash<u16s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval HashKey<u16s> operator""_h(const u16s* ptr, size_t l) {
+    return HashKey<u16s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6158,8 +6159,8 @@ consteval StoreType<u16s, strhash<u16s>> operator""_h(const u16s* ptr, size_t l)
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u16s, strhashia<u16s>> operator""_ia(const u16s* ptr, size_t l) {
-    return StoreType<u16s, strhashia<u16s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval HashKeyIA<u16s> operator""_ia(const u16s* ptr, size_t l) {
+    return HashKeyIA<u16s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6168,8 +6169,8 @@ consteval StoreType<u16s, strhashia<u16s>> operator""_ia(const u16s* ptr, size_t
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u16s, strhashiu<u16s>> operator""_iu(const u16s* ptr, size_t l) {
-    return StoreType<u16s, strhashiu<u16s>>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
+inline HashKeyIU<u16s> operator""_iu(const u16s* ptr, size_t l) {
+    return HashKeyIU<u16s>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
 }
 
 /*!
@@ -6178,8 +6179,8 @@ inline StoreType<u16s, strhashiu<u16s>> operator""_iu(const u16s* ptr, size_t l)
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u32s, strhash<u32s>> operator""_h(const u32s* ptr, size_t l) {
-    return StoreType<u32s, strhash<u32s>>{{ptr, l}, fnv_hash_compile(ptr, l)};
+consteval HashKey<u32s> operator""_h(const u32s* ptr, size_t l) {
+    return HashKey<u32s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
@@ -6188,8 +6189,8 @@ consteval StoreType<u32s, strhash<u32s>> operator""_h(const u32s* ptr, size_t l)
  * @param l - длина строки
  * @return StoreType
  */
-consteval StoreType<u32s, strhashia<u32s>> operator""_ia(const u32s* ptr, size_t l) {
-    return StoreType<u32s, strhashia<u32s>>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+consteval HashKeyIA<u32s> operator""_ia(const u32s* ptr, size_t l) {
+    return HashKeyIA<u32s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
@@ -6198,10 +6199,39 @@ consteval StoreType<u32s, strhashia<u32s>> operator""_ia(const u32s* ptr, size_t
  * @param l - длина строки
  * @return StoreType
  */
-inline StoreType<u32s, strhashiu<u32s>> operator""_iu(const u32s* ptr, size_t l) {
-    return StoreType<u32s, strhashiu<u32s>>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
+inline HashKeyIU<u32s> operator""_iu(const u32s* ptr, size_t l) {
+    return HashKeyIU<u32s>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
 }
 
+/*!
+ * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
+ * @param ptr - указатель на строку
+ * @param l - длина строки
+ * @return StoreType
+ */
+consteval HashKey<uws> operator""_h(const uws* ptr, size_t l) {
+    return HashKey<uws>{{ptr, l}, fnv_hash_compile(ptr, l)};
+}
+
+/*!
+ * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII
+ * @param ptr - указатель на строку
+ * @param l - длина строки
+ * @return StoreType
+ */
+consteval HashKeyIA<uws> operator""_ia(const uws* ptr, size_t l) {
+    return HashKeyIA<uws>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+}
+
+/*!
+ * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode
+ * @param ptr - указатель на строку
+ * @param l - длина строки
+ * @return StoreType
+ */
+inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
+    return HashKeyIU<uws>{{ptr, l}, strhashiu<uws>{}(simple_str<uws>{ptr, l})};
+}
 } // namespace literals
 
 /*!
