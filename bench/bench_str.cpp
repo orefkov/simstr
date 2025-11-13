@@ -145,7 +145,6 @@ void ToIntStr10(benchmark::State& state, const std::string& s, int c) {
         }
     #endif
         benchmark::DoNotOptimize(res);
-        benchmark::DoNotOptimize(s);
     }
 }
 
@@ -159,7 +158,6 @@ void ToIntStr16(benchmark::State& state, const std::string& s, int c) {
         }
     #endif
         benchmark::DoNotOptimize(res);
-        benchmark::DoNotOptimize(s);
     }
 }
 
@@ -173,7 +171,6 @@ void ToIntStr0(benchmark::State& state, const std::string& s, int c) {
         }
     #endif
         benchmark::DoNotOptimize(res);
-        benchmark::DoNotOptimize(s);
     }
 }
 
@@ -191,7 +188,6 @@ void ToIntFromChars10(benchmark::State& state, const std::string_view& s, int c)
         }
     #endif
         benchmark::DoNotOptimize(res);
-        benchmark::DoNotOptimize(s);
     }
 #endif
 }
@@ -210,7 +206,6 @@ void ToIntFromChars16(benchmark::State& state, const std::string_view& s, int c)
         }
     #endif
         benchmark::DoNotOptimize(res);
-        benchmark::DoNotOptimize(s);
     }
 #endif
 }
@@ -890,8 +885,6 @@ void ReplaceSymbolsStdString(benchmark::State& state) {
 #endif
         benchmark::DoNotOptimize(result);
         benchmark::DoNotOptimize(source);
-        benchmark::DoNotOptimize(repl_from);
-        benchmark::DoNotOptimize(repl_to);
     }
 }
 
@@ -1112,8 +1105,6 @@ void ShortReplaceSymbolsStdString(benchmark::State& state) {
 #endif
         benchmark::DoNotOptimize(result);
         benchmark::DoNotOptimize(source);
-        benchmark::DoNotOptimize(repl_from);
-        benchmark::DoNotOptimize(repl_to);
     }
 }
 
@@ -1904,3 +1895,18 @@ BENCHMARK(BuildFuncNameStdStr1)        ->Name("Build func full name std::string 
 BENCHMARK(BuildFuncNameStream)         ->Name("Build func full name std::stream;");
 BENCHMARK(BuildFuncNameSimStr)         ->Name("Build func full name stringa;");
 BENCHMARK(BuildFuncNameSimStr1)        ->Name("Build func full name stringa 1;");
+
+int main(int argc, char** argv) {
+    char arg1[] = "--benchmark_repetitions=10", arg2[] = "--benchmark_report_aggregates_only=true";
+    char* my_params[] = {argv[0], arg1, arg2};
+    if (argc < 2) {
+        argc = 3;
+        argv = my_params;
+    }
+    ::benchmark::Initialize(&argc, argv);
+    if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
+    ::benchmark::RunSpecifiedBenchmarks();
+    ::benchmark::Shutdown();
+    return 0;
+}

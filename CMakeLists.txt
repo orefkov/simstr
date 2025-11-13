@@ -22,22 +22,13 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
 endif()
 
 option(SIMSTR_BUILD_TESTS "Построить тесты" ON)
-option(SIMSTR_BENCHMARKS "Построить замеры производительности" ON)
-option(SIMSTR_SHARED "Функции simstr должны экспортироваться или импортироваться" OFF)
+option(SIMSTR_BENCHMARKS "Построить замеры производительности" Off)
 
-if(EMSCRIPTEN)
-    option(SIMSTR_EMSCRIPTEN_MT "Использовать многопоточность в Emscripten" OFF)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-warn-absolute-paths -Wno-unknown-warning-option -msimd128 -msse4.2 -msse3")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-warn-absolute-paths -Wno-unknown-warning-option -msimd128 -msse4.2 -msse3")
-
-    if(SIMSTR_EMSCRIPTEN_MT)
-        message("Build MT emscripten")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency-1")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sENVIRONMENT=web,worker")
-    endif()
-endif(EMSCRIPTEN)
+# При OFF - строится обычная статическая библиотека.
+# При On - simstr собирается как статическая библиотека, которую потом встроят в shared библиотеку,
+# и она будет свои функции объявлять как экспортируемые. Потребители же будут собираться с указанием,
+# что функции - импортируемые
+option(SIMSTR_IN_SHARED "Функции simstr будут экспортироваться или импортироваться" Off)
 
 add_library(simstr_simstr
     src/sstring.cpp
@@ -52,6 +43,16 @@ target_include_directories(
 )
 
 target_compile_features(simstr_simstr PUBLIC cxx_std_20)
+
+if(EMSCRIPTEN)
+    option(SIMSTR_EMSCRIPTEN_MT "Использовать многопоточность в Emscripten" OFF)
+    target_compile_options(simstr_simstr PUBLIC -Wno-warn-absolute-paths -Wno-unknown-warning-option -msimd128 -msse4.2 -msse3)
+
+    if(SIMSTR_EMSCRIPTEN_MT)
+        message("Build MT emscripten")
+        target_compile_options(simstr_simstr PUBLIC -pthread)
+    endif()
+endif(EMSCRIPTEN)
 
 # Для MSVC подключаем natvis файл для красивой отладки
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -68,7 +69,7 @@ set_target_properties(
     OUTPUT_NAME simstr
 )
 
-function(Simdutf)
+function(add_simdutf)
     set(SIMDUTF_TOOLS OFF)
     set(SIMDUTF_TESTS OFF)
     set(SIMDUTF_BENCHMARKS OFF)
@@ -82,14 +83,22 @@ function(Simdutf)
     FetchContent_MakeAvailable(simdutf)
 endfunction()
 
-Simdutf()
+add_simdutf()
 
 target_link_libraries(simstr_simstr PUBLIC simdutf::simdutf)
 
-if(SIMSTR_SHARED)
-    add_compile_definitions(SIMSTR_SHARED)
+if(SIMSTR_IN_SHARED)
+    # Всем объявляем, что мы будем в shared библиотеке
+    add_compile_definitions(SIMSTR_IN_SHARED)
+    # Себе объявим, что мы должны экспортировать функции
     target_compile_definitions(simstr_simstr PRIVATE SIMSTR_EXPORT)
-endif(SIMSTR_SHARED)
+    # Пример построения shared библиотеки, которая включит в себя simstr.
+    # Как при этом создать экзешник, пользующийся этой dll - пример в tests/CMakeLists.txt
+    # Нельзя объявить библиотеку без исходников, добавим просто .h файл
+    add_library(simstr_dll SHARED include/simstr/sstring.h)
+    # simstr должна войти в simstr_dll целиком
+    target_link_libraries(simstr_dll PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,simstr::simstr>")
+endif(SIMSTR_IN_SHARED)
 
 if(SIMSTR_BUILD_TESTS)
     enable_testing()
@@ -101,7 +110,6 @@ if(SIMSTR_BUILD_TESTS)
         URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
         FIND_PACKAGE_ARGS NAMES GTest
     )
-
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt FALSE CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
@@ -110,14 +118,12 @@ endif()
 
 function(GBencmark)
     # Load and build Google benchmarks
-    include(FetchContent)
     FetchContent_Declare(
         googlebench
         # Specify the commit you depend on and update it regularly.
-        URL https://github.com/google/benchmark/archive/refs/tags/v1.7.0.zip
+        URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
         FIND_PACKAGE_ARGS NAMES benchmark
     )
-    set(CMAKE_CXX_STANDARD 20)
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_LTO OFF)
     set(BENCHMARK_ENABLE_INSTALL OFF)
@@ -126,6 +132,15 @@ function(GBencmark)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
     add_compile_definitions(BENCHMARK_STATIC_DEFINE)
     FetchContent_MakeAvailable(googlebench)
+    target_compile_features(benchmark PUBLIC cxx_std_20)
+
+    if(EMSCRIPTEN)
+        # Свежий Clang в Emscripten ругается на __COUNTER__
+        target_compile_options(benchmark PUBLIC -Wno-c2y-extensions)
+        if(SIMSTR_EMSCRIPTEN_MT)
+            target_compile_options(benchmark PUBLIC -pthread)
+        endif()
+    endif()
 endfunction()
 
 if(SIMSTR_BENCHMARKS) # AND CMAKE_BUILD_TYPE STREQUAL Release)

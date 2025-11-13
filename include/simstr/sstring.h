@@ -15,7 +15,7 @@
 #define __has_declspec_attribute(x) 0
 #endif
 
-#ifdef SIMSTR_SHARED
+#ifdef SIMSTR_IN_SHARED
     #if defined(_MSC_VER) || (defined(__clang__) && __has_declspec_attribute(dllexport))
         #ifdef SIMSTR_EXPORT
             #define SIMSTR_API __declspec(dllexport)
@@ -41,10 +41,10 @@ const bool isx64 = sizeof(void*) == 8; // NOLINT
 
 #ifdef _MSC_VER
 #define _no_unique_address msvc::no_unique_address
-#define empty_bases __declspec(empty_bases)
+#define decl_empty_bases __declspec(empty_bases)
 #else
 #define _no_unique_address no_unique_address
-#define empty_bases
+#define decl_empty_bases
 #endif
 
 #if defined __has_builtin
@@ -3752,7 +3752,7 @@ class sstring;
  * выделяется +n байтов, чтобы потом не копировать данные.
  */
 template<typename K, size_t N, bool forShared = false, Allocatorable Allocator = allocator_string>
-class empty_bases lstring :
+class decl_empty_bases lstring :
     public str_algs<K, simple_str<K>, lstring<K, N, forShared, Allocator>, true>,
     public str_mutable<K, lstring<K, N, forShared, Allocator>>,
     public str_storable<K, lstring<K, N, forShared, Allocator>, Allocator>,
@@ -4220,7 +4220,7 @@ constexpr const size_t local_count = _local_count<sizeof(size_t), sizeof(T)>;
  */
 
 template<typename K, Allocatorable Allocator = allocator_string>
-class empty_bases sstring :
+class decl_empty_bases sstring :
     public str_algs<K, simple_str<K>, sstring<K, Allocator>, false>,
     public str_storable<K, sstring<K, Allocator>, Allocator>,
     public from_utf_convertable<K, sstring<K, Allocator>> {
@@ -5987,7 +5987,7 @@ using stringa = sstring<u8s>;
 using stringw = sstring<wchar_t>;
 using stringu = sstring<u16s>;
 using stringuu = sstring<u32s>;
-static_assert(sizeof(stringa) == 24, "Bad size of sstring");
+static_assert(sizeof(stringa) == (sizeof(void*) == 8 ? 24 : 16), "Bad size of sstring");
 
 /*!
  * @brief Тип хеш-словаря для char строк, регистрозависимый поиск
