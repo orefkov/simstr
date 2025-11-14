@@ -54,8 +54,11 @@ if(EMSCRIPTEN)
     endif()
 endif(EMSCRIPTEN)
 
+if (NOT CMAKE_CXX_SIMULATE_ID)
+    set (CMAKE_CXX_SIMULATE_ID "None")
+endif()
 # Для MSVC подключаем natvis файл для красивой отладки
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR ${CMAKE_CXX_SIMULATE_ID} STREQUAL MSVC)
     target_link_options(simstr_simstr PUBLIC "/natvis:${CMAKE_CURRENT_SOURCE_DIR}/for_debug/simstr.natvis")
 endif()
 
