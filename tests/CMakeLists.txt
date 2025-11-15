@@ -4,17 +4,7 @@
 
 add_executable(testStr test_str.cpp)
 
-if (NOT SIMSTR_IN_SHARED)
-    target_link_libraries(testStr simstr::simstr GTest::gtest_main)
-else()
-    # Пример создания экзешника, если simstr экспортируются из dll.
-    # Так как мы подключаем только simstr_dll, и входящие в неё либы не видны
-    # нужно вручную задать каталоги include и стандарт C++20
-    target_link_libraries(testStr simstr_dll GTest::gtest_main)
-    get_target_property(SIMSTR_INCLUDES simstr::simstr INCLUDE_DIRECTORIES)
-    target_include_directories(testStr PRIVATE ${SIMSTR_INCLUDES})
-    target_compile_features(testStr PUBLIC cxx_std_20)
-endif()
+target_link_libraries(testStr simstr::simstr GTest::gtest_main)
 
 add_test(NAME testStr COMMAND testStr)
 

@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.0.0
+    VERSION 1.2.3
     DESCRIPTION "Yet another string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -23,12 +23,6 @@ endif()
 
 option(SIMSTR_BUILD_TESTS "Построить тесты" ON)
 option(SIMSTR_BENCHMARKS "Построить замеры производительности" Off)
-
-# При OFF - строится обычная статическая библиотека.
-# При On - simstr собирается как статическая библиотека, которую потом встроят в shared библиотеку,
-# и она будет свои функции объявлять как экспортируемые. Потребители же будут собираться с указанием,
-# что функции - импортируемые
-option(SIMSTR_IN_SHARED "Функции simstr будут экспортироваться или импортироваться" Off)
 
 add_library(simstr_simstr
     src/sstring.cpp
@@ -90,17 +84,11 @@ add_simdutf()
 
 target_link_libraries(simstr_simstr PUBLIC simdutf::simdutf)
 
-if(SIMSTR_IN_SHARED)
+if(BUILD_SHARED_LIBS)
     # Всем объявляем, что мы будем в shared библиотеке
     add_compile_definitions(SIMSTR_IN_SHARED)
     # Себе объявим, что мы должны экспортировать функции
     target_compile_definitions(simstr_simstr PRIVATE SIMSTR_EXPORT)
-    # Пример построения shared библиотеки, которая включит в себя simstr.
-    # Как при этом создать экзешник, пользующийся этой dll - пример в tests/CMakeLists.txt
-    # Нельзя объявить библиотеку без исходников, добавим просто .h файл
-    add_library(simstr_dll SHARED include/simstr/sstring.h)
-    # simstr должна войти в simstr_dll целиком
-    target_link_libraries(simstr_dll PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,simstr::simstr>")
 endif(SIMSTR_IN_SHARED)
 
 if(SIMSTR_BUILD_TESTS)
