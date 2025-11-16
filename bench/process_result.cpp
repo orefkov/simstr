@@ -13,8 +13,10 @@ using results_vector = std::vector<result_info>;
 
 bool extract_cpu_info(ssa text, ssa& res) {
     // Найдём, где начинается "Run on ", потом где за ним начинается "\n---"
+    // Find where "Run on" begins, then where after it "\n---" begins
     size_t start = text.find("Run on "), end = text.find("\n---", start);
     // Если что-то не нашлось - ошибка
+    // If something was not found - an error
     if (start == str::npos || end == str::npos) {
         return false;
     }
@@ -34,6 +36,7 @@ struct result_info {
             throw std::runtime_error{"Not found cpu info"};
         }
         // Текущее положение поставим сразу за cpuinfo и откинем завершающие переводы строк
+        // We will put the current position immediately after cpuinfo and discard the final line feeds
         current_text_ = current_text_(cpu_info_.end() - current_text_.begin() + 1).trimmed_right("\n");
     }
 };
@@ -57,14 +60,16 @@ stringa get_file_content(stra filePath) {
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     // Такой тип удобен для передачи потом в stringa
+    // This type is convenient for later passing to stringa
     lstringsa<0> result;
     file.read(result.set_size(size), size);
     result.replace("\r\n", "\n");
-    return result;
+    return std::move(result);
 }
 
 results_vector get_results_infos() {
     // Отберём в директории results все файлы с названиями, заканчивающимися на ".txt" и отсортируем их по имени
+    // Select all files in the results directory with names ending in ".txt" and sort them by name
     const ssa suffix = ".txt", dirForResults = "results/";
     std::vector<stringa> fileNames;
     for (const auto& f: std::filesystem::directory_iterator{str_to_path(dirForResults)}) {
@@ -88,6 +93,7 @@ results_vector get_results_infos() {
         for (const auto& f : fileNames) {
             ssa fileName = f;
             // В начале имени файла может идти число и дефис, для сортировки, уберём их
+            // At the beginning of the file name there can be a number and a hyphen, for sorting, remove them
             if (auto delimeter = fileName.find('-'); delimeter != str::npos && delimeter > 0) {
                 if (std::get<1>(fileName(0, delimeter).to_int<unsigned, false, 10, false, false>()) == IntConvertResult::Success) {
                     fileName.remove_prefix(delimeter + 1);
@@ -188,6 +194,7 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
     auto [it, not_exist] = textes.try_emplace(benchName);
     if (not_exist) {
         // Ищем имя функции для этого бенчмарка
+        // Looking for the name of the function for this benchmark
         size_t start = sourceText.find(lstringa<128>{"->Name(\"" + e_repl(benchName, "\"", "\\\"") + "\")"});
         if (start == str::npos) {
             std::cerr << "Can not found benchmark function name for " << benchName << std::endl;
@@ -204,6 +211,7 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
         auto [func_it, not_exist] = textes.try_emplace(funcName);
         if (not_exist) {
             // Теперь ищем саму эту функцию
+            // Now we look for this function itself
             start = sourceText.find(lstringa<128>{funcName + "(benchmark::State"});
             if (start == str::npos) {
                 std::cerr << "Can not found source function " << funcName << " for benchmark " << benchName << std::endl;
@@ -218,6 +226,7 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
             }
             size_t end = -1;
             // Проверим, возможно там есть переход на другую функцию через //>
+            // Let's check, maybe there is a transition to another function via //>
             ssa prevLine = sourceText.from_to(sourceText.find_last('\n', start - 1) + 1, start);
             if (prevLine.starts_with("//> ")) {
                 prevLine.remove_prefix(4);
@@ -262,6 +271,7 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             auto source = extract_source_for_benchmark(benchName, sourceText);
             auto comment = extract_comment(commentsText, benchName);
             // Нужно вывести название бенча и коммент
+            // Need to display title and comment
             out += "\n<tr><td class=\"benchmarkname\"><span class=\"tooltip\">" +
                 repl_html_symbols(benchName) +
                 "<span class=\"tooltiptext code\">" +
@@ -296,11 +306,13 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             continue;
         } else if (line.starts_with("--") && !line.ends_with("---")) {
             // Начинается новый набор бенчмарков
+            // Starts a new set of benchmarks
             if (needFooter) {
                 write_benchset_footer(out, script_text);
             }
             benchName = extract_name_result(line, result);
             // Из названия набора надо удалить начальные и конечные ---
+            // From the name of the set we need to remove the beginning and end ---
             benchName = benchName.from_to(benchName.find(' ') + 1, benchName.find_last(' ')).trimmed();
             write_benchset_header(out, results, benchName, ++benchSetId);
             needFooter = true;
@@ -308,6 +320,7 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             script_text = "bench_sets['" + e_repl(benchName.to_str(), "'", "\\'") + "'] = {id:'bs" + benchSetId +"', tests:[";
         }
         // Эти строки надо пропустить во всех файлах
+        // These lines must be skipped in all files
         for (unsigned idx = 1; idx < results.size(); idx++) {
             if (splitters[idx].is_done()) {
                 std::cerr << "Not expected end of file for " << results[idx].platform_ << std::endl;
