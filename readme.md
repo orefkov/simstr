@@ -1,94 +1,96 @@
-# simstr - библиотека строковых объектов и функций
+# simstr - String object and function library
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.2.4.
+Version 1.2.4.
 
-В этой библиотеке содержится реализация нескольких видов строковых объектов и различных алгоритмов для работы со строками.
+[On Russian|По-русски](readme_ru.md)
 
-Цель библиотеки - сделать работу со строками в С++ такой же простой и лёгкой, как во множестве других языков, особенно
-скриптовых, но при этом сохранив оптимальность и производительность на уровне С и C++, и даже улучшив их.
+This library contains the implementation of several types of string objects and various algorithms for working with strings.
 
-Не секрет, что работа со строками в С++ зачастую доставляет боль. Класс `std::string` часто неудобен либо неэффективен.
-Многих функций, обычно необходимых при работе со строками, просто нет, и их каждому приходится писать самому.
+The goal of the library is to make working with strings in C++ as simple and easy as in many other languages, especially
+scripting languages, while maintaining optimality and performance at the level of C and C++, and even improving them.
 
-Эта библиотека не делалась как универсальный комбайн, который "может всё", я реализовывал то, что мне приходилось
-использовать в работе, стараясь сделать это наиболее эффективным способом, и скромно надеюсь, что кое-что у меня получилось
-и пригодится другим людям, либо напрямую, либо как источник идей.
+It's no secret that working with strings in C++ often causes pain. The `std::string` class is often inconvenient or inefficient.
+Many functions that are usually necessary when working with strings are simply not there, and everyone has to write them themselves.
 
-Библиотека не претендует на роль "поменял хедер и всё заработало лучше". Многие методы я старался делать совместимыми
-с `std::string` и `std::string_view`, но особо с этим не заморачивался. Переписывание старого кода на работу с simstr
-потребует некоторых усилий, но уверяю, что они окупятся. А новый код писать с её применением легко и доставляет удовольствие :)
+This library was not made as a universal combine that "can do everything", I implemented what I had to
+use at work, trying to do it in the most efficient way, and I modestly hope that I succeeded in something
+and will be useful to other people, either directly or as a source of ideas.
 
-Основное отличие simstr от std::string - для работы со строками используется не единый универсальный класс, а несколько
-видов объектов, каждый из которых хорош для своих целей, и при этом хорошо взаимодействующих друг с другом.
-Если вы активно использовали std::string_view и понимали, в чём его преимущество и недостатки по сравнению с std::string,
-то подход simstr вам также будет понятен.
+The library does not pretend to be a "change the header and everything works better" solution. I tried to make many methods compatible
+with `std::string` and `std::string_view`, but I didn't bother with it much. Rewriting old code to work with simstr
+will require some effort, but I assure you that it will pay off. And writing new code with its use is easy and enjoyable :)
 
-## Основные возможности библиотеки
-- Строки `char`, `char16_t`, `char32_t`, `wchar_t`.
-- Прозрачное преобразование строк из одного типа символов в другой, с автоматической конвертацией между UTF-8, UTF-16, UTF-32,
-  используя [simdutf](https://github.com/simdutf/simdutf).
-- Расширяемая система "Строковых выражений". Позволяет эффективно реализовать преобразование и сложение (конкатенацию) строк, литералов,
-  чисел и возможно других объектов.
-- Строковые функции:
-  - Получение подстрок.
-  - Поиск подстрок и символов - с начала или с конца строки.
-  - Различный тримминг строк - справа, слева, везде, по пробельным символам, по заданным символам.
-  - Замена подстрок.
-  - Замена набора символов на набор соответствующих подстрок.
-  - Слияние (join) контейнеров строк в единую строку, с заданием разделителей и опций - "пропускать пустые", "разделитель после последней".
-  - Разбиение (split) строк на части по заданному разделителю. Разбиение возможно сразу в контейнер со строками, либо вызовом функтора для
-    каждой подстроки, либо путем итерации с помощью итератора `Splitter`.
-- Интеграция с функциями форматирования `format` и `sprintf` (с автоматическим увеличением буфера).
-  Форматирование возможно для строк `char`, `wchar_t` и строк, совместимых с `wchar_t` по размеру.
-  То есть под Windows это `char16_t`, под Linux - `char32_t`. Писать свою библиотеку форматирования не входило в мои замыслы.
-- Парсинг целых чисел с возможностью "тонкой" настройки при компиляции - можно задавать опции проверки переполнения,
-  пропуск пробельных символов, конкретное основание счисления либо автовыбор по префиксам `0x`, `0`, `0b`, `0o`,
-  допустимость знака `+`. Парсинг реализован для всех видов строк и символов.
-- Парсинг double пока реализован вызовом стандартной библиотеки и работает только для строк `char`, `wchar_t` и совместимых с
-  `wchar_t` по размеру типов.
-- Содержится минимальная поддержка Unicode при преобразовании `upper`, `lower` и регистро-независимом сравнении строк.
-  Работает только для символов первой плоскости Unicode (до 0xFFFF), а при смене регистра не учитываются случаи, когда один code point
-  может преобразовываться в несколько, то есть преобразование регистра символов соответствует `std::towupper`, `std::towlower` для unicode локали, только быстрее и может работать с любым видом символов.
-- Реализован `hash map` для ключей строкового типа, на базе `std::unordered_map`, с возможностью более эффективного хранения и
-  сравнения ключей по сравнению с ключами `std::string`. Поддерживается возможность регистро-независимого сравнения ключей (Ascii или
-  минимальный Unicode (см. предыдущий пункт)).
+The main difference between simstr and std::string is that instead of a single universal class, several
+types of objects are used to work with strings, each of which is good for its own purposes, and at the same time interacts well with each other.
+If you actively used std::string_view and understood its advantages and disadvantages compared to std::string,
+then the simstr approach will also be clear to you.
 
-## Основные объекты библиотеки
-- simple_str&lt;K> - самая простая строка (или кусок строки), иммутабельная, не владеющая, аналог `std::string_view`.
-- simple_str_nt&lt;K> - то же самое, только заявляет, что заканчивается 0. Для работы со сторонними C-API.
-- sstring&lt;K> - shared string, иммутабельная, владеющая, с разделяемым буфером символов, поддержка SSO.
-- lstring&lt;K, N> - local string, мутабельная, владеющая, с задаваемым размером SSO буфера.
+## Main features of the library
+- Strings `char`, `char16_t`, `char32_t`, `wchar_t`.
+- Transparent conversion of strings from one character type to another, with automatic conversion between UTF-8, UTF-16, UTF-32,
+  using [simdutf](https://github.com/simdutf/simdutf).
+- Extensible "String Expression" system. Allows you to efficiently implement the conversion and addition (concatenation) of strings, literals,
+  numbers and possibly other objects.
+- String functions:
+  - Getting substrings.
+  - Searching for substrings and characters - from the beginning or from the end of the string.
+  - Various string trimming - right, left, everywhere, by whitespace characters, by specified characters.
+  - Replacing substrings.
+  - Replacing a set of characters with a set of corresponding substrings.
+  - Merging (join) containers of strings into a single string, with specifying separators and options - "skip empty", "separator after last".
+  - Splitting strings into parts by a specified separator. Splitting is possible directly into a container with strings, or by calling a functor for
+    each substring, or by iterating using the `Splitter` iterator.
+- Integration with `format` and `sprintf` formatting functions (with automatic buffer increase).
+  Formatting is possible for `char`, `wchar_t` strings and strings compatible with `wchar_t` in size.
+  That is, under Windows it is `char16_t`, under Linux - `char32_t`. Writing my own formatting library was not part of my plans.
+- Parsing integers with the possibility of "fine" tuning during compilation - you can set options for checking overflow,
+  skipping whitespace characters, a specific radix or auto-selection by prefixes `0x`, `0`, `0b`, `0o`,
+  admissibility of the `+` sign. Parsing is implemented for all types of strings and characters.
+- Parsing double is currently implemented by calling the standard library and only works for `char`, `wchar_t` strings and types compatible with
+  `wchar_t` in size.
+- Minimal Unicode support is included when converting `upper`, `lower` and case-insensitive string comparison.
+  It only works for characters in the first plane of Unicode (up to 0xFFFF), and when changing case, it does not take into account cases where one code point
+  can be converted into several, that is, the case conversion of characters corresponds to `std::towupper`, `std::towlower` for the unicode locale, only faster and can work with any type of characters.
+- Implemented `hash map` for string type keys, based on `std::unordered_map`, with the possibility of more efficient storage and
+  comparison of keys compared to `std::string` keys. Case-insensitive key comparison is supported (Ascii or
+  minimal Unicode (see previous paragraph)).
 
-## Статьи
-- [Обзор и введение](docs/overview.md)
-- [Обзорная статья на Хабре](https://habr.com/ru/articles/935590)
-- [Описание применяемой техники "Expression Templates"](https://habr.com/ru/articles/936468/)
+## Main objects of the library
+- simple_str&lt;K> - the simplest string (or piece of string), immutable, not owning, analogue of `std::string_view`.
+- simple_str_nt&lt;K> - the same, only declares that it ends with 0. For working with third-party C-API.
+- sstring&lt;K> - shared string, immutable, owning, with shared character buffer, SSO support.
+- lstring&lt;K, N> - local string, mutable, owning, with a specified size of the SSO buffer.
 
-## Использование
-`simstr` состоит из трёх заголовочных файлов и двух исходников. Можно подключать как CMake проект через `add_subdirectory` (библиотека `simstr`),
-можно просто включить файлы в свой проект. Для сборки также требуется [simdutf](https://github.com/simdutf/simdutf) (при использовании CMake
-скачивается автоматически).
+## Articles
+- [Overview and introduction](docs/overview.md)
+- [Overview article on Habr](https://habr.com/ru/articles/935590)
+- [Description of the "Expression Templates" technique used](https://habr.com/ru/articles/936468/)
 
-Для работы `simstr` требуется компилятор стандарта не ниже С++20 - используются концепты и std::format.
-Работа проверялась под Windows на MSVC-19 и Clang-19, под Linux - на GCC-13 и Clang-21.
-Также проверялась работа в WASM, сборка в Emscripten 4.0.6, Clang-21.
+## Usage
+`simstr` consists of three header files and two source files. You can connect as a CMake project via `add_subdirectory` (the `simstr` library),
+you can simply include the files in your project. Building also requires [simdutf](https://github.com/simdutf/simdutf) (when using CMake
+it is downloaded automatically).
+
+`simstr` requires a compiler of standard no lower than C++20 to work - concepts and std::format are used.
+The work was tested under Windows on MSVC-19 and Clang-19, under Linux - on GCC-13 and Clang-21.
+The work in WASM was also tested, built in Emscripten 4.0.6, Clang-21.
 
 
-## Бенчмарки
-Бенчмарки производятся с использованием фреймворка [Google benchmark](https://github.com/google/benchmark).
-Постарался сделать замеры для наиболее типичных операций, встречающихся в обычной работе. Я проводил замеры на своём оборудовании, под
-Windows и Linux (в WSL), с использованием компиляторов MSVC, Clang, GCC. Сторонние результаты приветствуются.
-Также проводил замеры в WASM, сборка в Emscripten. Обращаю внимание, что под WASM в Emscripten собирается 32-битная сборка, а значит,
-размеры буферов SSO в объектах меньше.
+## Benchmarks
+Benchmarks are performed using the [Google benchmark](https://github.com/google/benchmark) framework.
+I tried to make measurements for the most typical operations that occur in normal work. I took measurements on my equipment, under
+Windows and Linux (in WSL), using MSVC, Clang, GCC compilers. Third-party results are welcome.
+I also took measurements in WASM, built in Emscripten. I draw your attention to the fact that a 32-bit build is assembled under WASM in Emscripten, which means that
+the sizes of SSO buffers in objects are smaller.
 
-- [Исходный код бенчмарков](bench/bench_str.cpp)
-- [Результаты бенчмарков](https://snegopat.ru/simstr/results.html)
+- [Benchmark source code](bench/bench_str.cpp)
+- [Benchmark results](https://snegopat.ru/simstr/results.html)
 
-## Примеры использования
-Пока отдельных примеров использования не подготовлено, можно посмотреть тексты [тестов](tests/test_str.cpp),
-[бенчмарков](bench/bench_str.cpp), и [утилиты подготовки html](bench/process_result.cpp) из результатов бенчмарков.
-Также simstr используется в моём проекте [v8sqlite](https://github.com/orefkov/v8sqlite)
+## Usage examples
+While no separate usage examples have been prepared, you can look at the texts of [tests](tests/test_str.cpp),
+[benchmarks](bench/bench_str.cpp), and [html preparation utilities](bench/process_result.cpp) from the benchmark results.
+Also, simstr is used in my [v8sqlite](https://github.com/orefkov/v8sqlite) project
 
-## Сгенерированная документация
-[Находится здесь](https://snegopat.ru/simstr/docs/)
+## Generated documentation
+[Located here](https://snegopat.ru/simstr/docs/)

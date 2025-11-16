@@ -1,30 +1,31 @@
-# Строки в С++
-(, что с вами не так?)
+# Strings in C++
+(, what's wrong with you?)
+
+[On Russian|По-русски](overview_ru.md)
 
 <cite>
-В ретроспективе 1991 года по истории C++ его создатель Бьярне Страуструп назвал отсутствие стандартного строкового типа
-(и некоторых других стандартных типов) в C++ 1.0 худшей ошибкой, которую он допустил при его разработке:
-"the absence of those led to everybody re-inventing the wheel and to an unnecessary diversity in the most fundamental classes"
-(«Их отсутствие привело к тому, что все заново изобретали велосипед, и к ненужному разнообразию в самых фундаментальных классах»).
+In a 1991 retrospective on the history of C++, its creator Bjarne Stroustrup called the lack of a standard string type
+(and some other standard types) in C++ 1.0 the worst mistake he made in its development:
+"Their absence led to everyone reinventing the wheel and to an unnecessary diversity in the most fundamental classes"
 </cite>
 
-## Что было и есть
-Во вступительной части я хочу немного описать, каково ныне состояние со строками в С++, как мы к нему докатились и почему оно таково.
-А также описать недостатки текущих реализаций, чтобы были понятны решения, которые я использую в своей библиотеке строк.
+## What was and is
+In the introductory part, I want to briefly describe the current state of strings in C++, how we got to it, and why it is so.
+I will also describe the shortcomings of current implementations so that the solutions I use in my string library are clear.
 
-Собственно, изначально как такового стандартного типа для строк в С++ не было.
-Для работы со строками использовался подход из C – строка есть указатель на массив байтов, оканчивающихся нулём.
-Недостатки таких строк — невозможно в строке использовать байт `0`, т. е. не подходит для бинарных данных,
-непонятна стратегия управления/владения ресурсами, ну и основной недостаток — длину строки приходится вычислять каждый раз,
-перебирая все её символы.
+Actually, initially there was no standard type for strings in C++.
+The approach from C was used to work with strings – a string is a pointer to an array of bytes ending in zero.
+The disadvantages of such strings are that it is impossible to use the byte `0` in the string, i.e. it is not suitable for binary data,
+the resource management/ownership strategy is unclear, and the main disadvantage is that the length of the string has to be calculated each time,
+iterating over all its characters.
 
-Откуда ноги растут у такого решения вполне понятно — со времён динозавров: как динозавры были большие, с маленьким мозгом и
-короткими ручками, так и компьютеры были большие, память у них была маленькая, а строки короткими. Сэкономить память на хранении длины строки было важнее, чем потерять время на повторный подсчет длины.
+The origin of this solution is quite clear – from the time of the dinosaurs: just as dinosaurs were large, with small brains and
+short arms, so computers were large, memory was small, and strings were short. Saving memory on storing the length of a string was more important than losing time on repeatedly calculating the length.
 
-Первые попытки стандартизировать строки как класс начались только в С++98 - std::string появился, как часть STL, и как
-многое из STL, крайне неоднозначно воспринимался программистами.
+The first attempts to standardize strings as a class began only in C++98 - std::string appeared as part of STL, and like
+much of STL, it was extremely ambiguously perceived by programmers.
 
-И первое, что приходит в голову при улучшении C-строк — надо хранить длину строки:
+And the first thing that comes to mind when improving C-strings is that you need to store the length of the string:
 ```cpp
     struct simple_string {
         const char* data;
@@ -32,92 +33,92 @@
     };
 ```
 
-При наличии такой строки, уже множество алгоритмов значительно оптимизируются.
-Например, при сравнении двух строк на равенство мы можем даже не начинать сравнивать их символы, если длины строк не равны.
-Более того, этих данных абсолютно достаточно для всех методов, которые не модифицируют строку.
-Также заметим, что такой объект на современных 64-битных архитектурах прекрасно передается в функции по значению —
-оба его поля укладываются в регистры (ну, кроме windows), что облегчает работу оптимизатору компилятора.
+With such a string, many algorithms are significantly optimized.
+For example, when comparing two strings for equality, we may not even start comparing their characters if the lengths of the strings are not equal.
+Moreover, this data is absolutely sufficient for all methods that do not modify the string.
+Also note that such an object on modern 64-bit architectures is perfectly passed to functions by value –
+both of its fields fit into registers (well, except for Windows), which makes it easier for the compiler optimizer to work.
 
-Между тем, такое решение попало в стандарт только аж в С++17, в виде `std::string_view`.
-Видимо, только тогда до комитета смогли донести мысль, что строки строкам рознь, и использовать только один универсальный объект
-для строк — по меньшей мере может приводить к уменьшению производительности, а также нарушает принцип «не плати за то,
-чем не пользуешься». Почему же «строки строкам рознь» и почему нам мало одного типа для строки, рассмотрим как раз далее.
+Meanwhile, such a solution only made it into the standard in C++17, in the form of `std::string_view`.
+Apparently, only then could the committee be convinced that strings are different, and using only one universal object
+for strings – at the very least, can lead to a decrease in performance, and also violates the principle of "don't pay for what you
+don't use". Why are "strings different" and why is one type of string not enough for us, we will consider just below.
 
-### Ресурсы
-И следующий вопрос, возникающий со строками — это владение ресурсами.
-Практически каждый крупный фреймворк решал эту задачу самостоятельно, изобретая свои велосипеды.
-У нас есть `std::string`, в QT у нас `QString`, в MFC - `CString`, в ATL - `CAtlString`, свои строки есть в Folly,
-в общем, “тысячи их”, любой игровой движок начинают с того, чтобы написать свои строки.
+### Resources
+And the next question that arises with strings is resource ownership.
+Almost every major framework solved this problem on its own, inventing its own bicycles.
+We have `std::string`, in QT we have `QString`, in MFC - `CString`, in ATL - `CAtlString`, there are own strings in Folly,
+in general, "thousands of them", any game engine starts with writing its own strings.
 
-Многие из этих реализаций в аспекте управления ресурсами для улучшения производительности использовали подход
-**COW** – “Copy On Write”. При этом объект строки ссылался на некий разделяемый между несколькими объектами буфер с символами
-строки и счётчиком ссылок на этот буфер, что позволяло быстро создавать копию строки, а реально копировать символы только
-при её модификации.
+Many of these implementations in the aspect of resource management used the approach to improve performance
+**COW** – “Copy On Write”. In this case, the string object referred to a buffer shared between several objects with the characters
+of the string and a reference counter to this buffer, which allowed you to quickly create a copy of the string, and actually copy the characters only
+when it is modified.
 
-Но все они совпадали в одном — строка всегда предполагалась мутабельной, то есть что мы можем модифицировать символы в буфере строки.
+But they all coincided in one thing – the string was always assumed to be mutable, that is, we can modify the characters in the string buffer.
 
-### Мутабельность / иммутабельность
-Из-за этого подход **COW** умер к С++11: при каждой операции, могущей модифицировать символы строки приходилось проверять,
-не ссылаемся ли мы на разделяемый буфер и если да, то копировать символы в другой буфер.
-В многопоточной же среде потом ещё и проверять, не надо ли теперь освобождать старый буфер, и естественно всё это обмазавшись
-локами или атомиками, что тоже не бесплатно.
-Поэтому, начиная с С++11 `std::string` не использует **COW**, и каждое копирование объекта строки приводит и к копированию
-всех символов строки в другой буфер.
+### Mutability / immutability
+Because of this, the **COW** approach died by C++11: for each operation that could modify the characters of the string, it was necessary to check
+whether we are referring to a shared buffer, and if so, copy the characters to another buffer.
+In a multithreaded environment, you also need to check whether you now need to free the old buffer, and of course, all this is smeared with
+locks or atomics, which is also not free.
+Therefore, starting with C++11, `std::string` does not use **COW**, and each copying of a string object also leads to copying
+all the characters of the string to another buffer.
 
-Естественно, что каждый новый буфер требует аллокации памяти, что пытаются немного оптимизировать за счёт **SSO** –
-“Small String Optimization”, когда объект строки содержит внутри себя небольшой буфер и символы коротких строк
-располагаются прямо в нём.
-Но это уже зависит от реализации:  в одних библиотеках помещают в объект строки до 15 байт, в некоторых до 23.
-Однако эта оптимизация тоже палка о двух концах, и может в различных реализациях усложнить перемещение строки - если она хранит
-указатель на свой внутренний буфер, его придётся корректировать.
+Naturally, each new buffer requires memory allocation, which they are trying to slightly optimize through **SSO** –
+“Small String Optimization”, when the string object contains a small buffer inside itself and the characters of short strings
+are located directly in it.
+But this already depends on the implementation: in some libraries they place up to 15 bytes in the string object, in some up to 23.
+However, this optimization is also a double-edged sword, and in various implementations it can complicate the movement of a string - if it stores
+a pointer to its internal buffer, it will have to be adjusted.
 
-А без COW мутабельность строк приводит к тому, что любая инициализация объекта строки приводит к копированию байтов.
-Посмотрим такой код:
+And without COW, the mutability of strings leads to the fact that any initialization of a string object leads to copying bytes.
+Let's look at this code:
 ```cpp
-    const char* text1 = "Hello, World";         // ничего не стоит
-    std::string_view text2 = "Hello, World";    // Ничего не стоит, вычисляет длину строки при компиляции
-    std::string text3 = "Hello, World";         // В рантайме каждый раз копирует символы строки
+    const char* text1 = "Hello, World";         // costs nothing
+    std::string_view text2 = "Hello, World";    // Costs nothing, calculates the length of the string at compile time
+    std::string text3 = "Hello, World";         // Copies the characters of the string every time at runtime
 ```
 
-(Удостоверится в правдивости комментариев можно на https://godbolt.org/z/51oKGWT5T )
+(You can verify the truth of the comments at https://godbolt.org/z/51oKGWT5T )
 
-Но если нам дальше по коду не нужно никак модифицировать строку, мы зря платим за аллокацию, копирование символов,
-а также за деструктор строки. То есть хотелось бы иметь как минимум два варианта строк — мутабельные и иммутабельные,
-чтобы явно дать понять компилятору, что мы не собираемся модифицировать строку.
-Или банальный пример — мы парсим какой-то входящий буфер данных, нам нужно проверить, равен ли некий кусок буфера строке
-”hello” на «чистом С++», т. е. без всяких memcmp и strcmp. До появления string_view приходилось делать примерно так:
+But if we don’t need to modify the string in any way further in the code, we are wasting money on allocation, copying characters,
+as well as on the string destructor. That is, I would like to have at least two versions of strings – mutable and immutable,
+to explicitly make it clear to the compiler that we are not going to modify the string.
+Or a banal example – we are parsing some incoming data buffer, we need to check whether a certain piece of the buffer is equal to the string
+"hello" in "pure C++", i.e. without any memcmp and strcmp. Before the advent of string_view, it had to be done something like this:
 ```cpp
     bool is_part_buffer_equal_hello(const char* data, int start, int end) {
         return std::string(data + start, end - start) == "hello";
     }
 ```
-Тут получается, сначала копируются символы из буфера data в буфер временной строки, возможно с аллокацией памяти, и лишь
-потом временная строка сравнивается с ”hello”, а потом ещё и деструктор и раскрутка стека на случай исключения.
+Here it turns out that first the characters from the data buffer are copied to the buffer of the temporary string, possibly with memory allocation, and only
+then the temporary string is compared with "hello", and then also the destructor and stack unwinding in case of an exception.
 
-При использовании же вместо `std::string` `std::string_view` – код на C++ почти не меняется:
+When using `std::string_view` instead of `std::string` – the code in C++ almost does not change:
 ```cpp
     bool is_part_buffer_equal_hello_view(const char* data, int start, int end) {
         return std::string_view(data + start, end - start) == "hello";
     }
 ```
-Однако генерируемый машинный код значительно преобразуется, достигая уровня ручного С-кода — там просто сравнивается,
-что end – start == 5 и дальше кусок начального буфера сравнивается через memcmp со строкой ”hello”
-(при -O2 c константами 1819043176 (’hell’) и 111 (’o’)).
-Ни создания временного объекта, ни копирования байтов, ни деструктора, ни раскрутки стека для исключений.
-Убедится можно на https://godbolt.org/z/9fo188e7c
+However, the generated machine code is significantly transformed, reaching the level of manual C-code – there it is simply compared
+that end – start == 5 and then a piece of the initial buffer is compared via memcmp with the string "hello"
+(with -O2 with constants 1819043176 ('hell') and 111 ('o')).
+No creation of a temporary object, no copying of bytes, no destructor, no stack unwinding for exceptions.
+You can verify this at https://godbolt.org/z/9fo188e7c
 
-Казалось бы, ну вот же в С++17 появился `string_view`, пожалуйста, используй его в параметрах своих функций вместо `const std::string&`,
-и будет счастье. Но тут тоже есть нюанс — всё отлично работает, пока нам не нужно передать строку в стороннее C-API: string_view не даёт
-гарантий нуль-терминированности строки, поэтому его data() нельзя передать в стороннее C-API, и потому всё-равно придётся сначала
-скопировать его в `std::string`. А раз нужен `std::string`, то и параметром функции оптимальнее cделать `const std::string&`
-и далее по цепочке, все параметры вновь станут `const std::string&`.
+It would seem, well, `string_view` appeared in C++17, please, use it in the parameters of your functions instead of `const std::string&`,
+and there will be happiness. But there is also a nuance here – everything works fine, as long as we don’t need to pass the string to a third-party C-API: string_view does not give
+guarantees of null-termination of the string, therefore its data() cannot be passed to a third-party C-API, and therefore you will still have to
+copy it to `std::string` first. And since `std::string` is needed, then it is more optimal to make `const std::string&` the parameter of the function
+and further down the chain, all parameters will again become `const std::string&`.
 
-### Конкатенация строк
-Далее, после инициализации строки, самая частая мутабельная операция с ними, скорее всего конкатенация строк, либо в виде просто
-сложения строк, либо добавления строки к строке. И именно она легко может вызывать как неоптимальную производительность при неграмотном
-использовании, так и оверхед по памяти, даже при грамотном использовании.
+### String concatenation
+Next, after initializing a string, the most frequent mutable operation with them is most likely string concatenation, either in the form of simply
+adding strings, or adding a string to a string. And it is she who can easily cause both suboptimal performance with illiterate
+use, and memory overhead, even with competent use.
 
-Рассмотрим простой код ( https://godbolt.org/z/odx7W1Pv7 )
+Consider a simple code ( https://godbolt.org/z/odx7W1Pv7 )
 ```cpp
     #include <string>
     void some_outer_function(const std::string&);
@@ -127,9 +128,9 @@
         some_outer_function(concat);
     }
 ```
-Как видим, и в clang, и в GCC создается несколько временных объектов, в которые последовательно перекладываются символы строк,
-и как результат — мы получаем несколько лишних аллокаций для промежуточных буферов, символы из строк копируются несколько лишних
-раз из промежуточных буферов. В идеале для лучшей производительности такой код нужно переписать так:
+As we can see, both in clang and in GCC, several temporary objects are created, into which the characters of the strings are sequentially shifted,
+and as a result – we get several extra allocations for intermediate buffers, the characters from the strings are copied several extra
+times from intermediate buffers. Ideally, for better performance, this code needs to be rewritten like this:
 ```cpp
     #include <string>
     void some_outer_function(const std::string&);
@@ -145,180 +146,180 @@
     }
 ```
 
-К сожалению, пока ни один компилятор не оптимизирует первый простой код до уровня второго более оптимального кода, а писать
-такой код каждый раз руками довольно неудобно. То есть опять приходится платить за то, чем не пользуешься.
-Да и в этом случае вполне может возникнуть оверхед по памяти — операции добавления строки обычно во всех реализациях увеличивают
-размер буфера строки не меньше, чем в два раза, считая, что скоро к строке могут снова что-нибудь добавить.
-Поэтому если строку не планируется более модифицировать, но время её жизни ещё не подошло к концу (например, это поле
-какого-либо класса), нужно ещё не забыть сделать на ней `shrink_to_fit`.
+Unfortunately, so far no compiler optimizes the first simple code to the level of the second more optimal code, and writing
+such code every time by hand is quite inconvenient. That is, again you have to pay for what you don’t use.
+And in this case, memory overhead may well occur – string addition operations usually increase
+the size of the string buffer in all implementations by at least two times, assuming that something may soon be added to the string again.
+Therefore, if the string is no longer planned to be modified, but its lifetime has not yet come to an end (for example, this is a field
+of some class), you should not forget to do `shrink_to_fit` on it.
 
-Между тем, часто основной сценарий использования строк — это как раз некая подготовка строки путём нескольких модификаций и конкатенаций,
-а затем она где-то хранится, более не меняясь. При этом программист обычно знает, примерно какой размер строк ожидается в этом месте,
-и мог бы выделить буфер для этих промежуточных модификаций прямо на стеке, прибегая к динамической аллокации только при превышении
-размера этого буфера. Однако с текущей реализацией строк это сделать довольно проблематично, либо неудобно.
+Meanwhile, often the main scenario for using strings is just some preparation of the string by several modifications and concatenations,
+and then it is stored somewhere, no longer changing. In this case, the programmer usually knows approximately what size of strings is expected in this place,
+and could allocate a buffer for these intermediate modifications directly on the stack, resorting to dynamic allocation only when exceeding
+the size of this buffer. However, with the current implementation of strings, this is quite problematic, or inconvenient.
 
-Подытожим, что имеем на данный момент:
+Let's summarize what we have at the moment:
 
-- «Из коробки» в С++ для работы со строками сейчас имеется `std::string`.
--  Строки подразумеваются мутабельными, что приводит к обязательному копированию всех символов строки при инициализации и
-   копировании объектов строк.
-- Соответственно, не имеем возможности быстрого копирования строк, даже если не планируем потом менять копию.
-- Конкатенация нескольких строк — задача, могущая выполнятся неоптимально, приводить к оверхеду по памяти, написать оптимальный код сложно.
-- Есть костыль для иммутабельных строк в виде `std::string_view`, однако он не решает вопросы владения строкой, поэтому по сути
-  годится только как тип для передачи параметров в функции, не меняющие строки, с оговоркой, что не может использоваться в функциях,
-  вызывающих C-API, так как не даёт гарантий нуль-терминированности.
-- Ну и к `std::string` есть вопросы, что несмотря на то, что это класс для строк, собственно для работы со строками в нём крайне куцый
-  функционал по сравнению с тем, к чему привыкли в других языках — к примеру нет замены подстрок по шаблону (в других языках это обычно
-  replace, но в С++ эта функция делает совершенно другое), trim, split, join, upper, lower и т. п.
-  Эти функции приходится каждый раз писать самому, и не факт, что у всех это получится оптимально.
+- "Out of the box" in C++ for working with strings there is now `std::string`.
+- Strings are assumed to be mutable, which leads to mandatory copying of all characters of the string during initialization and
+   copying of string objects.
+- Accordingly, we do not have the ability to quickly copy strings, even if we do not plan to change the copy later.
+- Concatenating several strings is a task that can be performed suboptimally, lead to memory overhead, and it is difficult to write optimal code.
+- There is a crutch for immutable strings in the form of `std::string_view`, but it does not solve the issues of string ownership, so in fact
+  it is only suitable as a type for passing parameters to functions that do not change strings, with the caveat that it cannot be used in functions
+  calling C-API, since it does not guarantee null-termination.
+- Well, and there are questions to `std::string` that despite the fact that this is a class for strings, in fact, for working with strings it has an extremely meager
+  functionality compared to what they are used to in other languages – for example, there is no replacement of substrings by a pattern (in other languages this is usually
+  replace, but in C++ this function does something completely different), trim, split, join, upper, lower, etc.
+  These functions have to be written by yourself every time, and it is not a fact that everyone will be able to do this optimally.
 
-Надеюсь, после этого небольшого вступления вам будет более понятно, какие проблемы я решал своей строковой библиотекой и каким образом.
+I hope that after this small introduction you will better understand what problems I solved with my string library and how.
 
-## Библиотека simstr
-Собственно, нельзя сказать, что «я свелосипедил свою реализацию класса для строк».
-Как я ранее показал, сложно, а то и даже невозможно написать один единый строковый класс, хорошо подходящий для всех сценариев
-использования. Именно поэтому у меня не строковый класс, а строковая библиотека, которая содержит несколько разных строковых типов,
-от более простых к более сложным, каждый из которых имеет свои сильные и слабые стороны, и пользователю нужно грамотно подходить к
-вопросу, какой из этих классов в каком случае стоит использовать.
+## Simstr library
+Actually, you can't say that "I reinvented my implementation of the class for strings."
+As I showed earlier, it is difficult, or even impossible, to write one single string class that is well suited for all scenarios
+of use. That is why I don’t have a string class, but a string library, which contains several different string types,
+from simpler to more complex, each of which has its own strengths and weaknesses, and the user needs to competently approach the
+question of which of these classes should be used in which case.
 
-Саму библиотеку я начал потихоньку разрабатывать ещё в 2011-2012 годах, когда у нас уже появилась семантика перемещения, но ещё
-не было std::string_view. Однако сейчас минимальная версия стандарта для работы библиотеки: **C++20** – используются концепты и \<format\>.
+I started developing the library itself little by little back in 2011-2012, when we already had move semantics, but not yet
+there was std::string_view. However, now the minimum standard version for the library to work is: **C++20** – concepts and \<format\> are used.
 
-Сначала я расскажу о классах библиотеки для самих строк, а потом о том, как в ней оптимально решается задача конкатенации строк.
+First, I will talk about the library classes for the strings themselves, and then about how the string concatenation problem is optimally solved in it.
 
-Несколько общих моментов:
-- Все классы для работы со строками шаблонизированы типом символов, но подразумевается, что символы могут быть char, char16_t,
+Several general points:
+- All classes for working with strings are templated by the type of characters, but it is assumed that the characters can be char, char16_t,
   char32_t, wchar_t.
-- Все строки имеют явную длину.
-- Классы владельцы строк хранят их с завершающим нулем в конце, который не входит в длину строки.
-- В самой строке могут содержаться нулевые символы, все алгоритмы работают только через длину строки, не обращая на них внимания.
-- Классы владельцы строк могут инициализироваться строками другого типа символов, выполняя конвертацию между UTF-8, UTF-16, UTF-32.
-- Для смены регистра символов и сравнения строк без учёта регистра используются встроенные таблицы для первой плоскости юникода
-  (до 0xFFFF). Строки считаются представленными в кодировке UTF-8, UTF-16, UTF-32 соответственно.
-  Однако не делается нормализация строк и не обрабатываются ситуации, когда смена регистра символа приводит к изменению их количества.
-  То есть преобразование регистра символов соответствует `std::towupper`, `std::towlower` для unicode локали,
-  только быстрее и может работать с любым видом символов.
-  Если вам нужна строгая работа с юникодом, используйте другие средства, например ICU.
+- All strings have an explicit length.
+- The string owner classes store them with a trailing zero at the end, which is not included in the length of the string.
+- The string itself can contain zero characters, all algorithms work only through the length of the string, without paying attention to them.
+- The string owner classes can be initialized with strings of another character type, performing conversion between UTF-8, UTF-16, UTF-32.
+- Built-in tables for the first plane of Unicode are used to change the case of characters and compare strings case-insensitively
+  (up to 0xFFFF). Strings are considered to be represented in UTF-8, UTF-16, UTF-32 encoding, respectively.
+  However, string normalization is not done and situations where changing the case of a character leads to a change in their number are not handled.
+  That is, the case conversion of characters corresponds to `std::towupper`, `std::towlower` for the unicode locale,
+  only faster and can work with any type of characters.
+  If you need strict work with unicode, use other tools, such as ICU.
 
-### Классы строк.
+### String classes.
 
-#### Первый самый простой класс строки называется, естественно, `simple_str` :)
+#### The first simplest string class is called, of course, `simple_str` :)
 (simstr::simple_str)
 
-Класс просто представляет собой указатель на начало константной строки и её длину, по сути то же самое, что `std::string_view`.
-Предназначен для работы с иммутабельными строками, не владеющий ими, то есть вы должны сами озаботиться тем, что реальная строка,
-представленная через `simple_str` – жива во время его использования.
+The class simply represents a pointer to the beginning of a constant string and its length, in fact the same as `std::string_view`.
+It is intended for working with immutable strings, not owning them, that is, you must take care that the real string,
+represented through `simple_str` – is alive during its use.
 
-Реализует все строковые методы, не модифицирующие строку.
+Implements all string methods that do not modify the string.
 
-Алиасы:
-- `ssa` для simple_str\<char\>
-- `ssu` для simple_str\<char16_t\>
-- `ssw` для simple_str\<wchar_t>
-- `ssuu` для simple_str\<char32_t\>
+Aliases:
+- `ssa` for simple_str\<char\>
+- `ssu` for simple_str\<char16_t\>
+- `ssw` for simple_str\<wchar_t>
+- `ssuu` for simple_str\<char32_t\>
 
-Применяется в основном для передачи строк как параметр функций, не модифицирующих переданную строку, вместо `const std::string&`,
-а также для локальных переменных при работе с частями строк.
+It is used mainly for passing strings as a parameter to functions that do not modify the passed string, instead of `const std::string&`,
+as well as for local variables when working with parts of strings.
 
-#### Второй класс — `simple_str_nt`
+#### The second class is `simple_str_nt`
 (simstr::simple_str_nt)
 
-По устройству и назначению совпадает с `simple_str`, но дает гарантии нуль-терминированности строки.
-То есть если функции надо переданный параметр без изменений передать дальше как C-строку в какое то API, она должна использовать для
-параметра тип `simple_str_nt`.
-Все классы владеющих строк (simstr::sstring, simstr::lstring) могут быть преобразованы в `simple_str_nt`, так как хранят строки с завершающим нулём.
-Это позволяет писать функции с единым типом параметра, принимающим на вход любой тип владеющих строковых объектов.
+In terms of structure and purpose, it coincides with `simple_str`, but guarantees null-termination of the string.
+That is, if the function needs to pass the passed parameter further as a C-string to some API without changes, it should use the
+`simple_str_nt` type for the parameter.
+All classes of owning strings (simstr::sstring, simstr::lstring) can be converted to `simple_str_nt`, since they store strings with a trailing zero.
+This allows you to write functions with a single parameter type that accepts any type of owning string objects as input.
 
-Алиасы:
-- `stra` для simple_str_nt\<char>
-- `stru` для simple_str_nt\<char16_t>
-- `strw` для simple_str_nt\<wchar_t>
-- `struu` для simple_str_nt\<char32_t>
+Aliases:
+- `stra` for simple_str_nt\<char>
+- `stru` for simple_str_nt\<char16_t>
+- `strw` for simple_str_nt\<wchar_t>
+- `struu` for simple_str_nt\<char32_t>
 
-Может инициализироваться строковыми литералами:
+Can be initialized with string literals:
 ```cpp
     stra text = "Text";
 ```
-Длина в этом случае вычисляется сразу при компиляции. Аналогично `simple_str_nt` создается с помощью `operator""_ss`:
+In this case, the length is calculated immediately at compile time. Similarly, `simple_str_nt` is created using `operator""_ss`:
 
 ```cpp
     stringa result = "Count: "_ss + count;
 ```
 
-#### Класс sstring (shared string).
+#### Sstring class (shared string).
 (simstr::sstring)
 
-Класс, умеющий хранить иммутабельную строку.
-То есть ему можно присвоить некую строку только целиком, модифицировать символы строки нельзя.
+A class that can store an immutable string.
+That is, you can only assign a string to it entirely, you cannot modify the characters of the string.
 
-Владеет строкой, управляет памятью для символов строки.
-Хранит со строками завершающий нуль, и может быть источником для `simple_str_nt`, для передачи в C-API.
-Так же, как и `simple_str`, реализует все методы, не модифицирующие строку.
+Owns the string, manages the memory for the characters of the string.
+Stores a trailing zero with the strings, and can be a source for `simple_str_nt`, for passing to C-API.
+Like `simple_str`, it implements all methods that do not modify the string.
 
-Алиасы:
-- `stringa` для sstring\<char>
-- `stringu` для sstring\<char16_t>
-- `stringw` для sstring\<wchar_t>
-- `stringuu` для sstring\<char32_t>
+Aliases:
+- `stringa` for sstring\<char>
+- `stringu` for sstring\<char16_t>
+- `stringw` for sstring\<wchar_t>
+- `stringuu` for sstring\<char32_t>
 
 
-То, что хранимая строка иммутабельна, позволяет применить ряд оптимизаций:
-- Для строк, не подходящих для SSO,  использует общий разделяемый буфер с атомарным счётчиком ссылок.
-  Позволяет быстро копировать строку без необходимости блокировок доступа к содержимому буфера.
-- Нет необходимости хранить размер буфера (capacity) — всё равно мы ничего не дописываем в буфер.
-- Позволяет просто ссылаться на литералы программы, не копируя их символы в какой-либо буфер:
+The fact that the stored string is immutable allows you to apply a number of optimizations:
+- For strings that are not suitable for SSO, it uses a common shared buffer with an atomic reference counter.
+  Allows you to quickly copy a string without the need to block access to the contents of the buffer.
+- There is no need to store the buffer size (capacity) – we are not adding anything to the buffer anyway.
+- Allows you to simply refer to program literals without copying their characters to any buffer:
     ```cpp
-	stringa str = "Hello!";       // Ничего не стоит, не копирует байты строки
-	stringa ltr = stra{"Hello!"}; // А вот тут копирует байты строки в ltr
+	stringa str = "Hello!";       // Costs nothing, does not copy the bytes of the string
+	stringa ltr = stra{"Hello!"}; // But here it copies the bytes of the string to ltr
     ```
 
-Также в классе применяется **SSO** – Small String Optimization.
-Короткие строки помещаются внутри самого объекта во внутренний буфер.
+The class also uses **SSO** – Small String Optimization.
+Short strings are placed inside the object itself in an internal buffer.
 
-Размеры:
+Sizes:
 
-Для 64 бит:
-- `stringa` – класс 24 байта, SSO до 23 символов.
-- `stringu` – класс 32 байта, SSO до 15 символов.
-- `stringuu` – класс 32 байта, SSO до 7 символов.
+For 64 bits:
+- `stringa` – class 24 bytes, SSO up to 23 characters.
+- `stringu` – class 32 bytes, SSO up to 15 characters.
+- `stringuu` – class 32 bytes, SSO up to 7 characters.
 
-Для 32 бит:
-- `stringa` – класс 16 байт, SSO до 15 символов.
-- `stringu` – класс 24 байта, SSO до 11 символов.
-- `stringuu` – класс 24 байта, SSO до 5 символов.
+For 32 bits:
+- `stringa` – class 16 bytes, SSO up to 15 characters.
+- `stringu` – class 24 bytes, SSO up to 11 characters.
+- `stringuu` – class 24 bytes, SSO up to 5 characters.
 
-#### Класс lstring<K, N, forShared> (local string)
+#### Class lstring<K, N, forShared> (local string)
 (simstr::lstring)
 
-Класс, хранящий строку и позволяющий её модифицировать.
-Владеет строкой, управляет памятью для символов строки.
-Хранит со строками завершающий нуль, и может быть источником для `simple_str_nt`, для передачи в C-API.
-Как и все остальные классы, реализует все методы, не модифицирующие строку.
+A class that stores a string and allows it to be modified.
+Owns the string, manages the memory for the characters of the string.
+Stores a trailing zero with the strings, and can be a source for `simple_str_nt`, for passing to C-API.
+Like all other classes, it implements all methods that do not modify the string.
 
-В качестве `N` в параметре шаблона задаётся размер внутреннего буфера для хранения символов.
-Строки длиной до N символов хранятся внутри объекта, а при превышении этого количества — аллоцируется динамический буфер,
-в который сохраняются символы. При копировании объекта все символы также всегда копируются.
+The size of the internal buffer for storing characters is specified as `N` in the template parameter.
+Strings up to N characters long are stored inside the object, and when this number is exceeded, a dynamic buffer is allocated,
+in which the characters are saved. When copying an object, all characters are also always copied.
 
-Если `forShare` == true и символы не помещаются в локальный буфер, то динамический буфер создается с дополнительным местом,
-так чтобы совпадать по структуре с буфером `sstring`. Тогда при перемещении `lstring` в `sstring` – переместится только указатель
-на буфер, без излишнего копирования символов.
+If `forShare` == true and the characters do not fit into the local buffer, then a dynamic buffer is created with additional space,
+so that it matches the structure of the `sstring` buffer. Then, when moving `lstring` to `sstring` – only the pointer will move
+to the buffer, without unnecessary copying of characters.
 
-Этот класс удобен для работы со строками как локальная переменная на стеке.
-Обычно мы предполагаем примерный размер строк, с котороми будем работать, и можем создать локальную строку с буфером на стеке,
-и работать с ней. При этом не опасаясь переполнения буфера, так как в этом случае строка переключится на динамический буфер.
+This class is convenient for working with strings as a local variable on the stack.
+Usually we assume the approximate size of the strings we will be working with, and we can create a local string with a buffer on the stack,
+and work with it. At the same time, without fear of buffer overflow, since in this case the string will switch to a dynamic buffer.
 
-Алиасы:
-- `lstringa<N=16>` для lsrting\<char, N, false>
-- `lstringu<N=16>` для lsrting\<char16_t, N, false>
-- `lstringw<N=16>` для lsrting\<wchar_t, N, false>
-- `lstringuu<N=16>` для lsrting\<char32_t, N, false>
-- `lstringsa<N=16>` для lsrting\<char, N, true>
-- `lstringsu<N=16>` для lsrting\<char16_t, N, true>
-- `lstringsw<N=16>` для lsrting\<wchar_t, N, true>
-- `lstringsuu<N=16>` для lsrting\<char32_t, N, true>
+Aliases:
+- `lstringa<N=16>` for lsrting\<char, N, false>
+- `lstringu<N=16>` for lsrting\<char16_t, N, false>
+- `lstringw<N=16>` for lsrting\<wchar_t, N, false>
+- `lstringuu<N=16>` for lsrting\<char32_t, N, false>
+- `lstringsa<N=16>` for lsrting\<char, N, true>
+- `lstringsu<N=16>` for lsrting\<char16_t, N, true>
+- `lstringsw<N=16>` for lsrting\<wchar_t, N, true>
+- `lstringsuu<N=16>` for lsrting\<char32_t, N, true>
 
 
-Небольшой пример использования с пояснениями:
+A small example of use with explanations:
 ```cpp
     #ifdef _WIN32
     const char path_separator = '\\';
@@ -329,13 +330,13 @@
 
     auto get_current_dir() {
     #ifdef _WIN32
-        /* заполняем буфер wchar_t строки lstringw<MAX_PATH> из GetCurrentDirectoryW с возможным
-        увеличением буфера и конвертируем в ut8 char. В конструкторе используется то, что появилось
-        только в С++23 как `resize_and_overwrite`, а у нас было изначально :) */
+        /* fills the buffer of the wchar_t string lstringw<MAX_PATH> from GetCurrentDirectoryW with possible
+        increasing the buffer and converting to ut8 char. The constructor uses what appeared
+        only in C++23 as `resize_and_overwrite`, and we had it originally :) */
 
         lstringa<MAX_PATH> path{lstringw<MAX_PATH>{ [](auto p, auto s) { return GetCurrentDirectoryW(DWORD(s + 1), p); }}};
 
-        /* Эта одна строчка делает примерно то же самое, что и вот такой код.
+        /* This one line does approximately the same thing as this code.
         typedef struct lstringa_MAX_PATH_t {
             char* data;
             size_t length;
@@ -347,11 +348,11 @@
             wchar_t buffer[MAX_PATH + 1], *buf = buffer;
             DWORD size = sizeof(buffer) / sizeof(wchar_t), lengthOfpath;
             for (;;) {
-                // Возвращает либо количество скопированных символов без учёта завершающего нуля,
-                // либо если буфер мал, то нужный размер буфера вместе с завершающим нулём
+                // Returns either the number of copied characters without taking into account the trailing zero,
+                // or if the buffer is small, then the required buffer size along with the trailing zero
                 DWORD ret = GetCurrentDirectoryW(size, buf);
                 if (ret < size) {
-                    // Влезло в буфер, хотя в Windows пути могут быть и длиннее, чем MAX_PATH, если начинаются с \\?\
+                    // Fits into the buffer, although in Windows paths can be longer than MAX_PATH if they start with \\?\
                     // https://learn.microsoft.com/ru-ru/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
                     lenOfpath = ret;
                     break;
@@ -371,14 +372,14 @@
         lstringa<MAX_PATH> path{ [](char* p, size_t s) {
             const char* res = getcwd(p, s + 1);
             if (res) {
-                return stra{res}.length(); // Возвращаем длину строки
+                return stra{res}.length(); // Returns the length of the string
             }
-            if (errno == ERANGE)  // Не влезло в буфер, попробуем в два раза больше
+            if (errno == ERANGE)  // Did not fit into the buffer, let's try twice as much
                 return s * 2;
             return 0ul;
         }};
     #endif
-        // Удостоверимся, что строка будет заканчиваться разделителем директорий
+        // Let's make sure that the string will end with a directory separator
         if (!path.length() || path.at(-1) != path_separator) {
             path += e_c(1, path_separator);
         }
@@ -388,37 +389,37 @@
     stringa build_full_path(ssa fileName) {
         return get_current_dir() + fileName + ".txt";
         /*
-        Здесь сначала на стеке создастся временный объект lstringa<MAX_PATH> для вызова get_current_dir.
-        Функция get_current_dir заполнит его названием текущего каталога.
-        В 99.9% случаев для этого хватит локального буфера на стеке.
-        После рассчитывается общая длина для результата: длина current_dir + длина fileName + 4.
-        Определяется буфер для строки конечного результата - если длина меньше 24 — строка будет размещена прямо в stringa,
-        иначе аллоцируется буфер для результирующей строки сразу нужного размера.
-        Затем в буфер результирующей строки последовательно копируются символы из current_dir, file_name, ".txt";
-        Ну и благодаря RVO - место для самого результата (stringa) - отводится в вызывающей функции,
-        то есть никакого дополнительного копирования при возврате не будет.
+        Here, a temporary lstringa<MAX_PATH> object will first be created on the stack to call get_current_dir.
+        The get_current_dir function will fill it with the name of the current directory.
+        In 99.9% of cases, the local buffer on the stack will be enough for this.
+        After that, the total length for the result is calculated: the length of current_dir + the length of fileName + 4.
+        The buffer for the string of the final result is determined - if the length is less than 24 - the string will be placed directly in stringa,
+        otherwise a buffer for the resulting string is allocated immediately of the required size.
+        Then the characters from current_dir, file_name, ".txt" are sequentially copied to the buffer of the resulting string;
+        Well, thanks to RVO - the place for the result itself (stringa) - is allocated in the calling function,
+        that is, there will be no additional copying upon return.
 
-        Таким образом, будет максимум всего две аллокации памяти (если current_dir не влезет в MAX_PATH),
-        или одна, если результирующая строка длиннее 23 символов, при этом эта аллокация будет сразу нужного размера.
+        Thus, there will be a maximum of only two memory allocations (if current_dir does not fit into MAX_PATH),
+        or one, if the resulting string is longer than 23 characters, while this allocation will be immediately of the required size.
         */
     }
 ```
 
-В этом примере вы наверняка заметили, как конкатенируются строки и задались вопросом — как же при двух сложениях считалась
-длина всего результата, чтобы выделить необходимое место сразу за один раз, без промежуточных буферов?
+In this example, you probably noticed how strings are concatenated and wondered – how was the
+length of the entire result calculated with two additions in order to allocate the necessary space at once, without intermediate buffers?
 
-Ответ на этот вопрос:
+The answer to this question:
 
-### Строковые выражения
-Дело в том, что в библиотеке нет сложения строковых объектов как такового. Сложение выполняется для «строковых выражений».
+### String Expressions
+The fact is that there is no addition of string objects as such in the library. Addition is performed for "string expressions".
 
-*Строковое выражение* — это любой объект произвольного типа, имеющий функции `length` и `place`.
-Функция `length` – возвращает длину строки, функция `place` – помещает символы строки в переданный ей буфер.
+A *string expression* is any object of arbitrary type that has `length` and `place` functions.
+The `length` function returns the length of the string, and the `place` function places the characters of the string into the buffer passed to it.
 
-Любая владеющая строка (simstr::sstring, simstr::lstring) может инициализироваться строковым выражением — она запрашивает у него длину,
-выделяет место для хранения символов, и передает это место строковому выражению, вызывая его функцию place.
+Any owning string (simstr::sstring, simstr::lstring) can be initialized with a string expression — it requests its length,
+allocates space for storing characters, and passes this space to the string expression, calling its place function.
 
-Для строковых выражений определена шаблонная функция сложения:
+A template addition function is defined for string expressions:
 ```cpp
     template<StrExpr A, StrExprForType<typename A::symb_type> B>
     inline auto operator + (const A& a, const B& b) {
@@ -426,10 +427,10 @@
     }
 ```
 
-`strexprjoin` – шаблонный тип, который сам является строковым выражением.
-В себе он хранит ссылки на два переданных ему строковых выражения.
-При запросе длины он выдает сумму длин двух строковых выражений, а при размещении символов — сначала размещает
-в переданном буфере первое выражение, затем второе.
+`strexprjoin` is a template type that is itself a string expression.
+It stores references to the two string expressions passed to it.
+When the length is requested, it returns the sum of the lengths of the two string expressions, and when placing characters, it first places
+the first expression in the passed buffer, then the second.
 ```cpp
     template<StrExpr A, StrExprForType<typename A::symb_type> B>
     struct strexprjoin {
@@ -441,86 +442,83 @@
         constexpr symb_type* place(symb_type* p) const noexcept { return b.place(a.place(p)); }
     };
 ```
-Таким образом, операция сложения строковых выражений создает объект, также являющийся строковым выражением,
-к которому также может быть применена следующая операция сложения, и который рекурсивно хранит ссылки на слагаемые части,
-каждая из которых знает свой размер и умеет размещать себя в буфере результата. И так далее, к каждому получаемому
-строковому выражению можно снова применить `operator +`, формируя цепочку из нескольких строковых выражений,
-и в итоге "материализовать" последний получившийся объект, который сначала посчитает размер всей общей памяти для
-конечного результата, а затем разместит вложенные подвыражения в один буфер.
+Thus, the addition operation of string expressions creates an object that is also a string expression,
+to which the next addition operation can also be applied, and which recursively stores references to the component parts,
+each of which knows its size and knows how to place itself in the result buffer. And so on, to each resulting
+string expression, you can reapply `operator +`, forming a chain of several string expressions,
+and eventually "materialize" the last resulting object, which first calculates the size of the entire total memory for
+the final result, and then places the nested subexpressions into one buffer.
 
-Все строковые типы библиотеки сами являются строковыми выражениями, то есть могут служить слагаемыми в конкатенациях
-строковых выражений.
+All string types in the library are themselves string expressions, that is, they can serve as terms in concatenations
+of string expressions.
 
-Также `operator+` определён для строковых выражений и строковых литералов, строковых выражений и чисел (числа конвертируются
-в десятичное представление), а также вы можете сами добавить желаемые типы.
+Also, `operator+` is defined for string expressions and string literals, string expressions and numbers (numbers are converted
+to decimal representation), and you can add the desired types yourself.
 
-Пример:
+Example:
 ```cpp
 	stringa text = header + " count=" + count + ", done";
 ```
 
-Существует несколько типов строковых выражений "из коробки", для выполнения различных операций со строками:
+There are several types of string expressions "out of the box" for performing various operations on strings:
 
-#### expr_spaces<ТипСимвола, КоличествоСимволов, Символ = ' '>{}
-Выдает строку длиной КоличествоСимволов,  заполненную заданным символом. Количество символов и символ - константы времени
-компиляции. Для некоторых случаев есть сокращенная запись:
-            
-    e_spca(КоличествоСимволов) - строка char пробелов
-    e_spcw(КоличествоСимволов) - строка w_char пробелов
+#### expr_spaces<CharacterType, NumberOfCharacters, Symbol = ' '>{}
+Returns a string of length NumberOfCharacters, filled with the specified character. The number of characters and the symbol are compile-time constants. For some cases, there is a shorthand notation:
 
-#### expr_pad<ТипСимвола>{КоличествоСимволов, Символ = ' '}
-Выдает строку длиной КоличествоСимволов, заполненную заданным символом.
-Количество символов и символ могут задаваться в рантайме. Сокращенная запись:
+    e_spca(NumberOfCharacters) - string of char spaces
+    e_spcw(NumberOfCharacters) - string of w_char spaces
 
-    e_c(КоличествоСимволов, Символ)
+#### expr_pad<CharacterType>{NumberOfCharacters, Symbol = ' '}
+Returns a string of length NumberOfCharacters, filled with the specified character.
+The number of characters and the symbol can be specified at runtime. Shorthand notation:
+
+    e_c(NumberOfCharacters, Symbol)
 
 #### e_choice(bool Condition, StrExpr1, StrExpr2)
-Если Condition == true, результат будет равен StrExpr1, иначе StrExpr2.
+If Condition == true, the result will be StrExpr1, otherwise StrExpr2.
 
 #### e_if(bool Condition, StrExpr1)
-Если Condition == true, результат будет равен StrExpr1, иначе пустая строка.
+If Condition == true, the result will be StrExpr1, otherwise an empty string.
 
-#### expr_num<ТипСимвола>(ЦелоеЧисло)
-Конвертирует число в десятичное представление. Редко используется, так как для строковых выражений и чисел
-переопределен оператор "+", и число можно просто написать как `text + number`;
+#### expr_num<CharacterType>(Integer)
+Converts a number to decimal representation. Rarely used, since the "+" operator is overloaded for string expressions and numbers, and the number can simply be written as `text + number`;
 
-#### expr_real<ТипСимвола>(ВещественноеЧисло)
-конвертирует число в десятичное представление. Редко используется, так как для строковых выражений и чисел
-переопределен оператор "+", и число можно просто написать как `text + number`;
+#### expr_real<CharacterType>(RealNumber)
+converts a number to decimal representation. Rarely used, since the "+" operator is overloaded for string expressions and numbers, and the number can simply be written as `text + number`;
 
-#### e_join<bool ПослеПоследнего = false, bool ТолькоНеПустые = false>(контейнер, "Разделитель")
-Конкатенирует все строки в контейнере, используя разделитель. Если ПослеПоследнего == true,
-то разделитель добавляется и после последнего элемента контейнера, иначе только между элементами.
-Если ТолькоНеПустые == true, то пустые строки пропускаются без добавления разделителя.
+#### e_join<bool AfterLast = false, bool OnlyNotEmpty = false>(container, "Separator")
+Concatenates all strings in the container, using a separator. If AfterLast == true,
+then the separator is added after the last element of the container as well, otherwise only between elements.
+If OnlyNotEmpty == true, then empty strings are skipped without adding a separator.
 
-#### e_repl(ИсходнаяСтрока, "Искать", "Заменять")
-Заменяет в исходной строке вхождения "Искать" на "Заменять".
-Шаблоны поиска и замены - строковые литералы времени компиляции.
+#### e_repl(OriginalString, "Search", "Replace")
+Replaces occurrences of "Search" in the original string with "Replace".
+Search and replace patterns are compile-time string literals.
 
-#### expr_replaced<ТипСимвола>{ИсходнаяСтрока, Искать, Заменять}
-Заменяет в исходной строке вхождения Искать на Заменять.
-Шаблоны поиска и замены - могут быть любыми строковыми объектами в рантайме.
+#### expr_replaced<CharacterType>{OriginalString, Search, Replace}
+Replaces occurrences of Search in the original string with Replace.
+Search and replace patterns can be any string objects at runtime.
 
-#### empty_expr<ТипСимвола>
-Выдает пустую строку. Сокращённая запись — eea, eeu, eew, eeuu. Применяется если формирование строки начинается с числа и строкового литерала:
+#### empty_expr<CharacterType>
+Returns an empty string. Abbreviated notation — eea, eeu, eew, eeuu. Used if the string formation starts with a number and a string literal:
 ```cpp
 	str = eea + count + " times.";
 ```
-так как оператор сложения определён только для сложения строкового выражения и числа.
-Также замечу, что существует `operator""_ss`, который превращает строковый литерал в объект `simple_str_nt`, который уже является строковым выражением:
+since the addition operator is only defined for adding a string expression and a number.
+I also note that there is `operator""_ss`, which turns a string literal into a `simple_str_nt` object, which is already a string expression:
 ```cpp
 	str = "Count = "_ss + count;
     ...
     str = count + " times."_ss;
 ```
 
-#### Свои строковые выражения
-Вы можете сами создавать свои типы строковых выражений для оптимального формирования строк в нужных вам целях и алгоритмах.
-Для этого просто создайте тип с методами `length`, `place` и `typename symb_type`.
-Примеры создания и использования из реальных проектов:
+#### Your own string expressions
+You can create your own string expression types to optimally form strings for your specific purposes and algorithms.
+To do this, simply create a type with `length`, `place` and `typename symb_type` methods.
+Examples of creation and use from real projects:
 
 ```cpp
-/* Сформировать строку в JSON формате, в 16 битных символах */
+/* Form a string in JSON format, in 16-bit characters */
 struct expr_json_str {
     using symb_type = u16s;
     ssu text;
@@ -607,7 +605,7 @@ inline u16s* expr_json_str::place(u16s* ptr) const noexcept {
 }
 ```
 
-Использование:
+Usage:
 
 ```cpp
 ........
@@ -617,9 +615,9 @@ vtText << uR"({"#type":"jxs:string","#value":")" + expr_json_str(name) + u"\"}";
 .......
 ```
 
-Ещё пример
+Another example
 ```cpp
-/* Нужно сформировать бинарные данные в BASE64 формате, в 16 битных символах */
+/* Need to form binary data in BASE64 format, in 16-bit characters */
 struct expr_str_base64 {
     using symb_type = u16s;
     ssa text;
@@ -660,7 +658,7 @@ inline u16s* expr_str_base64::place(u16s* ptr) const noexcept {
 }
 ```
 
-Использование:
+Usage:
 ```cpp
 ......
 chunked_string_builder<u16s> vtText;
@@ -669,10 +667,10 @@ vtText << u"{\"#\",87126200-3e98-44e0-b931-ccb1d7edc497,{1,{#base64:" + expr_str
 ......
 ```
 
-И ещё
+And more
 
 ```cpp
-/* Нужно преобразовать tm в строку даты/времени в 16-битных символах */
+/* Need to convert tm to a date/time string in 16-bit characters */
 struct expr_str_tm {
     using symb_type = u16s;
     const tm& t;
@@ -685,11 +683,11 @@ struct expr_str_tm {
 
 inline u16s* expr_str_tm::place(u16s* ptr) const noexcept {
     if constexpr (sizeof(wchar_t) == 2) {
-        // Под Windows можно сразу форматнуть строку в нужный буфер
+        // Under Windows, you can immediately format the string into the desired buffer
         std::swprintf((wchar_t*)ptr, 20, L"%04i-%02i-%02i %02i:%02i:%02i", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
             t.tm_hour, t.tm_min, t.tm_sec);
     } else {
-        // Сначала форматнём в промежуточный буфер, потом скопируем в результат
+        // First, format into an intermediate buffer, then copy to the result
         char buf[20];
         std::snprintf(buf, 20, "%04i-%02i-%02i %02i:%02i:%02i", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour,
             t.tm_min, t.tm_sec);
@@ -701,7 +699,7 @@ inline u16s* expr_str_tm::place(u16s* ptr) const noexcept {
 }
 ```
 
-Использование
+Usage
 
 ```cpp
 ......
@@ -717,31 +715,31 @@ bool makeBind(SqliteQuery& query, tVariant& param, unsigned paramNum) {
 ......
 ```
 
-ВНИМАНИЕ: обычно поля в объектах строковых выражений являются ссылками на исходные данные.
-И ссылки эти почти всегда ведут на локальные или временные объекты. Поэтому крайне рискованно возвращать строковые выражения
-из функций — надо сто раз проверить, что в них не попали ссылки на локальные или временные переменные.
-Возьмите за правило — можно легко передавать строковые выражения в функции, и опасно возвращать их из функций.
-Лучше при возврате материализовать строковое выражение в строковый объект, содержащий итоговую строку.
-При желании тип возвращаемой строки можно задать шаблонным параметром.
-	
+ATTENTION: usually the fields in string expression objects are references to the source data.
+And these references almost always lead to local or temporary objects. Therefore, it is extremely risky to return string expressions
+from functions — you need to check a hundred times that they do not contain references to local or temporary variables.
+Make it a rule — you can easily pass string expressions to functions, and it is dangerous to return them from functions.
+It is better to materialize a string expression into a string object containing the final string when returning.
+If desired, the type of the returned string can be specified by a template parameter.
 
-### Класс chunked_string_builder
 
-Предназначен для конкатенации множества строк.
-Когда вам нужно последовательно формировать длинный текст из множества небольших кусочков (например, формируете html ответ
-и т. п.) - последовательно складывать всё в один строковый объект крайне неоптимально — будет много переаллокаций и
-перекопирования уже накопленных символов. В этом случае удобно использовать chunked_string_builder — всё, что он умеет,
-это прибавлять строку к накопленным символам. Однако делает он это не в единый последовательный буфер памяти, а в отдельные
-буфера, не меньше чем заданное выравнивание. При заполнении очередного буфера он просто создает ещё один буфер и продолжает
-складывать данные в него.
+### Class chunked_string_builder
 
-То есть допустим вы задали выравнивание 1024.
-Добавили несколько строк, заполнили буфер  на 100 символов. И добавляете строку длинной 3000 символов.
-При этом 924 символа скопируются в первый буфер, заполнив его до конца.
-Для оставшихся 2076 создастся буфер размером 3072 символа, и они скопируются в него, в нём останется место для 996 символов.
-Так последовательно каждый буфер заполняется до конца, и имеет размер кратный заданному выравниванию.
-Таким образом избегаются переаллокации и перекопирование обработанных символов.
+Designed for concatenating multiple strings.
+When you need to sequentially form a long text from many small pieces (for example, you are forming an html response
+etc.) - sequentially adding everything to one string object is extremely suboptimal - there will be many reallocations and
+copying of already accumulated characters. In this case, it is convenient to use chunked_string_builder - all it can do is
+add a string to the accumulated characters. However, it does this not in a single sequential memory buffer, but in separate
+buffers, no less than the specified alignment. When filling the next buffer, it simply creates another buffer and continues
+to add data to it.
 
-После окончательного заполнения вы можете работать с накопленными данными — либо слить все буфера в одну последовательную
-строку (размер для буфера которой вы теперь уже знаете), либо перебирать их по отдельности, например, посылая эти буфера
-в сеть. Либо последовательно копируя данные в буфер заданного размера.
+That is, suppose you set the alignment to 1024.
+Added several strings, filled the buffer with 100 characters. And you add a string of 3000 characters long.
+In this case, 924 characters will be copied to the first buffer, filling it to the end.
+For the remaining 2076, a buffer of 3072 characters will be created, and they will be copied into it, leaving space for 996 characters in it.
+Thus, each buffer is sequentially filled to the end and has a size that is a multiple of the specified alignment.
+This avoids reallocations and copying of processed characters.
+
+After the final filling, you can work with the accumulated data - either merge all the buffers into one sequential
+string (the size for the buffer of which you now already know), or iterate over them separately, for example, sending these buffers
+to the network. Or sequentially copying data into a buffer of a given size.

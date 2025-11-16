@@ -12,7 +12,8 @@
 #include <utility>
 
 /*!
- * @brief Пространство имён для объектов библиотеки
+ * @ru @brief Пространство имён для объектов библиотеки
+ * @en @brief Library namespace
  */
 namespace simstr {
 
@@ -145,15 +146,25 @@ public:
 };
 
 /*!
- * @brief Базовая концепция строкового объекта.
- * @tparam A - проверяемый тип
- * @tparam K - тип символов
- * @details В библиотеке для разных целей могут использоваться различные типы объектов строк.
+ * @ru @brief Базовая концепция строкового объекта.
+ * @ru @tparam A - проверяемый тип
+ * @ru @tparam K - тип символов
+ * @ru @details В библиотеке для разных целей могут использоваться различные типы объектов строк.
  *  Мы считаем строковым объектом любой объект, поддерживающий методы:
  *  - `is_empty()`: возвращает, пуста ли строка.
  *  - `length()`: возвращает длину строки без нулевого терминатора.
  *  - `symbols()`: возвращает указатель на строку символов.
  *  - `typename symb_type`: задаёт тип символов строки
+ *
+ * @en @brief Base concept of string object.
+ * @en @tparam  A - tested type
+ * @en @tparam K - type of symbols  @ru K - тип символов
+ * @en @details The library can use different types of string objects for different purposes. 
+ * We consider a string object to be any object that supports methods: 
+ * - `is_empty()`: Returns whether the string is empty. 
+ * - `length()`: returns the length of a string without a null terminator. 
+ * - `symbols()`: returns a pointer to a string of symbols. 
+ * - `typename symb_type`: sets the character type of the string
  */
 template<typename A, typename K>
 concept StrType = requires(const A& a) {
