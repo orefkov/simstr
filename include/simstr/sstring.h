@@ -1406,7 +1406,7 @@ public:
      * @tparam Base - the base of the number, from -1 to 36, except 1.
      *         - If 0: then tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10.
      *         - If -1: then tries to determine the base by prefixes:
-     *         - 0 or 0[oO]: 8
+     *            - 0 or 0[oO]: 8
      *            - 0[bB]: 2
      *            - 0[xX]: 16
      *         - in other cases 10.
@@ -1439,7 +1439,7 @@ public:
      * @tparam Base - the base of the number, from -1 to 36, except 1.
      *        - If 0: then tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10
      *        - If -1: then tries to determine the base by prefixes:
-     *        - 0 or 0[oO]: 8
+     *            - 0 or 0[oO]: 8
      *            - 0[bB]: 2
      *            - 0[xX]: 16
      *        - in other cases 10.
@@ -4611,7 +4611,8 @@ public:
     using allocator_t = Allocator;
 
     enum : size_t {
-        LocalCapacity = N | (sizeof(void*) / sizeof(K) - 1),        //!< Размер внутреннего буфера в символах, N выравнивается до `sizeof(void*) / sizeof(K)`
+        /// @ru Размер внутреннего буфера в символах @en Size of internal buffer
+        LocalCapacity = N | (sizeof(void*) / sizeof(K) - 1),
     };
 
 protected:
