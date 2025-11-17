@@ -1,12 +1,16 @@
 # Объекты simstr в отладчиках
-[On English|По-английски](readme.md)
+[On English | По-английски](readme.md)
 
 Для более удобного отображения объектов simstr в отладчиках msvc и gdb подготовлено два файла:
 simstr.natvis - для использования в отладчике MSVC, и simstr_pretty_print.py для работы с gdb.
 
 # Объекты simstr в отладчиках
+
+### Visual Studio
 Если вы работаете в MS Visual Studio simstr.natvis автоматически добавляется в pdb файл,
 и обеспечивает удобный просмотр строковых объектов simstr везде, где используется эта библиотека.
+
+![MSVC](msvc.png)
 
 # Объекты simstr в Visual Studio Code
 ## При работе в gdb
@@ -56,6 +60,8 @@ simstr.natvis - для использования в отладчике MSVC, и
         ]
     }
 ```
+### Результат
+![VSC+gdb](vsc_gdb.png)
 
 Если же в Visual Studio Code вы работаете с отладчиком MSVC, то есть в launch.json `"type": "cppvsdbg"` то настройка другая:
 ```

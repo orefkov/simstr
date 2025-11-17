@@ -76,6 +76,10 @@ it is downloaded automatically).
 The work was tested under Windows on MSVC-19 and Clang-19, under Linux - on GCC-13 and Clang-21.
 The work in WASM was also tested, built in Emscripten 4.0.6, Clang-21.
 
+## Convenient debugging
+Along with the library, two files are supplied that allow viewing simstr string objects in debuggers
+more convenient.\
+It is described in more detail in [here](for_debug/readme.md).
 
 ## Benchmarks
 Benchmarks are performed using the [Google benchmark](https://github.com/google/benchmark) framework.

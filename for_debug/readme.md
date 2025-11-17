@@ -1,12 +1,15 @@
 # simstr Objects in Debuggers
-[On Russian|По-русски](readme_ru.md)
+[On Russian | По-русски](readme_ru.md)
 
 Two files have been prepared for more convenient display of simstr objects in msvc and gdb debuggers:
-simstr.natvis - for use in the MSVC debugger, and simstr_pretty_print.py for working with gdb.
+`simstr.natvis` - for use in the MSVC debugger, and `simstr_pretty_print.py` for working with gdb.
 
 # simstr Objects in Debuggers
+### Visual Studio
 If you are working in MS Visual Studio, simstr.natvis is automatically added to the pdb file,
 and provides convenient viewing of simstr string objects wherever this library is used.
+
+![MSVC](msvc.png)
 
 # simstr Objects in Visual Studio Code
 ## When working in gdb
@@ -55,6 +58,9 @@ In this case, the settings for connecting the script are written in `.vscode/set
         ]
     }
 ```
+
+### Result
+![VSC+gdb](vsc_gdb.png)
 
 If you are working with the MSVC debugger in Visual Studio Code, that is, in launch.json `"type": "cppvsdbg"`, then the setting is different:
 ```
