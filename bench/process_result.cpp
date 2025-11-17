@@ -94,7 +94,7 @@ results_vector get_results_infos() {
             ssa fileName = f;
             // В начале имени файла может идти число и дефис, для сортировки, уберём их
             // At the beginning of the file name there can be a number and a hyphen, for sorting, remove them
-            if (auto delimeter = fileName.find('-'); delimeter != str::npos && delimeter > 0) {
+            if (auto delimeter = fileName.find('-'); delimeter + 1 > 1) {
                 if (std::get<1>(fileName(0, delimeter).to_int<unsigned, false, 10, false, false>()) == IntConvertResult::Success) {
                     fileName.remove_prefix(delimeter + 1);
                 }
@@ -107,7 +107,6 @@ results_vector get_results_infos() {
 
 void write_header(out_t& out) {
     out += get_file_content("header.txt");
-
 }
 
 void write_platforms_cpu(out_t& out, const results_vector& results) {
@@ -242,7 +241,7 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
                     std::cerr << "Not found end of " << prevLine;
                     throw std::runtime_error{"Not found end of func"};
                 }
-                lstringa<2048> text = expr_replaced<u8s>{sourceText.from_to(beginLine, end + indent.length() + 1), indent, "\n"};
+                lstringa<2048> text{sourceText.from_to(beginLine, end + indent.length() + 1), indent, "\n"};
                 func_it->second = repl_html_symbols(text(1));
             } else {
                 end = sourceText.find("\n}\n", start);

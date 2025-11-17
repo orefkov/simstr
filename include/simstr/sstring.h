@@ -1,13 +1,20 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.0
+ * ver. 1.2.4
  * Классы для работы со строками
+* (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
+* ver. 1.2.4
+* Classes for working with strings
  */
 
-/**
- * @mainpage Библиотека simstr
- * @include{doc} "../readme.md"
+/*!
+ * @ru @mainpage Библиотека simstr.
+ * @include{doc} "../readme_ru.md"
  * @page overview Обзор
+ * @includedoc{doc} "overview_ru.md"
+ * @en @mainpage Simstr lib.
+ * @include{doc} "../readme.md"
+ * @page overview Overview
  * @includedoc{doc} "overview.md"
  */
 #pragma once
@@ -92,6 +99,13 @@ struct unicode_traits<u8s> {
     // Если получающеюся строка не влезает в отведенный буфер, указатели устанавливаются на последние
     // обработанные символы, для повторного возобновления работы,
     // а для оставшихся символов считается нужный размер буфера.
+    // These utf-8 operations can change the length of the string
+    // Therefore their specializations are different
+    // In addition to the text and address of the buffer for writing, the buffer size is passed to the function
+    // Returns the length of the resulting string.
+    // If the resulting string does not fit into the allocated buffer, pointers are set to the last
+    // processed characters to resume work again,
+    // and for the remaining characters the required buffer size is calculated.
     static SIMSTR_API size_t upper(const u8s*& src, size_t lenStr, u8s*& dest, size_t lenBuf);
     static SIMSTR_API size_t lower(const u8s*& src, size_t len, u8s*& dest, size_t lenBuf);
 
@@ -233,7 +247,8 @@ struct need_sign<K, false, T> {
 };
 
 /*!
- * @brief Перечисление с возможными результатами преобразования строки в целое число
+ * @ru @brief Перечисление с возможными результатами преобразования строки в целое число
+ * @en @brief Enumeration with possible results of converting a string to an integer
  */
 enum class IntConvertResult : char {
     Success,            //!< Успешно
@@ -344,6 +359,7 @@ private:
             }
             if (!maxDigits) {
                 // Прошли все цифры, дальше надо с проверкой на overflow
+                // All numbers have passed, then we need to check for overflow
                 for (;;) {
                     const unsigned char digit = toDigit<K, Base>(*current);
                     if (digit >= Base) {
@@ -393,6 +409,8 @@ private:
 public:
     // Если Base = 0 - то пытается определить основание по префиксу 0[xX] как 16, 0 как 8, иначе 10
     // Если Base = -1 - то пытается определить основание по префиксу 0[xX] как 16, 0[bB] как 2, 0[oO] или 0 как 8, иначе 10
+    // If Base = 0, then it tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10
+    // If Base = -1 - then tries to determine the base by the prefix 0[xX] as 16, 0[bB] as 2, 0[oO] or 0 as 8, otherwise 10
     template<typename K, ToIntNumber T, unsigned Base = 0, bool CheckOverflow = true, bool SkipWs = true, bool AllowSign = true>
         requires(Base == -1 || (Base < 37 && Base != 1))
     static std::tuple<T, IntConvertResult, size_t> to_integer(const K* start, size_t len) noexcept {
@@ -406,6 +424,7 @@ public:
             if constexpr (std::is_signed_v<T>) {
                 if constexpr (AllowSign) {
                     // Может быть число, +число или -число
+                    // Can be a number, +number or -number
                     if (*ptr == '+') {
                         ptr++;
                     } else if (*ptr == '-') {
@@ -414,6 +433,7 @@ public:
                     }
                 } else {
                     // Может быть число или -число
+                    // Can be a number or -number
                     if (*ptr == '-') {
                         negate = true;
                         ptr++;
@@ -421,6 +441,7 @@ public:
                 }
             } else if constexpr (AllowSign) {
                 // Может быть число или +число
+                // Can be a number or +number
                 if (*ptr == '+') {
                     ptr++;
                 }
@@ -459,28 +480,44 @@ class Splitter;
 
 template<typename K, typename Impl, bool Mutable> class buffer_pointers;
 
+/*!
+ * @ru @brief Базовый класс для строкового буфера.
+ * @tparam K - тип символов.
+ * @tparam Impl - класс реализации.
+ * @en @brief Base class for a string buffer.
+ * @tparam K - character type.
+ * @tparam Impl - implementation class.
+ */
 template<typename K, typename Impl>
 class buffer_pointers<K, Impl, false> {
     const Impl& d() const { return *static_cast<const Impl*>(this); }
 public:
     /*!
-     * @brief Получить указатель на константный буфер символов строки
+     * @ru @brief Получить указатель на константный буфер символов строки
      * @return const K* - указатель на константный буфер символов строки
+     * @en @brief Get a pointer to a constant character buffer of a string
+     * @return const K* - pointer to a constant string character buffer
      */
     const K* c_str() const { return d().symbols(); }
     /*!
-     * @brief Получить указатель на константный буфер символов строки
-     * @return const K* - указатель на константный буфер символов строки
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
      */
     const K* data() const  { return d().symbols(); }
     /*!
-     * @brief Получить указатель на константный буфер символов строки
-     * @return const K* - указатель на константный буфер символов строки
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
      */
     const K* begin() const { return d().symbols(); }
     /*!
-     * @brief Указатель на константный символ после после последнего символа строки
-     * @return const K* - конец строки
+     * @ru @brief  Указатель на константный символ после после последнего символа строки.
+     * @return const K* - конец строки.
+     * @en @brief  Pointer to a constant character after the last character of the string.
+     * @return const K* - end of line.
      */
     const K* end() const   { return d().symbols() + d().length(); }
 };
@@ -491,49 +528,72 @@ class buffer_pointers<K, Impl, true> : public buffer_pointers<K, Impl, false> {
     using base = buffer_pointers<K, Impl, false>;
 public:
     /*!
-     * @brief Получить указатель на константный буфер символов строки
-     * @return const K* - указатель на константный буфер символов строки
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
      */
     const K* data() const  { return base::data(); }
     /*!
-     * @brief Получить указатель на константный буфер символов строки
-     * @return const K* - указатель на константный буфер символов строки
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
      */
     const K* begin() const { return base::begin(); }
     /*!
-     * @brief Указатель на константный символ после после последнего символа строки
-     * @return const K* - конец строки
+     * @ru @brief  Указатель на константный символ после после последнего символа строки.
+     * @return const K* - конец строки.
+     * @en @brief  Pointer to a constant character after the last character of the string.
+     * @return const K* - end of line.
      */
     const K* end() const   { return base::end(); }
     /*!
-     * @brief Получить указатель на буфер символов строки
-     * @return K* - указатель на буфер символов строки
+     * @ru @brief  Получить указатель на буфер символов строки.
+     * @return K* - указатель на буфер символов строки.
+     * @en @brief  Get a pointer to the string's character buffer.
+     * @return K* - pointer to a string character buffer.
      */
     K* data()  { return d().str(); }
     /*!
-     * @brief Получить указатель на буфер символов строки
-     * @return K* - указатель на буфер символов строки
+     * @ru @brief  Получить указатель на буфер символов строки.
+     * @return K* - указатель на буфер символов строки.
+     * @en @brief  Get a pointer to the string's character buffer.
+     * @return K* - pointer to a string character buffer.
      */
     K* begin() { return d().str(); }
     /*!
-     * @brief Указатель на символ после после последнего символа строки
-     * @return K* - конец строки
+     * @ru @brief  Указатель на символ после после последнего символа строки.
+     * @return K* - конец строки.
+     * @en @brief  Pointer to the character after the last character of the string.
+     * @return K* - end of line.
      */
     K* end()   { return d().str() + d().length(); }
 };
 
 /*!
- * @brief Класс с базовыми константными строковыми алгоритмами.
+ * @ru @brief Класс с базовыми константными строковыми алгоритмами.
  * @details Является базой для классов, могущих выполнять константные операции со строками.
  * Ничего не знает о хранении строк, ни сам, ни у класса наследника, то есть работает
  * только с указателем на строку и её длиной.
  * Для работы класс-наследник должен реализовать методы:
- *   size_t length() const noexcept     - возвращает длину строки
- *   const K* symbols() const noexcept  - возвращает указатель на начало строки
- *   bool is_empty() const noexcept    - проверка, не пустая ли строка
- * @tparam K       - тип символов
- * @tparam StrRef  - тип хранилища куска строки
- * @tparam Impl    - конечный класс наследник
+ *   - size_t length() const noexcept     - возвращает длину строки.
+ *   - const K* symbols() const noexcept  - возвращает указатель на начало строки.
+ *   - bool is_empty() const noexcept     - проверка, не пустая ли строка.
+ * @tparam K       - тип символов.
+ * @tparam StrRef  - тип хранилища куска строки.
+ * @tparam Impl    - конечный класс наследник.
+ * @en @brief A class with basic constant string algorithms.
+ * @details Is the base for classes that can perform constant operations on strings.
+ * Doesn’t know anything about storing strings, neither itself nor the descendant class, that is, it works
+ * only with a pointer to a string and its length.
+ * To work, the descendant class must implement the following methods:
+ *   - size_t length() const noexcept - returns the length of the string.
+ *   - const K* symbols() const noexcept - returns a pointer to the beginning of the line.
+ *   - bool is_empty() const noexcept - checks whether the string is empty.
+ * @tparam K - character type.
+ * @tparam StrRef - storage type for the string chunk.
+ * @tparam Impl - the final class is the successor.
  */
 template<typename K, typename StrRef, typename Impl, bool Mutable>
 class str_algs : public buffer_pointers<K, Impl, Mutable> {
@@ -558,15 +618,19 @@ public:
     using uns_type = std::make_unsigned_t<K>;
     using my_type = Impl;
     using base = str_algs<K, StrRef, Impl, Mutable>;
-    // Пустой конструктор
     str_algs() = default;
 
     /*!
-     * @brief Копировать строку в указанный буфер.
+     * @ru @brief Копировать строку в указанный буфер.
      * @details Метод предполагает, что размер выделенного буфера достаточен для всей строки, т.е.
      * предварительно была запрошена `length()`. Не добавляет `\0`.
-     * @param ptr - указатель на буфер
-     * @return указатель на символ после конца размещённой в буфере строки
+     * @param ptr - указатель на буфер.
+     * @return указатель на символ после конца размещённой в буфере строки.
+     * @en @brief Copy the string to the specified buffer.
+     * @details The method assumes that the size of the allocated buffer is sufficient for the entire line, i.e.
+     * `length()` was previously requested. Does not add `\0`.
+     * @param ptr - pointer to the buffer.
+     * @return pointer to the character after the end of the symbols placed in the buffer.
      */
     constexpr K* place(K* ptr) const noexcept {
         size_t myLen = _len();
@@ -577,10 +641,14 @@ public:
         return ptr;
     }
     /*!
-     * @brief Копировать строку в указанный буфер.
+     * @ru @brief Копировать строку в указанный буфер.
      * @details Метод добавляет `\0` после скопированных символов. Не выходит за границы буфера.
      * @param buffer - указатель на буфер
      * @param bufSize - размер буфера в символах.
+     * @en @brief Copy the string to the specified buffer.
+     * @details The method adds `\0` after the copied characters. Does not exceed buffer boundaries.
+     * @param buffer - pointer to buffer
+     * @param bufSize - buffer size in characters.
      */
     void copy_to(K* buffer, size_t bufSize) {
         size_t tlen = std::min(_len(), bufSize - 1);
@@ -589,48 +657,65 @@ public:
         buffer[tlen] = 0;
     }
     /*!
-     * @brief Размер строки в символах.
+     * @ru @brief Размер строки в символах.
      * @return size_t 
+     * @en @brief The size of the string in characters.
+     * @return size_t
      */
     size_t size() const {
         return _len();
     }
 
     /*!
-     * @brief Преобразовать себя в "кусок строки", включающий всю строку
-     * @return str_piece 
+     * @ru @brief Преобразовать себя в "кусок строки", включающий всю строку.
+     * @return str_piece.
+     * @en @brief Convert itself to a "string chunk" that includes the entire string.
+     * @return str_piece.
      */
     constexpr operator str_piece() const noexcept {
         return str_piece{_str(), _len()};
     }
     /*!
-     * @brief Преобразовать себя в "кусок строки", включающий всю строку
-     * @return str_piece 
+     * @ru @brief Преобразовать себя в "кусок строки", включающий всю строку.
+     * @return str_piece.
+     * @en @brief Convert itself to a "string chunk" that includes the entire string.
+     * @return str_piece.
      */
     str_piece to_str() const noexcept {
         return {_str(), _len()};
     }
     /*!
-     * @brief Конвертировать в std::string_view
-     * @return std::string_view
+     * @ru @brief Конвертировать в std::string_view.
+     * @return std::string_view.
+     * @en @brief Convert to std::string_view.
+     * @return std::string_view.
      */
     std::string_view to_sv() const noexcept {
         return {_str(), _len()};
     }
     /*!
-     * @brief Конвертировать в std::string
-     * @return std::string
+     * @ru @brief Конвертировать в std::string.
+     * @return std::string.
+     * @en @brief Convert to std::string.
+     * @return std::string.
      */
     std::string to_string() const noexcept {
         return {_str(), _len()};
     }
     /*!
-     * @brief Получить часть строки как "simple_str"
+     * @ru @brief Получить часть строки как "simple_str".
      * @param from - количество символов от начала строки.
      * @param len - количество символов в получаемом "куске".
      * @return Подстроку, simple_str.
      * @details  Если `from` меньше нуля, то отсчитывается `-from` символов от конца строки в сторону начала.
      *           Если `len` меньше или равно нулю, то отсчитать `-len` символов от конца строки
+     * @en @brief Get part of a string as "simple_str".
+     * @param from - number of characters from the beginning of the line.
+     * @param len - the number of characters in the resulting "chunk".
+     * @return Substring, simple_str.
+     * @details If `from` is less than zero, then `-from` characters are counted from the end of the line towards the beginning.
+     * If `len` is less than or equal to zero, then count `-len` characters from the end of the line
+     * @~
      *  ```cpp
      *      "0123456789"_ss(5, 2) == "56";
      *      "0123456789"_ss(5) == "56789";
@@ -650,10 +735,14 @@ public:
         return str_piece{_str() + idxStart, idxEnd - idxStart};
     }
     /*!
-     * @brief Получить часть строки как "кусок строки".
+     * @ru @brief Получить часть строки как "кусок строки".
      * @param from - количество символов от начала строки. При превышении размера строки вернёт пустую строку.
      * @param len - количество символов в получаемом "куске". При выходе за пределы строки вернёт всё до конца строки.
      * @return Подстроку, simple_str.
+     * @en @brief Get part of a string as "string chunk".
+     * @param from - number of characters from the beginning of the line. If the string size is exceeded, it will return an empty string.
+     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the line.
+     * @return Substring, simple_str.
      */
     constexpr str_piece mid(size_t from, size_t len = -1) const noexcept {
         size_t myLen = _len(), idxStart = from, idxEnd = from > std::numeric_limits<size_t>::max() - len ? myLen : from + len;
@@ -664,49 +753,67 @@ public:
         return str_piece{_str() + idxStart, idxEnd - idxStart};
     }
     /*!
-     * @brief Получить подстроку simple_str с позиции от from до позиции to (не включая её)
+     * @ru @brief Получить подстроку simple_str с позиции от from до позиции to (не включая её).
      * @details Для производительности метод никак не проверяет выходы за границы строки, используйте
      *          в сценариях, когда точно знаете, что это позиции внутри строки и to >= from.
-     * @param from - начальная позиция
-     * @param to - конечная позиция (не входит в результат)
+     * @param from - начальная позиция.
+     * @param to - конечная позиция (не входит в результат).
      * @return Подстроку, simple_str.
+     * @en @brief Get the substring simple_str from position from to position to (not including it).
+     * @details For performance reasons, the method does not check for line boundaries in any way, use
+     * in scenarios when you know for sure that these are positions inside the line and to >= from.
+     * @param from - starting position.
+     * @param to - final position (not included in the result).
+     * @return Substring, simple_str.
      */
     constexpr str_piece from_to(size_t from, size_t to) const noexcept {
         return str_piece{_str() + from, to - from};
     }
     /*!
-     * @brief Проверка на пустоту
+     * @ru @brief Проверка на пустоту.
+     * @en @brief Check for emptiness.
      */
     bool operator!() const noexcept {
         return _is_empty();
     }
     /*!
-     * @brief Получить символ на заданной позиции 
+     * @ru @brief Получить символ на заданной позиции .
      * @param idx - индекс символа. Для отрицательных значений отсчитывается от конца строки.
-     * @return K - символ
-     * @details Не производит проверку на выход за границы строки
+     * @return K - символ.
+     * @details Не производит проверку на выход за границы строки.
+     * @en @brief Get the character at the given position.
+     * @param idx - symbol index. For negative values, it is counted from the end of the line.
+     * @return K - character.
+     * @details Does not check for line boundaries.
      */
     K at(ptrdiff_t idx) const {
         return _str()[idx >= 0 ? idx : _len() + idx];
     }
     // Сравнение строк
+    // String comparison
     constexpr int compare(const K* text, size_t len) const {
         size_t myLen = _len();
         int cmp = traits::compare(_str(), text, std::min(myLen, len));
         return cmp == 0 ? (myLen > len ? 1 : myLen == len ? 0 : -1) : cmp;
     }
     /*!
-     * @brief Сравнение строк посимвольно
-     * @param o - другая строка
-     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше
+     * @ru @brief Сравнение строк посимвольно.
+     * @param o - другая строка.
+     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
+     * @en @brief Compare strings character by character.
+     * @param o - another line.
+     * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     constexpr int compare(str_piece o) const {
         return compare(o.symbols(), o.length());
     }
     /*!
-     * @brief Сравнение с C-строкой посимвольно
-     * @param o - другая строка
-     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше
+     * @ru @brief Сравнение с C-строкой посимвольно.
+     * @param text - другая строка.
+     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
+     * @en @brief Compare with C-string character by character.
+     * @param text - another line.
+     * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     constexpr int strcmp(const K* text) const {
         size_t myLen = _len(), idx = 0;
@@ -730,40 +837,51 @@ public:
         return len == _len() && traits::compare(_str(), text, len) == 0;
     }
     /*!
-     * @brief Сравнение строк на равенство
-     * @param other - другая строка
-     * @return равны ли строки
+     * @ru @brief Сравнение строк на равенство.
+     * @param other - другая строка.
+     * @return равны ли строки.
+     * @en @brief String comparison for equality.
+     * @param other - another line.
+     * @return whether the strings are equal.
      */
     constexpr bool equal(str_piece other) const noexcept {
         return equal(other.symbols(), other.length());
     }
     /*!
-     * @brief Оператор сравнение строк на равенство
-     * @param other - другая строка
-     * @return равны ли строки
+     * @ru @brief Оператор сравнение строк на равенство.
+     * @param other - другая строка.
+     * @return равны ли строки.
+     * @en @brief Operator comparing strings for equality.
+     * @param other - another line.
+     * @return whether the strings are equal.
      */
     constexpr bool operator==(const base& other) const noexcept {
         return equal(other._str(), other._len());
     }
     /*!
-     * @brief Оператор сравнения строк
-     * @param other - другая строка
+     * @ru @brief Оператор сравнения строк.
+     * @param other - другая строка.
+     * @en @brief String comparison operator.
+     * @param other - another line.
      */
     constexpr auto operator<=>(const base& other) const noexcept {
         return compare(other._str(), other._len()) <=> 0;
     }
     /*!
-     * @brief Оператор сравнения строки и строкового литерала на равенство
-     * @param other - строковый литерал
+     * @ru @brief Оператор сравнения строки и строкового литерала на равенство.
+     * @param other - строковый литерал.
+     * @en @brief Operator for comparing a string and a string literal for equality.
+     * @param other - string literal.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     bool operator==(T&& other) const noexcept {
         return N - 1 == _len() && traits::compare(_str(), other, N - 1) == 0;
     }
-
     /*!
-     * @brief Оператор сравнения строки и строкового литерала
-     * @param other - строковый литерал
+     * @ru @brief Оператор сравнения строки и строкового литерала.
+     * @param other - строковый литерал.
+     * @en @brief Comparison operator between a string and a string literal.
+     * @param other is a string literal.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     auto operator<=>(T&& other) const noexcept {
@@ -774,6 +892,7 @@ public:
     }
 
     // Сравнение ascii строк без учёта регистра
+    // Compare ascii strings without taking into account case
     int compare_ia(const K* text, size_t len) const noexcept { // NOLINT
         if (!len)
             return _is_empty() ? 0 : 1;
@@ -793,26 +912,35 @@ public:
         return myLen == len ? 0 : myLen > len ? 1 : -1;
     }
     /*!
-     * @brief Сравнение строк посимвольно без учёта регистра ASCII символов
-     * @param text - другая строка
-     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше
+     * @ru @brief Сравнение строк посимвольно без учёта регистра ASCII символов.
+     * @param text - другая строка.
+     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
+     * @en @brief Compare strings character by character and not case sensitive ASCII characters.
+     * @param text - another line.
+     * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     int compare_ia(str_piece text) const noexcept { // NOLINT
         return compare_ia(text.symbols(), text.length());
     }
 
     /*!
-     * @brief Равна ли строка другой строке посимвольно без учёта регистра ASCII символов
-     * @param text - другая строка
-     * @return равны ли строки
+     * @ru @brief Равна ли строка другой строке посимвольно без учёта регистра ASCII символов.
+     * @param text - другая строка.
+     * @return равны ли строки.
+     * @en @brief Whether a string is equal to another string, character-by-character-insensitive, of ASCII characters.
+     * @param text - another line.
+     * @return whether the strings are equal.
      */
     bool equal_ia(str_piece text) const noexcept { // NOLINT
         return text.length() == _len() && compare_ia(text.symbols(), text.length()) == 0;
     }
     /*!
-     * @brief Меньше ли строка другой строки посимвольно без учёта регистра ASCII символов
-     * @param text - другая строка
-     * @return меньше ли строка
+     * @ru @brief Меньше ли строка другой строки посимвольно без учёта регистра ASCII символов.
+     * @param text - другая строка.
+     * @return меньше ли строка.
+     * @en @brief Whether a string is smaller than another string, character-by-character-insensitive, ASCII characters.
+     * @param text - another line.
+     * @return whether the string is smaller.
      */
     bool less_ia(str_piece text) const noexcept { // NOLINT
         return compare_ia(text.symbols(), text.length()) < 0;
@@ -824,26 +952,35 @@ public:
         return uni::compareiu(_str(), _len(), text, len);
     }
     /*!
-     * @brief Сравнение строк посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF)
-     * @param text - другая строка
-     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше
+     * @ru @brief Сравнение строк посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF).
+     * @param text - другая строка.
+     * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
+     * @en @brief Compare strings character by character without taking into account the case of Unicode characters of the first plane (<0xFFFF).
+     * @param text - another line.
+     * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     int compare_iu(str_piece text) const noexcept { // NOLINT
         return compare_iu(text.symbols(), text.length());
     }
 
     /*!
-     * @brief Равна ли строка другой строке посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF)
-     * @param text - другая строка
-     * @return равны ли строки
+     * @ru @brief Равна ли строка другой строке посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF).
+     * @param text - другая строка.
+     * @return равны ли строки.
+     * @en @brief Whether a string is equal to another string, character-by-character-insensitive, of the Unicode characters of the first plane (<0xFFFF).
+     * @param text - another line.
+     * @return whether the strings are equal.
      */
     bool equal_iu(str_piece text) const noexcept { // NOLINT
         return text.length() == _len() && compare_iu(text.symbols(), text.length()) == 0;
     }
     /*!
-     * @brief Меньше ли строка другой строки посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF)
-     * @param text - другая строка
-     * @return меньше ли строка
+     * @ru @brief Меньше ли строка другой строки посимвольно без учёта регистра Unicode символов первой плоскости (<0xFFFF).
+     * @param text - другая строка.
+     * @return меньше ли строка.
+     * @en @brief Whether a string is smaller than another string, character-by-character-insensitive, of the Unicode characters of the first plane (<0xFFFF).
+     * @param text - another line.
+     * @return whether the string is smaller.
      */
     bool less_iu(str_piece text) const noexcept { // NOLINT
         return compare_iu(text.symbols(), text.length()) < 0;
@@ -852,6 +989,7 @@ public:
     size_t find(const K* pattern, size_t lenPattern, size_t offset) const noexcept {
         size_t lenText = _len();
         // Образец, не вмещающийся в строку и пустой образец не находим
+        // We don't look for an empty line or a line longer than the text.
         if (!lenPattern || offset >= lenText || offset + lenPattern > lenText)
             return str::npos;
         lenPattern--;
@@ -866,21 +1004,33 @@ public:
         }
     }
     /*!
-     * @brief Найти начало первого вхождения подстроки в этой строке.
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена
+     * @ru @brief Найти начало первого вхождения подстроки в этой строке.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена.
+     * @en @brief Find the beginning of the first occurrence of a substring in this string.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position of the beginning of the occurrence of the substring, or -1 if not found.
      */
     size_t find(str_piece pattern, size_t offset = 0) const noexcept {
         return find(pattern.symbols(), pattern.length(), offset);
     }
     /*!
-     * @brief Найти начало первого вхождения подстроки в этой строке или выкинуть исключение.
-     * @tparam Exc - тип исключения
-     * @tparam Args... - типы параметров для конструирования исключения, выводятся из аргументов
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию начала вхождения подстроки, или выбрасывает исключение Exc, если не найдена
+     * @ru @brief Найти начало первого вхождения подстроки в этой строке или выкинуть исключение.
+     * @tparam Exc - тип исключения.
+     * @tparam Args... - типы параметров для конструирования исключения, выводятся из аргументов.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @param args - аргументы для конструктора исключения.
+     * @return size_t - позицию начала вхождения подстроки, или выбрасывает исключение Exc, если не найдена.
+     * @en @brief Find the beginning of the first occurrence of a substring in this string or throw an exception.
+     * @tparam Exc - exception type.
+     * @tparam Args... - types of parameters for constructing an exception, inferred from the arguments.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @param args - arguments for the exception constructor.
+     * @return size_t - the position of the beginning of the substring occurrence, or throws an Exc exception if not found.
      */
     template<typename Exc, typename ... Args> requires std::is_constructible_v<Exc, Args...>
     size_t find_or_throw(str_piece pattern, size_t offset = 0, Args&& ... args) const noexcept {
@@ -890,30 +1040,42 @@ public:
         throw Exc(std::forward<Args>(args)...);
     }
     /*!
-     * @brief Найти конец вхождения подстроки в этой строке.
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию сразу за вхождением подстроки, или -1, если не найдена
+     * @ru @brief Найти конец вхождения подстроки в этой строке.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию сразу за вхождением подстроки, или -1, если не найдена.
+     * @en @brief Find the end of the occurrence of a substring in this string.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position immediately after the occurrence of the substring, or -1 if not found.
      */
     size_t find_end(str_piece pattern, size_t offset = 0) const noexcept {
         size_t fnd = find(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? fnd : fnd + pattern.length();
     }
     /*!
-     * @brief Найти начало первого вхождения подстроки в этой строке или конец строки.
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию начала вхождения подстроки, или длину строки, если не найдена
+     * @ru @brief Найти начало первого вхождения подстроки в этой строке или конец строки.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию начала вхождения подстроки, или длину строки, если не найдена.
+     * @en @brief Find the beginning of the first occurrence of a substring in this string or the end of the string.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position at which the substring begins, or the length of the string if not found.
      */
     size_t find_or_all(str_piece pattern, size_t offset = 0) const noexcept {
         auto fnd = find(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? _len() : fnd;
     }
     /*!
-     * @brief Найти конец первого вхождения подстроки в этой строке или конец строки.
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию сразу за вхождением подстроки, или длину строки, если не найдена
+     * @ru @brief Найти конец первого вхождения подстроки в этой строке или конец строки.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию сразу за вхождением подстроки, или длину строки, если не найдена.
+     * @en @brief Find the end of the first occurrence of a substring in this string, or the end of a string.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position immediately after the occurrence of the substring, or the length of the string if not found.
      */
     size_t find_end_or_all(str_piece pattern, size_t offset = 0) const noexcept {
         auto fnd = find(pattern.symbols(), pattern.length(), offset);
@@ -925,6 +1087,7 @@ public:
             return find_last(pattern[0], offset);
         size_t lenText = std::min(_len(), offset);
         // Образец, не вмещающийся в строку и пустой образец не находим
+        // We don't look for an empty line or a line longer than the text.
         if (!lenPattern || lenPattern > lenText)
             return str::npos;
         
@@ -941,58 +1104,82 @@ public:
         return str::npos;
     }
     /*!
-     * @brief Найти начало последнего вхождения подстроки в этой строке.
-     * @param pattern - искомая строка
-     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца
-     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена
+     * @ru @brief Найти начало последнего вхождения подстроки в этой строке.
+     * @param pattern - искомая строка.
+     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца.
+     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена.
+     * @en @brief Find the beginning of the last occurrence of a substring in this string.
+     * @param pattern - the search string.
+     * @param offset - from which position to search in the opposite direction, -1 - from the very end.
+     * @return size_t - the position of the beginning of the occurrence of the substring, or -1 if not found.
      */
     size_t find_last(str_piece pattern, size_t offset = -1) const noexcept {
         return find_last(pattern.symbols(), pattern.length(), offset);
     }
     /*!
-     * @brief Найти конец последнего вхождения подстроки в этой строке.
-     * @param pattern - искомая строка
-     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца
-     * @return size_t - позицию сразу за последним вхождением подстроки, или -1, если не найдена
+     * @ru @brief Найти конец последнего вхождения подстроки в этой строке.
+     * @param pattern - искомая строка.
+     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца.
+     * @return size_t - позицию сразу за последним вхождением подстроки, или -1, если не найдена.
+     * @en @brief Find the end of the last occurrence of a substring in this string.
+     * @param pattern - the search string.
+     * @param offset - from which position to search in the opposite direction, -1 - from the very end.
+     * @return size_t - the position immediately after the last occurrence of the substring, or -1 if not found.
      */
     size_t find_end_of_last(str_piece pattern, size_t offset = -1) const noexcept {
         size_t fnd = find_last(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? fnd : fnd + pattern.length();
     }
     /*!
-     * @brief Найти начало последнего вхождения подстроки в этой строке или конец строки.
-     * @param pattern - искомая строка
-     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца
-     * @return size_t - позицию начала вхождения подстроки, или длину строки, если не найдена
+     * @ru @brief Найти начало последнего вхождения подстроки в этой строке или конец строки.
+     * @param pattern - искомая строка.
+     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца.
+     * @return size_t - позицию начала вхождения подстроки, или длину строки, если не найдена.
+     * @en @brief Find the beginning of the last occurrence of a substring in this string or the end of the string.
+     * @param pattern - the search string.
+     * @param offset - from which position to search in the opposite direction, -1 - from the very end.
+     * @return size_t - the position at which the substring begins, or the length of the string if not found.
      */
     size_t find_last_or_all(str_piece pattern, size_t offset = -1) const noexcept {
         auto fnd = find_last(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? _len() : fnd;
     }
     /*!
-     * @brief Найти конец последнего вхождения подстроки в этой строке или конец строки.
-     * @param pattern - искомая строка
-     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца
-     * @return size_t - позицию сразу за последним вхождением подстроки, или длину строки, если не найдена
+     * @ru @brief Найти конец последнего вхождения подстроки в этой строке или конец строки.
+     * @param pattern - искомая строка.
+     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца.
+     * @return size_t - позицию сразу за последним вхождением подстроки, или длину строки, если не найдена.
+     * @en @brief Find the end of the last occurrence of a substring in this string, or the end of a string.
+     * @param pattern - the search string.
+     * @param offset - from which position to search in the opposite direction, -1 - from the very end.
+     * @return size_t - the position immediately after the last occurrence of the substring, or the length of the string if not found.
      */
     size_t find_end_of_last_or_all(str_piece pattern, size_t offset = -1) const noexcept {
         size_t fnd = find_last(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? _len() : fnd + pattern.length();
     }
     /*!
-     * @brief Содержит ли строка указанную подстроку.
-     * @param pattern - искомая строка
-     * @param offset - с какой позиции начинать поиск
-     * @return bool
+     * @ru @brief Содержит ли строка указанную подстроку.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return bool.
+     * @en @brief Whether the string contains the specified substring.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return bool.
      */
     bool contains(str_piece pattern, size_t offset = 0) const noexcept {
         return find(pattern, offset) != str::npos;
     }
     /*!
-     * @brief Найти символ в этой строке.
-     * @param s - искомый символ
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию найденного символа, или -1, если не найден
+     * @ru @brief Найти символ в этой строке.
+     * @param s - искомый символ.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию найденного символа, или -1, если не найден.
+     * @en @brief Find a character in this string.
+     * @param s is an optional character.
+     * @param offset - from which position to start the search.
+     * @return size_t - position of the found character, or -1 if not found.
      */
     size_t find(K s, size_t offset = 0) const noexcept {
         size_t len = _len();
@@ -1004,10 +1191,14 @@ public:
         return str::npos;
     }
     /*!
-     * @brief Найти символ в этой строке или конец строки.
-     * @param s - искомый символ
-     * @param offset - с какой позиции начинать поиск
-     * @return size_t - позицию найденного символа, или длину строки, если не найден
+     * @ru @brief Найти символ в этой строке или конец строки.
+     * @param s - искомый символ.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию найденного символа, или длину строки, если не найден.
+     * @en @brief Find a character in this string or the end of a string.
+     * @param s is an optional character.
+     * @param offset - from which position to start the search.
+     * @return size_t - position of the found character, or string length if not found.
      */
     size_t find_or_all(K s, size_t offset = 0) const noexcept {
         size_t len = _len();
@@ -1032,11 +1223,16 @@ public:
         }
     }
     /*!
-     * @brief Вызвать функтор для всех найденных вхождений подстроки в этой строке
-     * @param op - функтор, принимающий строку
-     * @param pattern - искомая подстрока
-     * @param offset - позиция начала поиска
-     * @param maxCount - максимальное количество обрабатываемых вхождений, 0 - без ограничений
+     * @ru @brief Вызвать функтор для всех найденных вхождений подстроки в этой строке.
+     * @param op - функтор, принимающий строку.
+     * @param pattern - искомая подстрока.
+     * @param offset - позиция начала поиска.
+     * @param maxCount - максимальное количество обрабатываемых вхождений, 0 - без ограничений.
+     * @en @brief Call a functor on all found occurrences of a substring in this string.
+     * @param op is a functor that takes a string.
+     * @param pattern - the substring to search for.
+     * @param offset - search start position.
+     * @param maxCount - the maximum number of occurrences to be processed, 0 - no restrictions.
      */
     template<typename Op>
     void for_all_finded(const Op& op, str_piece pattern, size_t offset = 0, size_t maxCount = 0) const {
@@ -1049,20 +1245,29 @@ public:
         return result;
     }
     /*!
-     * @brief Найти все вхождения подстроки в этой строке
-     * @param pattern - искомая подстрока
-     * @param offset - позиция начала поиска
-     * @param maxCount - максимальное количество обрабатываемых вхождений, 0 - без ограничений
-     * @return std::vector<size_t> - вектор с позициями начал найденных вхождений
+     * @ru @brief Найти все вхождения подстроки в этой строке.
+     * @param pattern - искомая подстрока.
+     * @param offset - позиция начала поиска.
+     * @param maxCount - максимальное количество обрабатываемых вхождений, 0 - без ограничений.
+     * @return std::vector<size_t> - вектор с позициями начал найденных вхождений.
+     * @en @brief Find all occurrences of a substring in this string.
+     * @param pattern - the substring to search for.
+     * @param offset - search start position.
+     * @param maxCount - the maximum number of occurrences to be processed, 0 - no restrictions.
+     * @return std::vector<size_t> - a vector with the positions of the beginnings of the found occurrences.
      */
     std::vector<size_t> find_all(str_piece pattern, size_t offset = 0, size_t maxCount = 0) const {
         return find_all(pattern.symbols(), pattern.length(), offset, maxCount);
     }
     /*!
-     * @brief Найти последнее вхождения символа в этой строке
-     * @param s - искомый символ
-     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца
-     * @return size_t - позицию найденного символа, или -1, если не найден
+     * @ru @brief Найти последнее вхождения символа в этой строке.
+     * @param s - искомый символ.
+     * @param offset - c какой позиции вести поиск в обратную сторону, -1 - с самого конца.
+     * @return size_t - позицию найденного символа, или -1, если не найден.
+     * @en @brief Find the last occurrence of a character in this string.
+     * @param s is an optional character.
+     * @param offset - from which position to search in the opposite direction, -1 - from the very end.
+     * @return size_t - position of the found character, or -1 if not found.
      */
     size_t find_last(K s, size_t offset = -1) const noexcept {
         size_t len = std::min(_len(), offset);
@@ -1074,19 +1279,27 @@ public:
         return str::npos;
     }
     /*!
-     * @brief Найти первое вхождение символа из заданного набора символов
-     * @param pattern - строка, задающая набор искомых символов
-     * @param offset - позиция начала поиска
-     * @return size_t - позицию найденного вхождения, или -1, если не найден
+     * @ru @brief Найти первое вхождение символа из заданного набора символов.
+     * @param pattern - строка, задающая набор искомых символов.
+     * @param offset - позиция начала поиска.
+     * @return size_t - позицию найденного вхождения, или -1, если не найден.
+     * @en @brief Find the first occurrence of a character from a given character set.
+     * @param pattern - a string specifying the set of characters to search for.
+     * @param offset - search start position.
+     * @return size_t - position of the found occurrence, or -1 if not found.
      */
     size_t find_first_of(str_piece pattern, size_t offset = 0) const noexcept {
         return std::string_view{_str(), _len()}.find_first_of(std::string_view{pattern.str, pattern.len}, offset);
     }
     /*!
-     * @brief Найти первое вхождение символа из заданного набора символов
-     * @param pattern - строка, задающая набор искомых символов
-     * @param offset - позиция начала поиска
-     * @return std::pair<size_t, size_t> - пару из позиции найденного вхождения и номера найденного символа в наборе, или -1, если не найден
+     * @ru @brief Найти первое вхождение символа из заданного набора символов.
+     * @param pattern - строка, задающая набор искомых символов.
+     * @param offset - позиция начала поиска.
+     * @return std::pair<size_t, size_t> - пару из позиции найденного вхождения и номера найденного символа в наборе, или -1, если не найден.
+     * @en @brief Find the first occurrence of a character from a given character set.
+     * @param pattern - a string specifying the set of characters to search for.
+     * @param offset - search start position.
+     * @return std::pair<size_t, size_t> - a pair from the position of the found occurrence and the number of the found character in the set, or -1 if not found.
      */
     std::pair<size_t, size_t> find_first_of_idx(str_piece pattern, size_t offset = 0) const noexcept {
         const K* text = _str();
@@ -1094,28 +1307,40 @@ public:
         return {fnd, fnd == std::string::npos ? fnd : pattern.find(text[fnd]) };
     }
     /*!
-     * @brief Найти первое вхождение символа не из заданного набора символов
-     * @param pattern - строка, задающая набор символов
-     * @param offset - позиция начала поиска
-     * @return size_t - позицию найденного вхождения, или -1, если не найден
+     * @ru @brief Найти первое вхождение символа не из заданного набора символов.
+     * @param pattern - строка, задающая набор символов.
+     * @param offset - позиция начала поиска.
+     * @return size_t - позицию найденного вхождения, или -1, если не найден.
+     * @en @brief Find the first occurrence of a character not from the given character set.
+     * @param pattern - a string specifying the character set.
+     * @param offset - search start position.
+     * @return size_t - position of the found occurrence, or -1 if not found.
      */
     size_t find_first_not_of(str_piece pattern, size_t offset = 0) const noexcept {
         return std::string_view{_str(), _len()}.find_first_not_of(std::string_view{pattern.str, pattern.len}, offset);
     }
     /*!
-     * @brief Найти последнее вхождение символа из заданного набора символов
-     * @param pattern - строка, задающая набор искомых символов
-     * @param offset - позиция начала поиска
-     * @return size_t - позицию найденного вхождения, или -1, если не найден
+     * @ru @brief Найти последнее вхождение символа из заданного набора символов.
+     * @param pattern - строка, задающая набор искомых символов.
+     * @param offset - позиция начала поиска.
+     * @return size_t - позицию найденного вхождения, или -1, если не найден.
+     * @en @brief Find the last occurrence of a character from a given character set.
+     * @param pattern - a string specifying the set of characters to search for.
+     * @param offset - search start position.
+     * @return size_t - position of the found occurrence, or -1 if not found.
      */
     size_t find_last_of(str_piece pattern, size_t offset = str::npos) const noexcept {
         return std::string_view{_str(), _len()}.find_last_of(std::string_view{pattern.str, pattern.len}, offset);
     }
     /*!
-     * @brief Найти последнее вхождение символа из заданного набора символов
-     * @param pattern - строка, задающая набор искомых символов
-     * @param offset - позиция начала поиска
-     * @return std::pair<size_t, size_t> - пару из позиции найденного вхождения и номера найденного символа в наборе, или -1, если не найден
+     * @ru @brief Найти последнее вхождение символа из заданного набора символов.
+     * @param pattern - строка, задающая набор искомых символов.
+     * @param offset - позиция начала поиска.
+     * @return std::pair<size_t, size_t> - пару из позиции найденного вхождения и номера найденного символа в наборе, или -1, если не найден.
+     * @en @brief Find the last occurrence of a character from a given character set.
+     * @param pattern - a string specifying the set of characters to search for.
+     * @param offset - search start position.
+     * @return std::pair<size_t, size_t> - a pair from the position of the found occurrence and the number of the found character in the set, or -1 if not found.
      */
     std::pair<size_t, size_t> find_last_of_idx(str_piece pattern, size_t offset = str::npos) const noexcept {
         const K* text = _str();
@@ -1123,46 +1348,71 @@ public:
         return {fnd, fnd == std::string::npos ? fnd : pattern.find(text[fnd]) };
     }
     /*!
-     * @brief Найти последнее вхождение символа не из заданного набора символов
-     * @param pattern - строка, задающая набор символов
-     * @param offset - позиция начала поиска
-     * @return size_t - позицию найденного вхождения, или -1, если не найден
+     * @ru @brief Найти последнее вхождение символа не из заданного набора символов.
+     * @param pattern - строка, задающая набор символов.
+     * @param offset - позиция начала поиска.
+     * @return size_t - позицию найденного вхождения, или -1, если не найден.
+     * @en @brief Find the last occurrence of a character not from the given character set.
+     * @param pattern - a string specifying the character set.
+     * @param offset - search start position.
+     * @return size_t - position of the found occurrence, or -1 if not found.
      */
     size_t find_last_not_of(str_piece pattern, size_t offset = str::npos) const noexcept {
         return std::string_view{_str(), _len()}.find_last_not_of(std::string_view{pattern.str, pattern.len}, offset);
     }
     /*!
-     * @brief Получить подстроку. Работает аналогично operator(), только результат выдает того же типа, к которому применён метод
+     * @ru @brief Получить подстроку. Работает аналогично operator(), только результат выдает того же типа, к которому применён метод.
      * @param from - количество символов от начала строки. Если меньше нуля, отсчитывается от конца строки в сторону начала.
-     * @param len - количество символов в получаемом "куске". Если меньше или равно нулю, то отсчитать len символов от конца строки
-     * @return my_type - подстроку, объект того же типа, к которому применён метод
+     * @param len - количество символов в получаемом "куске". Если меньше или равно нулю, то отсчитать len символов от конца строки.
+     * @return my_type - подстроку, объект того же типа, к которому применён метод.
+     * @en @brief Get a substring. Works similarly to operator(), only the result is the same type as the method applied to.
+     * @param from - number of characters from the beginning of the line. If less than zero, it is counted from the end of the line towards the beginning.
+     * @param len - the number of characters in the resulting "chunk". If less than or equal to zero, then count len ​​characters from the end of the line.
+     * @return my_type - a substring, an object of the same type to which the method is applied.
      */
-    my_type substr(ptrdiff_t from, ptrdiff_t len = 0) const { // индексация в code units
+    my_type substr(ptrdiff_t from, ptrdiff_t len = 0) const { // индексация в code units | indexing in code units
         return my_type{d()(from, len)};
     }
     /*!
-     * @brief Получить часть строки объектом того же типа, к которому применён метод, аналогично mid.
+     * @ru @brief Получить часть строки объектом того же типа, к которому применён метод, аналогично mid.
      * @param from - количество символов от начала строки. При превышении размера строки вернёт пустую строку.
      * @param len - количество символов в получаемом "куске". При выходе за пределы строки вернёт всё до конца строки.
      * @return Строку того же типа, к которому применён метод.
+     * @en @brief Get part of a string with an object of the same type to which the method is applied, similar to mid.
+     * @param from - number of characters from the beginning of the line. If the string size is exceeded, it will return an empty string.
+     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the line.
+     * @return A string of the same type to which the method is applied.
      */
-    my_type str_mid(size_t from, size_t len = -1) const { // индексация в code units
+    my_type str_mid(size_t from, size_t len = -1) const { // индексация в code units | indexing in code units
         return my_type{d().mid(from, len)};
     }
     /*!
-     * @brief Преобразовать строку в число заданного типа
-     * @tparam T - желаемый тип числа
-     * @tparam CheckOverflow - проверять на переполнение
+     * @ru @brief Преобразовать строку в число заданного типа.
+     * @tparam T - желаемый тип числа.
+     * @tparam CheckOverflow - проверять на переполнение.
      * @tparam Base - основание счисления числа, от -1 до 36, кроме 1.
-     *         - Если 0: то пытается определить основание по префиксу 0[xX] как 16, 0 как 8, иначе 10
+     *         - Если 0: то пытается определить основание по префиксу 0[xX] как 16, 0 как 8, иначе 10.
      *         - Если -1: то пытается определить основание по префиксам:
      *            - 0 или 0[oO]: 8
      *            - 0[bB]: 2
      *            - 0[xX]: 16
      *            - в остальных случаях 10.
-     * @tparam SkipWs - пропускать пробельные символы в начале строки
-     * @tparam AllowSign - допустим ли знак '+' перед числом
+     * @tparam SkipWs - пропускать пробельные символы в начале строки.
+     * @tparam AllowSign - допустим ли знак '+' перед числом.
      * @return T - число, результат преобразования, насколько оно получилось, или 0 при переполнении.
+     * @en @brief Convert a string to a number of the given type.
+     * @tparam T - the desired number type.
+     * @tparam CheckOverflow - check for overflow.
+     * @tparam Base - the base of the number, from -1 to 36, except 1.
+     *         - If 0: then tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10.
+     *         - If -1: then tries to determine the base by prefixes:
+     *         - 0 or 0[oO]: 8
+     *            - 0[bB]: 2
+     *            - 0[xX]: 16
+     *         - in other cases 10.
+     * @tparam SkipWs - skip whitespace characters at the beginning of the line.
+     * @tparam AllowSign - whether the '+' sign is allowed before a number.
+     * @return T - a number, the result of the transformation, how much it turned out, or 0 if it overflows.
      */
     template<ToIntNumber T, bool CheckOverflow = true, unsigned Base = 0, bool SkipWs = true, bool AllowSign = true>
     T as_int() const noexcept {
@@ -1170,9 +1420,9 @@ public:
         return err == IntConvertResult::Overflow ? 0 : res;
     }
     /*!
-     * @brief Преобразовать строку в число заданного типа
-     * @tparam T - желаемый тип числа
-     * @tparam CheckOverflow - проверять на переполнение
+     * @ru @brief Преобразовать строку в число заданного типа.
+     * @tparam T - желаемый тип числа.
+     * @tparam CheckOverflow - проверять на переполнение.
      * @tparam Base - основание счисления числа, от -1 до 36, кроме 1.
      *         - Если 0: то пытается определить основание по префиксу 0[xX] как 16, 0 как 8, иначе 10
      *         - Если -1: то пытается определить основание по префиксам:
@@ -1181,16 +1431,31 @@ public:
      *            - 0[xX]: 16
      *            - в остальных случаях 10.
      * @tparam SkipWs - пропускать пробельные символы в начале строки. Пропускаются все символы с ASCII кодами <= 32.
-     * @tparam AllowSign - допустим ли знак '+' перед числом
-     * @return std::tuple<T, IntConvertResult, size_t> - кортеж из полученного числа, успешности преобразования и количестве обработанных символов
+     * @tparam AllowSign - допустим ли знак '+' перед числом.
+     * @return std::tuple<T, IntConvertResult, size_t> - кортеж из полученного числа, успешности преобразования и количестве обработанных символов.
+     * @en @brief Convert a string to a number of the given type.
+     * @tparam T - the desired number type.
+     * @tparam CheckOverflow - check for overflow.
+     * @tparam Base - the base of the number, from -1 to 36, except 1.
+     *        - If 0: then tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10
+     *        - If -1: then tries to determine the base by prefixes:
+     *        - 0 or 0[oO]: 8
+     *            - 0[bB]: 2
+     *            - 0[xX]: 16
+     *        - in other cases 10.
+     * @tparam SkipWs - skip whitespace characters at the beginning of the line. All characters with ASCII codes <= 32 are skipped.
+     * @tparam AllowSign - whether the '+' sign is allowed before a number.
+     * @return std::tuple<T, IntConvertResult, size_t> - a tuple of the received number, the success of the conversion and the number of characters processed.
      */
     template<ToIntNumber T, bool CheckOverflow = true, unsigned Base = 0, bool SkipWs = true, bool AllowSign = true>
     std::tuple<T, IntConvertResult, size_t> to_int() const noexcept {
         return int_convert::to_integer<K, T, Base, CheckOverflow, SkipWs, AllowSign>(_str(), _len());
     }
     /*!
-     * @brief Преобразовать строку в double
+     * @ru @brief Преобразовать строку в double.
      * @return double. Пока работает только для строк из char, wchar_t и типов, совместимых с wchar_t по размеру.
+     * @en @brief Convert string to double.
+     * @return double. So far it only works for strings of char, wchar_t and types compatible with wchar_t in size.
      */
     double to_double() const noexcept {
         static_assert(sizeof(K) == 1 || sizeof(K) == sizeof(wchar_t), "Only char and wchar available for conversion to double now");
@@ -1233,17 +1498,22 @@ public:
     }
 
     /*!
-     * @brief Преобразовать строку в целое число 
-     * @tparam T - тип числа, выводится из аргумента
-     * @param t - переменная, в которую записывается результат
+     * @ru @brief Преобразовать строку в целое число.
+     * @tparam T - тип числа, выводится из аргумента.
+     * @param t - переменная, в которую записывается результат.
+     * @en @brief Convert a string to an integer.
+     * @tparam T - number type, inferred from the argument.
+     * @param t - the variable into which the result is written.
      */
     template<ToIntNumber T>
     void as_number(T& t) {
         t = as_int<T>();
     }
     /*!
-     * @brief Преобразовать строку в double
-     * @param t - переменная, в которую записывается результат
+     * @ru @brief Преобразовать строку в double.
+     * @param t - переменная, в которую записывается результат.
+     * @en @brief Convert string to double.
+     * @param t - the variable into which the result is written.
      */
     void as_number(double& t) {
         t = to_double();
@@ -1264,6 +1534,7 @@ public:
                 if constexpr (requires { results.emplace_back(last); }) {
                     if (last.is_same(me)) {
                         // Пробуем положить весь объект.
+                        // Try to put the entire object.
                         results.emplace_back(d());
                     } else {
                         results.emplace_back(last);
@@ -1271,6 +1542,7 @@ public:
                 } else if constexpr (requires { results.push_back(last); }) {
                     if (last.is_same(me)) {
                         // Пробуем положить весь объект.
+                        // Try to put the entire object.
                         results.push_back(d());
                     } else {
                         results.push_back(last);
@@ -1279,6 +1551,7 @@ public:
                     if (i < std::size(results)) {
                         if (last.is_same(me)) {
                             // Пробуем положить весь объект.
+                            // Try to put the entire object.
                             results[i] = d();
                         } else
                             results[i] = last;
@@ -1309,11 +1582,11 @@ public:
         }
     }
     /*!
-     * @brief Разделить строку на части по заданному разделителю, с возможным применением функтора к каждой подстроке
-     * @tparam T - тип контейнера для складывания подстрок. 
-     * @param delimeter - подстрока разделитель
-     * @param beforeFunc - функтор для применения к найденным подстрокам, перед помещением их в результат
-     * @param offset - позиция начала поиска разделителя
+     * @ru @brief Разделить строку на части по заданному разделителю, с возможным применением функтора к каждой подстроке.
+     * @tparam T - тип контейнера для складывания подстрок.
+     * @param delimeter - подстрока разделитель.
+     * @param beforeFunc - функтор для применения к найденным подстрокам, перед помещением их в результат.
+     * @param offset - позиция начала поиска разделителя.
      * @return T - результат.
      * @details Для каждой найденной подстроки, если функтор может принять её, вызывается функтор, и подстрока
      *          присваивается результату функтора. Далее подстрока пытается добавиться в результат,
@@ -1323,37 +1596,63 @@ public:
      *          мы не выходим за этот размер.
      *          При этом, если найденная подстрока получается совпадающей со всей строкой - в результат пытается
      *          поместить не подстроку, а весь объект строки, что позволяет, например, эффективно копировать sstring.
+     * @en @brief Split a string into parts at a given delimiter, possibly applying a functor to each substring.
+     * @tparam T - type of container for folding substrings.
+     * @param delimeter - substring delimiter.
+     * @param beforeFunc - a functor to apply to the found substrings, before placing them in the result.
+     * @param offset - the position to start searching for the separator.
+     * @return T - result.
+     * @details For each substring found, if the functor can accept it, the functor is called, and the substring
+     *          is assigned to the result of the functor. Next, the substring tries to be added to the result,
+     *          calling one of its methods - `emplace_back`, `push_back`, `operator[]`. If none of this method
+     *          no, nothing is done, just calling the functor.
+     *          `operator[]` tries to apply if the result can have a size via `std::size` and
+     *          we do not exceed this size.
+     *          At the same time, if the found substring turns out to match the entire string, the result is attempted
+     *          place not a substring, but the entire string object, which allows, for example, to effectively copy sstring.
      */
     template<typename T, typename Op>
     T splitf(str_piece delimeter, const Op& beforeFunc, size_t offset = 0) const {
         return splitf<T>(delimeter.symbols(), delimeter.length(), beforeFunc, offset);
     }
     /*!
-     * @brief Разделить строку на подстроки по заданному разделителю
-     * @tparam T - тип контейнера для результата
-     * @param delimeter - разделитель
-     * @param offset - позиция начала поиска разделителя
-     * @return T - контейнер с результатом
+     * @ru @brief Разделить строку на подстроки по заданному разделителю.
+     * @tparam T - тип контейнера для результата.
+     * @param delimeter - разделитель.
+     * @param offset - позиция начала поиска разделителя.
+     * @return T - контейнер с результатом.
+     * @en @brief Split a string into substrings using a given delimiter.
+     * @tparam T - container type for the result.
+     * @param delimeter - delimiter.
+     * @param offset - the position to start searching for the separator.
+     * @return T - container with the result.
      */
     template<typename T>
     T split(str_piece delimeter, size_t offset = 0) const {
         return splitf<T>(delimeter.symbols(), delimeter.length(), 0, offset);
     }
     /*!
-     * @brief Получить объект `Splitter` по заданному разделителю, который позволяет последовательно
+     * @ru @brief Получить объект `Splitter` по заданному разделителю, который позволяет последовательно
      *        получать подстроки методом `next()`, пока `is_done()` false.
-     * @param delimeter - разделитель
-     * @return Splitter<K>
+     * @param delimeter - разделитель.
+     * @return Splitter<K>.
+     * @en @brief Retrieve a `Splitter` object by the given splitter, which allows sequential
+     * get substrings using the `next()` method while `is_done()` is false.
+     * @param delimeter - delimiter.
+     * @return Splitter<K>.
      */
     Splitter<K> splitter(str_piece delimeter) const;
 
     // Начинается ли эта строка с указанной подстроки
+    // Does this string start with the specified substring
     constexpr bool starts_with(const K* prefix, size_t l) const noexcept {
         return _len() >= l && 0 == traits::compare(_str(), prefix, l);
     }
     /*!
-     * @brief Начинается ли строка с заданной подстроки
-     * @param prefix - подстрока
+     * @ru @brief Начинается ли строка с заданной подстроки.
+     * @param prefix - подстрока.
+     * @en @brief Whether the string begins with the given substring.
+     * @param prefix - substring.
      */
     constexpr bool starts_with(str_piece prefix) const noexcept {
         return starts_with(prefix.symbols(), prefix.length());
@@ -1375,25 +1674,31 @@ public:
         return true;
     }
     /*!
-     * @brief Начинается ли строка с заданной подстроки без учёта регистра ASCII символов
-     * @param prefix - подстрока
+     * @ru @brief Начинается ли строка с заданной подстроки без учёта регистра ASCII символов.
+     * @param prefix - подстрока.
+     * @en @brief Whether the string begins with the given substring in a case-insensitive ASCII character.
+     * @param prefix - substring.
      */
     constexpr bool starts_with_ia(str_piece prefix) const noexcept {
         return starts_with_ia(prefix.symbols(), prefix.length());
     }
     // Начинается ли эта строка с указанной подстроки без учета unicode регистра
+    // Does this string begin with the specified substring, insensitive to unicode case
     bool starts_with_iu(const K* prefix, size_t len) const noexcept {
         return _len() >= len && 0 == uni::compareiu(_str(), len, prefix, len);
     }
     /*!
-     * @brief Начинается ли строка с заданной подстроки без учёта регистра Unicode символов первой плоскости (<0xFFFF)
-     * @param prefix - подстрока
+     * @ru @brief Начинается ли строка с заданной подстроки без учёта регистра Unicode символов первой плоскости (<0xFFFF).
+     * @param prefix - подстрока.
+     * @en @brief Whether the string starts with the given substring, case-insensitive Unicode characters of the first plane (<0xFFFF).
+     * @param prefix - substring.
      */
     bool starts_with_iu(str_piece prefix) const noexcept {
         return starts_with_iu(prefix.symbols(), prefix.length());
     }
 
     // Является ли эта строка началом указанной строки
+    // Is this string the beginning of the specified string
     constexpr bool prefix_in(const K* text, size_t len) const noexcept {
         size_t myLen = _len();
         if (myLen > len)
@@ -1401,25 +1706,31 @@ public:
         return !myLen || 0 == traits::compare(text, _str(), myLen);
     }
     /*!
-     * @brief Является ли эта строка началом другой строки
-     * @param text - другая строка
+     * @ru @brief Является ли эта строка началом другой строки.
+     * @param text - другая строка.
+     * @en @brief Whether this string is the beginning of another string.
+     * @param text - another string.
      */
     constexpr bool prefix_in(str_piece text) const noexcept {
         return prefix_in(text.symbols(), text.length());
     }
     // Заканчивается ли строка указанной подстрокой
+    // Does the string end with the specified substring
     constexpr bool ends_with(const K* suffix, size_t len) const noexcept {
         size_t myLen = _len();
         return len <= myLen && traits::compare(_str() + myLen - len, suffix, len) == 0;
     }
     /*!
-     * @brief Заканчивается ли строка указанной подстрокой
-     * @param suffix - подстрока
+     * @ru @brief Заканчивается ли строка указанной подстрокой.
+     * @param suffix - подстрока.
+     * @en @brief Whether the string ends with the specified substring.
+     * @param suffix - substring.
      */
     constexpr bool ends_with(str_piece suffix) const noexcept {
         return ends_with(suffix.symbols(), suffix.length());
     }
     // Заканчивается ли строка указанной подстрокой без учета регистра ASCII
+    // Whether the string ends with the specified substring, case insensitive ASCII
     constexpr bool ends_with_ia(const K* suffix, size_t len) const noexcept {
         size_t myLen = _len();
         if (myLen < len) {
@@ -1436,26 +1747,32 @@ public:
         return true;
     }
     /*!
-     * @brief Заканчивается ли строка указанной подстрокой без учёта регистра ASCII символов
-     * @param suffix - подстрока
+     * @ru @brief Заканчивается ли строка указанной подстрокой без учёта регистра ASCII символов.
+     * @param suffix - подстрока.
+     * @en @brief Whether the string ends with the specified substring in a case-insensitive ASCII character.
+     * @param suffix - substring.
      */
     constexpr bool ends_with_ia(str_piece suffix) const noexcept {
         return ends_with_ia(suffix.symbols(), suffix.length());
     }
     // Заканчивается ли строка указанной подстрокой без учета регистра UNICODE
+    // Whether the string ends with the specified substring, case insensitive UNICODE
     constexpr bool ends_with_iu(const K* suffix, size_t len) const noexcept {
         size_t myLen = _len();
         return myLen >= len && 0 == uni::compareiu(_str() + myLen - len, len, suffix, len);
     }
     /*!
-     * @brief Заканчивается ли строка указанной подстрокой без учёта регистра Unicode символов первой плоскости (<0xFFFF)
-     * @param suffix - подстрока
+     * @ru @brief Заканчивается ли строка указанной подстрокой без учёта регистра Unicode символов первой плоскости (<0xFFFF).
+     * @param suffix - подстрока.
+     * @en @brief Whether the string ends with the specified substring, case-insensitive Unicode characters of the first plane (<0xFFFF).
+     * @param suffix - substring.
      */
     constexpr bool ends_with_iu(str_piece suffix) const noexcept {
         return ends_with_iu(suffix.symbols(), suffix.length());
     }
     /*!
-     * @brief Содержит ли строка только ASCII символы
+     * @ru @brief Содержит ли строка только ASCII символы.
+     * @en @brief Whether the string contains only ASCII characters.
      */
     bool is_ascii() const noexcept {
         if (_is_empty())
@@ -1485,49 +1802,68 @@ public:
         return true;
     }
     /*!
-     * @brief Получить копию строки в верхнем регистре ASCII символов
+     * @ru @brief Получить копию строки в верхнем регистре ASCII символов.
      * @tparam R - желаемый тип строки, по умолчанию тот же, чей метод вызывался.
-     * @return R - копию строки в верхнем регистре
+     * @return R - копию строки в верхнем регистре.
+     * @en @brief Get a copy of the string in uppercase ASCII characters.
+     * @tparam R - the desired string type, by default the same whose method was called.
+     * @return R - uppercase copy of the string.
      */
     template<typename R = my_type>
     R uppered_only_ascii() const {
         return R::uppered_only_ascii_from(d());
     }
     /*!
-     * @brief Получить копию строки в нижнем регистре ASCII символов
+     * @ru @brief Получить копию строки в нижнем регистре ASCII символов.
      * @tparam R - желаемый тип строки, по умолчанию тот же, чей метод вызывался.
-     * @return R - копию строки в нижнем регистре
+     * @return R - копию строки в нижнем регистре.
+     * @en @brief Get a copy of the string in lowercase ASCII characters.
+     * @tparam R - the desired string type, by default the same whose method was called.
+     * @return R - lowercase copy of the string.
      */
     template<typename R = my_type>
     R lowered_only_ascii() const {
         return R::lowered_only_ascii_from(d());
     }
     /*!
-     * @brief Получить копию строки в верхнем регистре Unicode символов первой плоскости (<0xFFFF)
+     * @ru @brief Получить копию строки в верхнем регистре Unicode символов первой плоскости (<0xFFFF).
      * @tparam R - желаемый тип строки, по умолчанию тот же, чей метод вызывался.
-     * @return R - копию строки в верхнем регистре
+     * @return R - копию строки в верхнем регистре.
+     * @en @brief Get a copy of the string in upper case Unicode characters of the first plane (<0xFFFF).
+     * @tparam R - the desired string type, by default the same whose method was called.
+     * @return R - uppercase copy of the string.
      */
     template<typename R = my_type>
     R uppered() const {
         return R::uppered_from(d());
     }
     /*!
-     * @brief Получить копию строки в нижнем регистре Unicode символов первой плоскости (<0xFFFF)
+     * @ru @brief Получить копию строки в нижнем регистре Unicode символов первой плоскости (<0xFFFF).
      * @tparam R - желаемый тип строки, по умолчанию тот же, чей метод вызывался.
-     * @return R - копию строки в нижнем регистре
+     * @return R - копию строки в нижнем регистре.
+     * @en @brief Get a copy of the string in lowercase Unicode characters of the first plane (<0xFFFF).
+     * @tparam R - the desired string type, by default the same whose method was called.
+     * @return R - lowercase copy of the string.
      */
     template<typename R = my_type>
     R lowered() const {
         return R::lowered_from(d());
     }
     /*!
-     * @brief Получить копию строки с заменёнными вхождениями подстрок
+     * @ru @brief Получить копию строки с заменёнными вхождениями подстрок.
      * @tparam R - желаемый тип строки, по умолчанию тот же, чей метод вызывался.
-     * @param pattern - искомая подстрока
-     * @param repl - строка, на которую заменять
-     * @param offset - начальная позиция поиска
-     * @param maxCount - максимальное количество замен, 0 - без ограничений
+     * @param pattern - искомая подстрока.
+     * @param repl - строка, на которую заменять.
+     * @param offset - начальная позиция поиска.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
      * @return R строку заданного типа, по умолчанию того же, чей метод вызывался.
+     * @en @brief Get a copy of the string with occurrences of substrings replaced.
+     * @tparam R - the desired string type, by default the same whose method was called.
+     * @param pattern - the substring to search for.
+     * @param repl - the string to replace with.
+     * @param offset - starting position of the search.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     * @return R a string of the given type, by default the same whose method was called.
      */
     template<typename R = my_type>
     R replaced(str_piece pattern, str_piece repl, size_t offset = 0, size_t maxCount = 0) const {
@@ -1535,10 +1871,14 @@ public:
     }
 
     /*!
-     * @brief Получить строковое выражение, которое выдает строку с заменёнными подстроками, заданными строковыми литералами.
-     * @param pattern - строковый литерал, подстрока, которую меняем
-     * @param repl - строковый литерал, подстрока, на которую меняем
-     * @return строковое выражение, заменяющее подстроки
+     * @ru @brief Получить строковое выражение, которое выдает строку с заменёнными подстроками, заданными строковыми литералами.
+     * @param pattern - строковый литерал, подстрока, которую меняем.
+     * @param repl - строковый литерал, подстрока, на которую меняем.
+     * @return строковое выражение, заменяющее подстроки.
+     * @en @brief Get a string expression that produces a string with replaced substrings given by string literals.
+     * @param pattern - string literal, substring to be changed.
+     * @param repl - string literal, substring to change to.
+     * @return a string expression that replaces substrings.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count, typename M, size_t L = const_lit_for<K, M>::Count>
     expr_replaces<K, N - 1, L - 1> replace_init(T&& pattern, M&& repl) const {
@@ -1566,37 +1906,50 @@ public:
         return make_trim_op(from, trim_operator<S, K, 0, withSpaces>{{pattern}});
     }
     /*!
-     * @brief Получить строку с удалением пробельных символов слева и справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @return R - строка, с удалёнными в начале и в конце пробельными символами
+     * @ru @brief Получить строку с удалением пробельных символов слева и справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @return R - строка, с удалёнными в начале и в конце пробельными символами.
+     * @en @brief Get a string with whitespace removed on the left and right.
+     * @tparam R - desired string type, default simple_str.
+     * @return R - a string with whitespace characters removed at the beginning and end.
      */
     template<typename R = str_piece>
     R trimmed() const {
         return R::template trim_static<TrimSides::TrimAll>(d());
     }
     /*!
-     * @brief Получить строку с удалением пробельных символов слева
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @return R - строка, с удалёнными в начале пробельными символами
+     * @ru @brief Получить строку с удалением пробельных символов слева.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @return R - строка, с удалёнными в начале пробельными символами.
+     * @en @brief Get a string with whitespace removed on the left.
+     * @tparam R - desired string type, default simple_str.
+     * @return R - a string with leading whitespace characters removed.
      */
     template<typename R = str_piece>
     R trimmed_left() const {
         return R::template trim_static<TrimSides::TrimLeft>(d());
     }
     /*!
-     * @brief Получить строку с удалением пробельных символов справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @return R - строка, с удалёнными в конце пробельными символами
+     * @ru @brief Получить строку с удалением пробельных символов справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @return R - строка, с удалёнными в конце пробельными символами.
+     * @en @brief Get a string with whitespace removed on the right.
+     * @tparam R - desired string type, default simple_str.
+     * @return R - a string with whitespace characters removed at the end.
      */
     template<typename R = str_piece>
     R trimmed_right() const {
         return R::template trim_static<TrimSides::TrimRight>(d());
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, слева и справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в литерале
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, слева и справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в литерале.
+     * @en @brief Get a string with the characters specified by the string literal removed from the left and right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the literal removed at the beginning and at the end.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1604,10 +1957,14 @@ public:
         return R::template trim_static<TrimSides::TrimAll, false>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, слева
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в начале символами, содержащимися в литерале
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, слева.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в начале символами, содержащимися в литерале.
+     * @en @brief Get a string with the characters specified by the string literal removed from the left.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the literal removed at the beginning.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1615,10 +1972,14 @@ public:
         return R::template trim_static<TrimSides::TrimLeft, false>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в конце символами, содержащимися в литерале
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в конце символами, содержащимися в литерале.
+     * @en @brief Get a string with the characters specified by the string literal removed from the right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with characters contained in the literal removed at the end.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1626,14 +1987,21 @@ public:
         return R::template trim_static<TrimSides::TrimRight, false>(d(), pattern);
     }
     // Триминг по символам в литерале и пробелам
+    // Trimming by characters in literal and spaces
 
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, а также
-     *  пробельных символов, слева и справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, а также
+     *  пробельных символов, слева и справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в литерале
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string with the characters specified by the string literal removed, as well as
+     * whitespace characters, left and right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the literal removed at the beginning and at the end
+     * and whitespace characters.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1641,12 +2009,18 @@ public:
         return R::template trim_static<TrimSides::TrimAll, true>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, а также
-     *  пробельных символов, слева
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, а также
+     *  пробельных символов, слева.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в начале символами, содержащимися в литерале
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string with the characters specified by the string literal removed, as well as
+     * whitespace characters, left.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the literal removed at the beginning
+     *  and whitespace characters.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1654,12 +2028,18 @@ public:
         return R::template trim_static<TrimSides::TrimLeft, true>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных строковым литералом, а также
-     *  пробельных символов, справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных строковым литералом, а также
+     *  пробельных символов, справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строковый литерал, задающий символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в конце символами, содержащимися в литерале
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string with the characters specified by the string literal removed, as well as
+     * whitespace characters, right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern is a string literal specifying the characters that will be trimmed.
+     * @return R - a string with characters contained in the literal removed at the end
+     *  and whitespace characters.
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -1667,68 +2047,99 @@ public:
         return R::template trim_static<TrimSides::TrimRight, true>(d(), pattern);
     }
     // Триминг по динамическому источнику
+    // Trimming by dynamic source
 
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, слева и справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в шаблоне
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, слева и справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в шаблоне.
+     * @en @brief Get a string with characters specified by another string removed, left and right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the pattern removed at the beginning and at the end.
      */
     template<typename R = str_piece>
     R trimmed(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimAll, false>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, слева
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в начале символами, содержащимися в шаблоне
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, слева.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в начале символами, содержащимися в шаблоне.
+     * @en @brief Get a string with characters specified by another string removed from the left.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the pattern removed at the beginning.
      */
     template<typename R = str_piece>
     R trimmed_left(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, false>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
-     * @return R - строка, с удалёнными в конце символами, содержащимися в шаблоне
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
+     * @return R - строка, с удалёнными в конце символами, содержащимися в шаблоне.
+     * @en @brief Get a string with characters specified by another string removed to the right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with characters contained in the pattern removed at the end.
      */
     template<typename R = str_piece>
     R trimmed_right(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimRight, false>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, а также
-     *  пробельных символов, слева и справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, а также
+     *  пробельных символов, слева и справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в начале и в конце символами, содержащимися в шаблоне
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string, removing characters specified by another string, as well as
+     * whitespace characters, left and right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the pattern removed at the beginning and at the end
+     *  and whitespace characters.
      */
     template<typename R = str_piece>
     R trimmed_with_spaces(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimAll, true>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, а также
-     *  пробельных символов, слева
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, а также
+     *  пробельных символов, слева.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в начале символами, содержащимися в шаблоне
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string, removing characters specified by another string, as well as
+     * whitespace characters, left.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with the characters contained in the pattern removed at the beginning
+     *  and whitespace characters.
      */
     template<typename R = str_piece>
     R trimmed_left_with_spaces(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, true>(d(), pattern);
     }
     /*!
-     * @brief Получить строку с удалением символов, заданных другой строкой, а также
-     *  пробельных символов, справа
-     * @tparam R - желаемый тип строки, по умолчанию simple_str
-     * @param pattern - строка, задающая символы, которые будут обрезаться
+     * @ru @brief Получить строку с удалением символов, заданных другой строкой, а также
+     *  пробельных символов, справа.
+     * @tparam R - желаемый тип строки, по умолчанию simple_str.
+     * @param pattern - строка, задающая символы, которые будут обрезаться.
      * @return R - строка, с удалёнными в конце символами, содержащимися в шаблоне
-     *  и пробельными символами
+     *  и пробельными символами.
+     * @en @brief Get a string, removing characters specified by another string, as well as
+     * whitespace characters, right.
+     * @tparam R - desired string type, default simple_str.
+     * @param pattern - a string specifying the characters that will be trimmed.
+     * @return R - a string with characters contained in the template removed at the end
+     * and whitespace characters.
      */
     template<typename R = str_piece>
     R trimmed_right_with_spaces(str_piece pattern) const {
@@ -1738,16 +2149,24 @@ public:
 
 /*
 * Базовая структура с информацией о строке.
-* Это структура для невладеющих строк.
+* Это структура для не владеющих строк.
 * Так как здесь только один базовый класс, MSVC компилятор автоматом применяет empty base optimization,
 * в результате размер класса не увеличивается
+* Basic structure with string information.
+* This is the structure for non-owning strings.
+* Since there is only one base class, the MSVC compiler automatically applies empty base optimization,
+* as a result the class size does not increase
 */
 
 /*!
- * @brief Простейший класс иммутабельной не владеющей строки.
+ * @ru @brief Простейший класс иммутабельной не владеющей строки.
  * @details Аналог std::string_view. Содержит только указатель и длину.
  *          Как наследник от str_algs поддерживает все константные строковые методы.
- * @tparam K - тип символов строки
+ * @tparam K - тип символов строки.
+ * @en @brief The simplest immutable non-owning string class.
+ * @details Similar to std::string_view. Contains only a pointer and a length.
+ *      As a descendant of str_algs, it supports all constant string methods.
+ * @tparam K - the character type of the string.
  */
 template<typename K>
 struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
@@ -1760,66 +2179,83 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
     simple_str() = default;
 
     /*!
-     * @brief Конструктор из строкового литерала.
+     * @ru @brief Конструктор из строкового литерала.
+     * @en @brief Constructor from a string literal.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     constexpr simple_str(T&& v) noexcept : str(v), len(N - 1) {}
     /*!
-     * @brief Конструктор из указателя и длины
+     * @ru @brief Конструктор из указателя и длины.
+     * @en @brief Constructor from pointer and length.
      */
     constexpr simple_str(const K* p, size_t l) noexcept : str(p), len(l) {}
     /*!
-     * @brief Конструктор, позволяющий инициализировать объектами std::string, и std::string_view
+     * @ru @brief Конструктор, позволяющий инициализировать объектами std::string, и std::string_view
      *        при условии, что они lvalue, то есть не временные.
+     * @en @brief Constructor that allows you to initialize std::string and std::string_view objects
+     *        provided that they are lvalue, that is, not temporary.
      */
     template<typename S>
         requires(std::is_same_v<S, std::string&> || std::is_same_v<S, const std::string&>
             || std::is_same_v<S, std::string_view&> || std::is_same_v<S, const std::string_view&>)
     constexpr simple_str(S&& s) noexcept : str(s.data()), len(s.length()) {}
     /*!
-     * @brief Получить длину строки
+     * @ru @brief Получить длину строки.
+     * @en @brief Get the length of the string.
      */
     constexpr size_t length() const noexcept {
         return len;
     }
     /*!
-     * @brief Получить указатель на константный буфер с символами строки
+     * @ru @brief Получить указатель на константный буфер с символами строки.
+     * @en @brief Get a pointer to a constant buffer containing string characters.
      */
     constexpr const symb_type* symbols() const noexcept {
         return str;
     }
     /*!
-     * @brief Проверить, не пуста ли строка
+     * @ru @brief Проверить, не пуста ли строка.
+     * @en @brief Check if a string is empty.
      */
     constexpr bool is_empty() const noexcept {
         return len == 0;
     }
     /*!
-     * @brief Проверить, не указывают ли два объекта на одну строку
-     * @param other - другая строка
+     * @ru @brief Проверить, не указывают ли два объекта на одну строку.
+     * @param other - другая строка.
+     * @en @brief Check if two objects point to the same string.
+     * @param other - another string.
      */
     bool is_same(simple_str<K> other) const noexcept {
         return str == other.str && len == other.len;
     }
     /*!
-     * @brief Проверить, не является ли строка частью другой строки
-     * @param other - другая строка
+     * @ru @brief Проверить, не является ли строка частью другой строки.
+     * @param other - другая строка.
+     * @en @brief Check if a string is part of another string.
+     * @param other - another string.
      */
     bool is_part_of(simple_str<K> other) const noexcept {
         return str >= other.str && str + len <= other.str + other.len;
     }
     /*!
-     * @brief Получить символ из указанной позиции. Проверка границ не выполняется.
-     * @param idx - позиция символа
-     * @return K  - символ
+     * @ru @brief Получить символ из указанной позиции. Проверка границ не выполняется.
+     * @param idx - позиция символа.
+     * @return K  - символ.
+     * @en @brief Get the character from the specified position. Bounds checking is not performed.
+     * @param idx - position of the symbol.
+     * @return K is a symbol.
      */
     K operator[](size_t idx) const {
         return str[idx];
     }
     /*!
-     * @brief Сдвигает начало строки на заданное количество символов
-     * @param delta - количество символов
-     * @return my_type& 
+     * @ru @brief Сдвигает начало строки на заданное количество символов.
+     * @param delta - количество символов.
+     * @return my_type&.
+     * @en @brief Shifts the start of a line by the specified number of characters.
+     * @param delta - number of characters.
+     * @return my_type&.
      */
     my_type& remove_prefix(size_t delta) {
         str += delta;
@@ -1827,9 +2263,12 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
         return *this;
     }
     /*!
-     * @brief Укорачивает строку на заданное количество символов
-     * @param delta - количество символов
-     * @return my_type& 
+     * @ru @brief Укорачивает строку на заданное количество символов.
+     * @param delta - количество символов.
+     * @return my_type&.
+     * @en @brief Shortens the string by the specified number of characters.
+     * @param delta - number of characters.
+     * @return my_type&.
      */
     my_type& remove_suffix(size_t delta) {
         len -= delta;
@@ -1838,8 +2277,8 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
 };
 
 /*!
- * @brief Класс, заявляющий, что ссылается на нуль-терминированную строку.
- * @tparam K - тип символов строки
+ * @ru @brief Класс, заявляющий, что ссылается на нуль-терминированную строку.
+ * @tparam K - тип символов строки.
  * @details Служит для показа того, что функция параметром хочет получить
  *      строку с нулем в конце, например, ей надо дальше передавать его в
  *      стороннее API. Без этого ей надо было бы либо указывать параметром
@@ -1847,6 +2286,15 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
  *      к постоянным накладным расходам на излишнее копирование строк во временный
  *      буфер. Источником нуль-терминированных строк могут быть строковые литералы
  *      при компиляции, либо классы, хранящие строки.
+ * @en @brief A class that claims to refer to a null-terminated string.
+ * @tparam K - the character type of the string.
+ * @details Shows what the function wants to receive as a parameter
+ * a string with a zero at the end, for example, she needs to further transfer it to
+ * third party API. Without this, she would have to either specify the parameter
+ * specific string class, which deprives universality, or would lead
+ * to the constant overhead of unnecessary copying of string into the temporary
+ * buffer. Null-terminated strings can be sourced from string literals
+ * during compilation, or classes that store strings.
  */
 template<typename K>
 struct simple_str_nt : simple_str<K> {
@@ -1859,13 +2307,20 @@ struct simple_str_nt : simple_str<K> {
 
     simple_str_nt() = default;
     /*!
-     * @brief Явный конструктор из С-строки.
-     * @param p - указатель на C-строку (нуль-терминированная строка)
+     * @ru @brief Явный конструктор из С-строки.
+     * @param p - указатель на C-строку (нуль-терминированная строка).
      * @details Это единственный конструктор из всех строковых объектов, принимающий C-строку.
      * Вычисляет её длину при инициализации. Все остальные строковые объекты не инициализируются
      * C-строками. Это для того, чтобы `strlen` вызывалась только в одном месте библиотеки,
      * длина C-строки вычислялась только один раз и далее не терялась случайно при передаче между разными 
      * типами строковых объектов.
+     * @en @brief Explicit constructor from C-string.
+     * @param p - pointer to a C-string (null-terminated string).
+     * @details This is the only constructor of all string objects that accepts a C-string.
+     * Calculates its length upon initialization. All other string objects are not initialized
+     * C-strings. This is to ensure that `strlen` is called only in one place in the library,
+     * the length of the C-string was calculated only once and was not subsequently lost accidentally when transferred between different
+     * types of string objects.
      */
     template<typename T> requires std::is_same_v<std::remove_const_t<std::remove_pointer_t<std::remove_cvref_t<T>>>, K>
     explicit simple_str_nt(T&& p) noexcept {
@@ -1873,8 +2328,10 @@ struct simple_str_nt : simple_str<K> {
         base::str = base::len ? p : empty_string;
     }
     /*!
-     * @brief Конструктор, позволяющий инициализировать объектами std::string, и std::string_view
+     * @ru @brief Конструктор, позволяющий инициализировать объектами std::string, и std::string_view
      *        при условии, что они lvalue, то есть не временные.
+     * @en @brief Constructor that allows you to initialize std::string and std::string_view objects
+     *        provided that they are lvalue, that is, not temporary.
      */
     template<typename S>
         requires(std::is_same_v<S, std::string&> || std::is_same_v<S, const std::string&>
@@ -1883,16 +2340,21 @@ struct simple_str_nt : simple_str<K> {
 
     static const my_type empty_str;
     /*!
-     * @brief Оператор преобразования в нуль-терминированную C-строку
-     * @return const K* - указатель на начало строки
+     * @ru @brief Оператор преобразования в нуль-терминированную C-строку.
+     * @return const K* - указатель на начало строки.
+     * @en @brief Conversion operator to a null-terminated C string.
+     * @return const K* - pointer to the beginning of the line.
      */
     operator const K*() const noexcept {
         return base::str;
     }
     /*!
-     * @brief Получить нуль-терминированную строку, сдвинув начало на заданное количество символов
-     * @param from - на сколько символов сдвинуть начало строки
-     * @return my_type 
+     * @ru @brief Получить нуль-терминированную строку, сдвинув начало на заданное количество символов.
+     * @param from - на сколько символов сдвинуть начало строки.
+     * @return my_type.
+     * @en @brief Get a null-terminated string by shifting the start by the specified number of characters.
+     * @param from - by how many characters to shift the beginning of the line.
+     * @return my_type.
      */
     my_type to_nts(size_t from) {
         if (from > base::len) {
@@ -1915,8 +2377,10 @@ using stru = simple_str_nt<u16s>;
 using struu = simple_str_nt<u32s>;
 
 /*!
- * @brief Класс для последовательного получения подстрок по заданному разделителю
- * @tparam K - тип символов
+ * @ru @brief Класс для последовательного получения подстрок по заданному разделителю.
+ * @tparam K - тип символов.
+ * @en @brief Class for sequentially obtaining substrings by a given delimiter.
+ * @tparam K - character type.
  */
 template<typename K>
 class Splitter {
@@ -1926,14 +2390,17 @@ class Splitter {
 public:
     Splitter(simple_str<K> text, simple_str<K> delim) : text_(text), delim_(delim) {}
     /*!
-     * @brief Узнать, не закончились ли подстроки
+     * @ru @brief Узнать, не закончились ли подстроки.
+     * @en @brief Find out if substrings are running out.
      */
     bool is_done() const {
         return text_.length() == str::npos;
     }
     /*!
-     * @brief Получить следующую подстроку
-     * @return simple_str
+     * @ru @brief Получить следующую подстроку.
+     * @return simple_str.
+     * @en @brief Get the next substring.
+     * @return simple_str.
      */
     simple_str<K> next() {
         if (!text_.length()) {
@@ -2108,6 +2575,7 @@ struct utf_convert_selector<u16s, u32s> {
 template<>
 struct utf_convert_selector<u16s, u16s> {
     // При конвертации char16_t в wchar_t под windows будет вызываться эта реализация
+    // When converting char16_t to wchar_t under windows this implementation will be called
     static size_t need_len(const u16s* src, size_t srcLen) {
         return srcLen;
     }
@@ -2120,6 +2588,7 @@ struct utf_convert_selector<u16s, u16s> {
 template<>
 struct utf_convert_selector<u32s, u32s> {
     // При конвертации char32_t в wchar_t под linux будет вызываться эта реализация
+    // When converting char32_t to wchar_t under Linux, this implementation will be called
     static size_t need_len(const u32s* src, size_t srcLen) {
         return srcLen;
     }
@@ -2192,12 +2661,18 @@ struct utf_convert_selector<wchar_t, u32s> {
 };
 
 /*!
- * @brief Базовый класс для строк, могущих конвертироваться из другого типа символов.
- * @tparam K - тип символов
- * @tparam Impl - конечный класс
+ * @ru @brief Базовый класс для строк, могущих конвертироваться из другого типа символов.
+ * @tparam K - тип символов.
+ * @tparam Impl - конечный класс.
  * @details Конвертация выполняется через UTF преобразование.
  *  Считаем, что строки `char` - в UTF-8, `char16_t` - в UTF-16, `char32_t` - в UTF-32.
  *  `wchar_t` - под Windows UTF-16, в Linux - UTF-32.
+ * @en @brief Base class for strings that can be converted from another character type.
+ * @tparam K - character type.
+ * @tparam Impl - final class.
+ * @details Conversion is performed via UTF conversion.
+ *   We assume that the strings `char` are in UTF-8, `char16_t` - in UTF-16, `char32_t` - in UTF-32.
+ *  `wchar_t` - in Windows UTF-16, in Linux - UTF-32.
  */
 template<typename K, typename Impl>
 class from_utf_convertable {
@@ -2232,9 +2707,12 @@ public:
 };
 
 /*!
- * @brief Строковое выражение для конвертации строк в разные виды UTF
- * @tparam From - Тип какой строки конвертируем
- * @tparam To - В какого типа строку конвертируем
+ * @ru @brief Строковое выражение для конвертации строк в разные виды UTF.
+ * @tparam From - Тип какой строки конвертируем.
+ * @tparam To - В какого типа строку конвертируем.
+ * @en @brief String expression to convert strings to different UTF types.
+ * @tparam From - The type of which string we are converting.
+ * @tparam To - What type of string we convert to.
  */
 template<typename From, typename To> requires (!std::is_same_v<From, To>)
 struct expr_utf {
@@ -2252,11 +2730,16 @@ struct expr_utf {
 };
 
 /*!
- * @brief Возвращает строковое выражение, преобразующую строку из одного типа символов
+ * @ru @brief Возвращает строковое выражение, преобразующую строку из одного типа символов
  * в другой тип, через UTF-конвертирование.
- * @tparam To - тип строки, в которую надо конвертировать
+ * @tparam To - тип строки, в которую надо конвертировать.
  * @tparam From - тип строки, из которого надо конвертировать. Выводится из аргумента.
  * @param from - строка, из которой надо конвертировать.
+ * @en @brief Returns a string expression that converts a string of one character type
+ * to another type, via UTF conversion.
+ * @tparam To - the type of string to convert to.
+ * @tparam From - the type of string to convert from. Derived from the argument.
+ * @param from - the string from which to convert.
  */
 template<typename To, typename From> requires (!std::is_same_v<From, To>)
 auto e_utf(simple_str<From> from) {
@@ -2264,7 +2747,8 @@ auto e_utf(simple_str<From> from) {
 }
 
 /*!
- * @brief Концепт типа, который может сохранить строку
+ * @ru @brief Концепт типа, который может сохранить строку.
+ * @en @brief A type concept that can store a string.
  */
 template<typename A, typename K>
 concept storable_str = requires {
@@ -2273,22 +2757,24 @@ concept storable_str = requires {
 };
 
 /*!
- * @brief Концепт типа, который может модифицировать хранимую строку
+ * @ru @brief Концепт типа, который может модифицировать хранимую строку.
+ * @en @brief A type concept that can modify a stored string.
  */
 template<typename A, typename K>
 concept mutable_str = storable_str<A, K> && requires { A::is_str_mutable == true; };
 
 /*!
- * @brief Концепт типа, который не может модифицировать хранимую строку
+ * @ru @brief Концепт типа, который не может модифицировать хранимую строку.
+ * @en @brief A type concept that cannot modify a stored string.
  */
 template<typename A, typename K>
 concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
 
 /*!
- * @brief База для объектов, владеющих строкой
- * @tparam K - тип символов
- * @tparam Impl - конечный класс наследник
- * @tparam Allocator - тип аллокатора
+ * @ru @brief База для объектов, владеющих строкой.
+ * @tparam K - тип символов.
+ * @tparam Impl - конечный класс наследник.
+ * @tparam Allocator - тип аллокатора.
  * @details По прежнему ничего не знает о том, где наследник хранит строку и её размер.
  * Просто вызывает его методы для получения места, и заполняет его при необходимости.
  * Работает только при создании объекта, не работает с модификацией строки после
@@ -2301,11 +2787,30 @@ concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
  *   - `K* set_size(size_t size)` - перевыделить место для строки, если при создании не угадали
  *                                  нужный размер и место нужно больше или меньше.
  *                                  Содержимое строки нужно оставить.
- *
  * Хотя тип аллокатора и задаётся параметром шаблона, делается это только для проброса
  * его типа в конструкторы, методы аллокатора не вызываются. Если наследник не пользуется
  * аллокатором, а сам в `init` и `set_size` как-то выделяет место, может указать типом аллокатора
  * какой-либо пустой класс.
+ * @en @brief The base for the objects that own the string.
+ * @tparam K - character type.
+ * @tparam Impl - the final class is the successor.
+ * @tparam Allocator - type of allocator.
+ * @details Still knows nothing about where the heir stores the string and its size.
+ * Simply calls its methods to get the space, and fills it as needed.
+ * Works only when creating an object, does not work with string modification after
+ * its creation and ensures that if these methods are called, the object is only
+ * is being created and no data sharing has yet taken place.
+ *
+ * These methods must be implemented by the descendant class and are called only when an object is created
+ *  - `K* init(size_t size)`       - allocate space for a line of the specified size, return the address
+ *  - `void create_empty()`        - create an empty object
+ *  - `K* set_size(size_t size)`   - re-allocate space for the line if you didn’t guess correctly when creating
+ *                                   the size you need and the space you need is larger or smaller.
+ *                                   The contents of the line must be left.
+ * Although the allocator type is specified by the template parameter, this is done only for forwarding
+ * of its type in constructors, allocator methods are not called. If the heir does not use
+ * an allocator, and in `init` and `set_size` it somehow allocates space, can indicate the type of the allocator
+ * any empty class.
  */
 template<typename K, typename Impl, typename Allocator>
 class str_storable : protected Allocator {
@@ -2316,7 +2821,8 @@ public:
 
 protected:
     /*!
-     * @brief Получить аллокатор
+     * @ru @brief Получить аллокатор.
+     * @en @brief Get the allocator.
      */
     allocator_t& allocator() {
         return *static_cast<Allocator*>(this);
@@ -2358,6 +2864,8 @@ protected:
     }
     // GCC до сих пор не даёт делать полную специализацию вложенного шаблонного класса внутри внешнего класса, только частичную.
     // Поэтому добавим фиктивный параметр шаблона, чтобы сделать специализацию для u8s прямо в классе.
+    // GCC still does not allow full specialization of a nested template class inside an outer class, only partial.
+    // So let's add a dummy template parameter to make the specialization for u8s right in the class.
     template<typename T, bool Dummy = true>
     struct ChangeCase {
         template<typename From, typename Op1, typename... Args>
@@ -2372,6 +2880,7 @@ protected:
         }
     };
     // Для utf8 сделаем отдельную спецификацию, так как при смене регистра может изменится длина строки
+    // For utf8 we will make a separate specification, since changing the register may change the length of the string
     template<bool Dummy>
     struct ChangeCase<u8s, Dummy> {
         template<typename From, typename Op1, typename... Args>
@@ -2389,9 +2898,11 @@ protected:
                 size_t newLen = opChangeCase(source, len, dest, len);
                 if (newLen < len) {
                     // Строка просто укоротилась
+                    // The string was simply shortened
                     result.set_size(newLen);
                 } else if (newLen > len) {
                     // Строка не влезла в буфер.
+                    // The line did not fit into the buffer.
                     size_t readed = static_cast<size_t>(source - ptr);
                     size_t writed = static_cast<size_t>(dest - pWrite);
                     pWrite = result.set_size(newLen);
@@ -2411,8 +2922,10 @@ public:
     inline static constexpr bool is_str_storable = true;
 
     /*!
-     * @brief Создать пустой объект
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать пустой объект.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Create an empty object.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2422,9 +2935,12 @@ public:
     }
 
     /*!
-     * @brief Конструктор из другого строкового объекта
-     * @param other - другой строковый объект, simple_str
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор из другого строкового объекта.
+     * @param other - другой строковый объект, simple_str.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief A constructor from another string object.
+     * @param other - another string object, simple_str.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2437,10 +2953,14 @@ public:
             d().create_empty();
     }
     /*!
-     * @brief Конструктор повторения строки
-     * @param repeat - количество повторов
-     * @param pattern - строка, которую надо повторить
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор повторения строки.
+     * @param repeat - количество повторов.
+     * @param pattern - строка, которую надо повторить.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief String repetition constructor.
+     * @param repeat - number of repetitions.
+     * @param pattern - the line to be repeated.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2457,10 +2977,14 @@ public:
             d().create_empty();
     }
     /*!
-     * @brief Конструктор повторения символа
-     * @param count - количество повторов
-     * @param pad - символ, который надо повторить
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор повторения символа.
+     * @param count - количество повторов.
+     * @param pad - символ, который надо повторить.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Character repetition constructor.
+     * @param count - number of repetitions.
+     * @param pad - the character to be repeated.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2473,12 +2997,18 @@ public:
             d().create_empty();
     }
     /*!
-     * @brief Конструктор из строкового выражения
-     * @param expr - строковое выражение
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор из строкового выражения.
+     * @param expr - строковое выражение.
+     * @param ...args - параметры для инициализации аллокатора.
      * @details Конструктор запрашивает у строкового выражения `length()`,
      *  выделяет память нужного размера, и вызывает метод `place()` для размещения
      *  результата в буфере.
+     * @en @brief Constructor from a string expression.
+     * @param expr - string expression.
+     * @param ...args - parameters for initializing the allocator.
+     * @details The constructor queries the string expression `length()`,
+     *  allocates memory of the required size, and calls the `place()` method to allocate
+     *  result in buffer.
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2490,13 +3020,20 @@ public:
             d().create_empty();
     }
     /*!
-     * @brief Конструктор из строкового источника с заменой
-     * @param f - строковый объект, из которого берётся исходная строка
-     * @param pattern - подстрока, которую надо заменить
-     * @param repl  - строка, на которую надо заменить
-     * @param offset - начальная позиция для поиска подстрок
-     * @param maxCount - максимальное количество замен, 0 - без ограничений
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор из строкового источника с заменой.
+     * @param f - строковый объект, из которого берётся исходная строка.
+     * @param pattern - подстрока, которую надо заменить.
+     * @param repl  - строка, на которую надо заменить.
+     * @param offset - начальная позиция для поиска подстрок.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Constructor from string source with replacement.
+     * @param f - the string object from which the source string is taken.
+     * @param pattern - substring to be replaced.
+     * @param repl - the string to be replaced with.
+     * @param offset - starting position for searching substrings.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2539,16 +3076,21 @@ public:
         *ptr = 0;
     }
     /*!
-     * @brief Оператор преобразования в нуль-терминированную C-строку
-     * @return const K* - указатель на начало строки
+     * @ru @brief Оператор преобразования в нуль-терминированную C-строку.
+     * @return const K* - указатель на начало строки.
+     * @en @brief Conversion operator to a null-terminated C string.
+     * @return const K* - pointer to the beginning of the line.
      */
     operator const K*() const noexcept {
         return d().symbols();
     }
     /*!
-     * @brief Получить simple_str_nt, начиная с заданного символа
-     * @param from - позиция начального символа, по умолчанию 0
-     * @return simple_str_nt
+     * @ru @brief Получить simple_str_nt, начиная с заданного символа.
+     * @param from - позиция начального символа, по умолчанию 0.
+     * @return simple_str_nt,
+     * @en @brief Get simple_str_nt starting at the given character.
+     * @param from - position of the starting character, default 0.
+     * @return simple_str_nt,
      */
     s_str_nt to_nts(size_t from = 0) const {
         size_t len = d().length();
@@ -2558,19 +3100,21 @@ public:
         return {d().symbols() + from, len - from};
     }
     /*!
-     * @brief Преобразовать в simple_str_nt
-     * @return simple_str_nt
+     * @ru @brief Преобразовать в simple_str_nt.
+     * @return simple_str_nt.
+     * @en @brief Convert to simple_str_nt.
+     * @return simple_str_nt.
      */
     operator s_str_nt() const {
         return {d().symbols(), d().length()};
     }
     /*!
-     * @brief Конкатенация строк из контейнера в одну строку
-     * @param strings - контейнер со строками
-     * @param delimeter - разделитель, добавляемый между строками
-     * @param tail - добавить разделитель после последней строки
-     * @param skip_empty - пропускать пустые строки без добавления разделителя
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конкатенация строк из контейнера в одну строку.
+     * @param strings - контейнер со строками.
+     * @param delimeter - разделитель, добавляемый между строками.
+     * @param tail - добавить разделитель после последней строки.
+     * @param skip_empty - пропускать пустые строки без добавления разделителя.
+     * @param ...args - параметры для инициализации аллокатора.
      * @details Функция служит для слияния контейнера строк в одну строку с разделителем.
      *  ```cpp
      *  std::vector<ssa> strings = get_strings();
@@ -2583,6 +3127,24 @@ public:
      *  lstringa<200> line{e_join(strings, "/")};
      *  ```
      * В этом случае компилятор может лучше оптимизировать код слияния строк.
+     * @en @brief Concatenate strings from the container into one string.
+     * @param strings - container with strings.
+     * @param delimeter - delimiter added between lines.
+     * @param tail - add a separator after the last line.
+     * @param skip_empty - skip empty lines without adding a separator.
+     * @param ...args - parameters for initializing the allocator.
+     * @details The function is used to merge a container of strings into one delimited string.
+     *  ```cpp
+     *  std::vector<ssa> strings = get_strings();
+     *  ssa delim = get_current_delimeter();
+     *  auto line = lstringa<200>::join(strings, delimeter);
+     *  ```
+     * It is worth noting that if the separator is known in advance, it is better to use the string expression `e_join`.
+     *  ```cpp
+     *  std::vector<ssa> strings = get_strings();
+     *  lstringa<200> line{e_join(strings, "/")};
+     *  ```
+     * In this case, the compiler can better optimize the string merging code.
      */
     template<typename T, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2628,9 +3190,12 @@ public:
         return result;
     }
     /*!
-     * @brief Создать строку, копию переданной в верхнем регистре символов ASCII
-     * @param f - строка источник
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать строку, копию переданной в верхнем регистре символов ASCII.
+     * @param f - строка источник.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Create a string copy of the passed in uppercase ASCII characters.
+     * @param f - source string.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2638,9 +3203,12 @@ public:
         return changeCaseAscii(f, makeAsciiUpper<K>, std::forward<Args>(args)...);
     }
     /*!
-     * @brief Создать копию переданной строки в нижнем регистре символов ASCII
-     * @param f - строка источник
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать копию переданной строки в нижнем регистре символов ASCII.
+     * @param f - строка источник.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Create a copy of the passed string in lowercase ASCII characters.
+     * @param f - source string.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2648,11 +3216,16 @@ public:
         return changeCaseAscii(f, makeAsciiLower<K>, std::forward<Args>(args)...);
     }
     /*!
-     * @brief Создать копию переданной строки в верхнем регистре символов Unicode первой плоскости (<0xFFFF)
-     * @param f - строка источник
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать копию переданной строки в верхнем регистре символов Unicode первой плоскости (<0xFFFF).
+     * @param f - строка источник.
+     * @param ...args - параметры для инициализации аллокатора.
      * @details Регистр меняется упрощенными таблицами, где один code_point всегда меняется в один code_point
      *          (но для UTF-8 возможно, что длина в code unit'ах изменится).
+     * @en @brief Create a copy of the passed string in uppercase Unicode characters of the first plane (<0xFFFF).
+     * @param f - source string.
+     * @param ...args - parameters for initializing the allocator.
+     * @details Case is changed by simplified tables, where one code_point is always changed to one code_point
+     *          (but for UTF-8 it is possible that the length in code units will change).
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2660,11 +3233,16 @@ public:
         return ChangeCase<K>::changeCase(f, uni::upper, std::forward<Args>(args)...);
     }
     /*!
-     * @brief Создать копию переданной строки в нижнем регистре символов Unicode первой плоскости (<0xFFFF)
-     * @param f - строка источник
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать копию переданной строки в нижнем регистре символов Unicode первой плоскости (<0xFFFF).
+     * @param f - строка источник.
+     * @param ...args - параметры для инициализации аллокатора.
      * @details Регистр меняется упрощенными таблицами, где один code_point всегда меняется в один code_point
      *          (но для UTF-8 возможно, что длина в code unit'ах изменится).
+     * @en @brief Create a copy of the passed string in lowercase Unicode characters of the first plane (<0xFFFF).
+     * @param f - source string.
+     * @param ...args - parameters for initializing the allocator.
+     * @details Case is changed by simplified tables, where one code_point is always changed to one code_point
+     *          (but for UTF-8 it is possible that the length in code units will change).
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2672,13 +3250,20 @@ public:
         return ChangeCase<K>::changeCase(f, uni::lower, std::forward<Args>(args)...);
     }
     /*!
-     * @brief Создать копию переданной строки с заменой подстрок
-     * @param f - строка источник
-     * @param pattern - подстрока, которую надо заменить
-     * @param repl - строка, на которую надо заменить
-     * @param offset - начальная позиция для поиска подстрок
-     * @param maxCount - максимальное количество замен, 0 - без ограничений
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Создать копию переданной строки с заменой подстрок.
+     * @param f - строка источник.
+     * @param pattern - подстрока, которую надо заменить.
+     * @param repl - строка, на которую надо заменить.
+     * @param offset - начальная позиция для поиска подстрок.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Create a copy of the passed string with substrings replaced.
+     * @param f - source string.
+     * @param pattern - substring to be replaced.
+     * @param repl - the string to be replaced with.
+     * @param offset - starting position for searching substrings.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -2688,7 +3273,8 @@ public:
 };
 
 /*!
- * @brief Концепт типа, управляющего памятью
+ * @ru @brief Концепт типа, управляющего памятью
+ * @en @brief Concept of a memory management type
  */
 template<typename A>
 concept Allocatorable = requires(A& a, size_t size, void* void_ptr) {
@@ -2704,6 +3290,7 @@ struct printf_selector {
             return std::snprintf(buffer, count, format, std::forward<T>(args)...);
           #else
             // Поддерживает позиционные параметры
+            // Supports positional parameters
             return _sprintf_p(buffer, count, format, args...);
           #endif
         } else {
@@ -2711,6 +3298,7 @@ struct printf_selector {
             return std::swprintf(to_one_of_std_char(buffer), count, to_one_of_std_char(format), args...);
           #else
             // Поддерживает позиционные параметры
+            // Supports positional parameters
             return _swprintf_p(to_one_of_std_char(buffer), count, to_one_of_std_char(format), args...);
           #endif
         }
@@ -2722,6 +3310,7 @@ struct printf_selector {
             return std::vsnprintf(buffer, count, format, args);
           #else
             // Поддерживает позиционные параметры
+            // Supports positional parameters
             return _vsprintf_p(buffer, count, format, args);
           #endif
         } else {
@@ -2729,6 +3318,7 @@ struct printf_selector {
             return std::vswprintf(to_one_of_std_char(buffer), count, to_one_of_std_char(format), args);
           #else
             // Поддерживает позиционные параметры
+            // Supports positional parameters
             return _vswprintf_p(buffer, count, format, args);
           #endif
         }
@@ -2740,7 +3330,7 @@ inline size_t grow2(size_t ret, size_t currentCapacity) {
 }
 
 /*!
- * @brief Базовый класс работы с изменяемыми строками
+ * @ru @brief Базовый класс работы с изменяемыми строками
  * @tparam K - тип символов
  * @tparam Impl - конечный тип наследника
  * @details По прежнему ничего не знает о том, где наследник хранит строку и её размер.
@@ -2757,7 +3347,25 @@ inline size_t grow2(size_t ret, size_t currentCapacity) {
  *                                             саму строку, можно вернуть текущий буфер, если место позволяет.
  *   - `set_from_copy(K* str, size_t size)`  - присвоить строку из памяти, ранее выделенной в alloc_for_copy.
  *                                             Если место выделялось в текущем буфере, ничего не делать.
- *   - `size_t capacity() const noexcept`    - вернуть текущую ёмкость строки, сколько может поместится без аллокации
+ *   - `size_t capacity() const noexcept`    - вернуть текущую ёмкость строки, сколько может поместится без аллокации.
+ * @en @brief Base class for working with mutable strings
+ * @tparam K - character type
+ * @tparam Impl - the final type of the successor
+ * @details Still knows nothing about where the heir stores the string and its size.
+ * Simply calls its methods to get the space, and fills it as needed.
+ * To work, the descendant class must implement the following methods:
+ *  - `size_t length() const noexcept`      - returns the length of the string
+ *  - `const K* symbols() const`            - returns a pointer to the beginning of the line
+ *  - `bool is_empty() const noexcept`      - checks whether the string is empty
+ *  - `K* str() noexcept`                   - Non-const pointer to the beginning of the string
+ *  - `K* set_size(size_t size)`            - Change the size of the string, either larger or smaller.
+ *                                            The contents of the line must be left.
+ *  - `K* reserve_no_preserve(size_t size)` - allocate space for a line, you don’t have to save the old one
+ *  - `K* alloc_for_copy(size_t size)`      - allocate space for a copy of a string of a given size, without changing it yet
+ *                                            the string itself, you can return the current buffer if space allows.
+ *  - `set_from_copy(K* str, size_t size)`  - assign a string from memory previously allocated in alloc_for_copy.
+ *                                            If space was allocated in the current buffer, do nothing.
+ *  - `size_t capacity() const noexcept`    - return the current capacity of the string, as much as can fit without allocation.
  */
 template<typename K, typename Impl>
 class str_mutable {
@@ -2803,6 +3411,8 @@ private:
     }
     // GCC до сих пор не позволяет делать внутри класса полную специализацию вложенного класса,
     // только частичную. Поэтому добавим неиспользуемый параметр шаблона.
+    // GCC still does not allow full specialization of a nested class within a class,
+    // only partial. Resources additive unused parameter template.
     template<typename T, bool Dummy = true>
     struct CaseTraits {
         static Impl& upper(Impl& obj) {
@@ -2816,6 +3426,7 @@ private:
     template<auto Op>
     Impl& utf8CaseChange() {
         // Для utf-8 такая операция может изменить длину строки, поэтому для них делаем разные специализации
+        // For utf-8, such an operation can change the length of the string, so we make different specializations for them
         size_t len = _len();
         if (len) {
             u8s* writePos = str();
@@ -2823,13 +3434,15 @@ private:
             size_t newLen = Op(readPos, len, writePos, len);
             if (newLen < len) {
                 // Строка просто укоротилась
+                // The string was simply shortened
                 d().set_size(newLen);
             } else if (newLen > len) {
                 // Строка не влезла в буфер.
+                // The line did not fit into the buffer.
                 size_t readed = static_cast<size_t>(readPos - startData);
                 size_t writed = static_cast<size_t>(writePos - startData);
                 d().set_size(newLen);
-                startData = str(); // при изменении размера могло изменится
+                startData = str(); // при изменении размера могло изменится | may change when resizing
                 readPos = startData + readed;
                 writePos = const_cast<u8s*>(startData) + writed;
                 Op(readPos, len - readed, writePos, newLen - writed);
@@ -2859,44 +3472,57 @@ private:
 
 public:
     /*!
-     * @brief Получить указатель на буфер строки
-     * @return K* - указатель на буфер строки
+     * @ru @brief Получить указатель на буфер строки.
+     * @return K* - указатель на буфер строки.
+     * @en @brief Get a pointer to the string buffer.
+     * @return K* - pointer to the string buffer.
      */
     K* str() noexcept {
         return d().str();
     }
     /*!
-     * @brief Получить указатель на буфер строки
-     * @return K* - указатель на буфер строки
+     * @ru @brief Получить указатель на буфер строки.
+     * @return K* - указатель на буфер строки.
+     * @en @brief Get a pointer to the string buffer.
+     * @return K* - pointer to the string buffer.
      */
     explicit operator K*() noexcept {
         return str();
     }
     /*!
-     * @brief Удалить пробельные символы в начале и в конце строки
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Удалить пробельные символы в начале и в конце строки.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove whitespace from the beginning and end of a line.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim() {
         return make_trim_op(SimpleTrim<TrimSides::TrimAll, K>{});
     }
     /*!
-     * @brief Удалить пробельные символы в начале строки
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Удалить пробельные символы в начале строки.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove whitespace at the beginning of a line.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_left() {
         return make_trim_op(SimpleTrim<TrimSides::TrimLeft, K>{});
     }
     /*!
-     * @brief Удалить пробельные символы в конце строки
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Удалить пробельные символы в конце строки.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove whitespace from the end of a line.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_right() {
         return make_trim_op(SimpleTrim<TrimSides::TrimRight, K>{});
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, в начале и в конце строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, в начале и в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
-     * @return Impl& - ссылку на себя же
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove characters included in a string literal at the beginning and end of the line.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2904,9 +3530,12 @@ public:
         return makeTrim<TrimSides::TrimAll, false>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, в начале строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, в начале строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
-     * @return Impl& - ссылку на себя же
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove characters included in a string literal at the beginning of the line.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2914,9 +3543,12 @@ public:
         return makeTrim<TrimSides::TrimLeft, false>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, в конце строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
-     * @return Impl& - ссылку на себя же
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove characters included in a string literal at the end of the line.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2924,9 +3556,12 @@ public:
         return makeTrim<TrimSides::TrimRight, false>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в начале и в конце строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в начале и в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in a string literal, as well as whitespace, at the beginning and end of the string.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2934,9 +3569,12 @@ public:
         return makeTrim<TrimSides::TrimAll, true>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в начале строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в начале строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in a string literal, as well as whitespace, at the beginning of a line.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @en @brief* @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2944,9 +3582,12 @@ public:
         return makeTrim<TrimSides::TrimLeft, true>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в конце строки.
+     * @ru @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in a string literal, as well as whitespace, at the end of a string.
+     * @param pattern is a string literal containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
@@ -2954,56 +3595,76 @@ public:
         return makeTrim<TrimSides::TrimRight, true>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, в начале и в конце строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, в начале и в конце строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string at the beginning and end of the line.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim(str_piece pattern) {
         return pattern.length() ? makeTrim<TrimSides::TrimAll, false>(pattern) : d();
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, в начале строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, в начале строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string at the beginning of the line.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_left(str_piece pattern) {
         return pattern.length() ? makeTrim<TrimSides::TrimLeft, false>(pattern) : d();
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, в конце строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, в конце строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string from the end of the string.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_right(str_piece pattern) {
         return pattern.length() ? makeTrim<TrimSides::TrimRight, false>(pattern) : d();
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в начале и в конце строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в начале и в конце строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string, as well as whitespace characters, at the beginning and end of the string.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_with_spaces(str_piece pattern) {
         return makeTrim<TrimSides::TrimAll, true>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в начале строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в начале строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string, as well as whitespace, at the beginning of the string.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_left_with_spaces(str_piece pattern) {
         return makeTrim<TrimSides::TrimLeft, true>(pattern);
     }
     /*!
-     * @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в конце строки.
+     * @ru @brief Удалить символы, входящие в переданную строку, а также пробельные символы, в конце строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
+     * @en @brief Remove characters included in the passed string, as well as whitespace at the end of the string.
+     * @param pattern - a string containing the characters to be removed.
+     * @return Impl& - a reference to yourself.
      */
     Impl& trim_right_with_spaces(str_piece pattern) {
         return makeTrim<TrimSides::TrimRight, true>(pattern);
     }
     /*!
-     * @brief Преобразовать в верхний регистр ASCII символы
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Преобразовать в верхний регистр ASCII символы.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Convert ASCII characters to uppercase.
+     * @return Impl& - a reference to yourself.
      */
     Impl& upper_only_ascii() {
         K* ptr = str();
@@ -3015,8 +3676,10 @@ public:
         return d();
     }
     /*!
-     * @brief Преобразовать в нижний регистр ASCII символы
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Преобразовать в нижний регистр ASCII символы.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Convert ASCII characters to lowercase.
+     * @return Impl& - a reference to yourself.
      */
     Impl& lower_only_ascii() {
         K* ptr = str();
@@ -3028,23 +3691,33 @@ public:
         return d();
     }
     /*!
-     * @brief Преобразовать в верхний регистр Unicode символы первой плоскости (<0xFFFF).
+     * @ru @brief Преобразовать в верхний регистр Unicode символы первой плоскости (<0xFFFF).
      * @details Регистр меняется упрощенными таблицами, где один code_point всегда меняется в один code_point
      *          (но для UTF-8 возможно, что длина в code unit'ах изменится).
      * @return Impl& - ссылку на себя же
+     * @en @brief Convert first plane characters (<0xFFFF) to uppercase Unicode.
+     * @details Case is changed by simplified tables, where one code_point is always changed to one code_point
+     *          (but for UTF-8 it is possible that the length in code units will change).
+     * @return Impl& - a reference to yourself.
      */
     Impl& upper() {
         // Для utf-8 такая операция может изменить длину строки, поэтому для них делаем разные специализации
+        // For utf-8, such an operation can change the length of the string, so we make different specializations for them
         return CaseTraits<K>::upper(d());
     }
     /*!
-     * @brief Преобразовать в нижний регистр Unicode символы первой плоскости (<0xFFFF).
+     * @ru @brief Преобразовать в нижний регистр Unicode символы первой плоскости (<0xFFFF).
      * @details Регистр меняется упрощенными таблицами, где один code_point всегда меняется в один code_point
      *          (но для UTF-8 возможно, что длина в code unit'ах изменится).
      * @return Impl& - ссылку на себя же
+     * @en @brief Convert first plane characters (<0xFFFF) to lowercase Unicode.
+     * @details Case is changed by simplified tables, where one code_point is always changed to one code_point
+     *          (but for UTF-8 it is possible that the length in code units will change).
+     * @return Impl& - a reference to yourself.
      */
     Impl& lower() {
         // Для utf-8 такая операция может изменить длину строки, поэтому для них делаем разные специализации
+        // For utf-8, such an operation can change the length of the string, so we make different specializations for them
         return CaseTraits<K>::lower(d());
     }
 
@@ -3100,135 +3773,193 @@ private:
 public:
     inline static constexpr bool is_str_mutable = true;
     /*!
-     * @brief Добавить другую строку в конец строки
-     * @param other - другая строка
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить другую строку в конец строки.
+     * @param other - другая строка.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add another line to the end of the line.
+     * @param other - another string.
+     * @return Impl& - a reference to yourself.
      */
     Impl& append(str_piece other) {
         return appendImpl<str_piece>(other);
     }
     /*!
-     * @brief Добавить строковое выражение в конец строки
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить строковое выражение в конец строки.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add a string expression to the end of the line.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
      */
     template<StrExprForType<K> A>
     Impl& append(const A& expr) {
         return appendImpl<const A&>(expr);
     }
     /*!
-     * @brief Добавить другую строку в конец строки
-     * @param other - другая строка
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить другую строку в конец строки.
+     * @param other - другая строка.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add another line to the end of the line.
+     * @param other - another line.
+     * @return Impl& - a reference to yourself.
      */
     Impl& operator+=(str_piece other) {
         return appendImpl<str_piece>(other);
     }
     /*!
-     * @brief Добавить строковое выражение в конец строки
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить строковое выражение в конец строки.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add a string expression to the end of the line.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
      */
     template<StrExprForType<K> A>
     Impl& operator+=(const A& expr) {
         return appendImpl<const A&>(expr);
     }
     /*!
-     * @brief Добавить другую строку, начиная с заданной позиции
+     * @ru @brief Добавить другую строку, начиная с заданной позиции.
      * @param pos - позиция, с которой добавлять. Сначала строка укорачивается до заданного
-     *        размера, а потом добавляется другая строка
-     * @param other - другая строка
-     * @return Impl& - ссылку на себя же
+     *        размера, а потом добавляется другая строка.
+     * @param other - другая строка.
+     * @return Impl& - ссылку на себя же.
      * @details Если строка длиинее`pos`, то она укорачивается до этого размера, а потом добавляется `other`.
+     * @en @brief Add another line starting at the given position.
+     * @param pos - the position from which to add. First, the string is shortened to the specified value
+     *      size, and then another line is added.
+     * @param other - another string.
+     * @return Impl& - a reference to yourself.
+     * @details If the string is longer than `pos`, then it is shortened to this size, and then `other` is added.
      */
     Impl& append_in(size_t pos, str_piece other) {
         return appendFromImpl<str_piece>(pos, other);
     }
     /*!
-     * @brief Добавить строковое выражение, начиная с заданной позиции
+     * @ru @brief Добавить строковое выражение, начиная с заданной позиции.
      * @param pos - позиция, с которой добавлять. Сначала строка укорачивается до заданного
-     *        размера, а потом добавляется строковое выражение
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
-     * @details Если строка длиинее`pos`, то она укорачивается до этого размера, а потом добавляется `expr`.
+     *        размера, а потом добавляется строковое выражение.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @details Если строка длиннее`pos`, то она укорачивается до этого размера, а потом добавляется `expr`.
+     * @en @brief Add a string expression starting at the given position.
+     * @param pos - the position from which to add. First, the string is shortened to the specified value
+     * size, and then a string expression is added.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
+     * @details If the string is longer than `pos`, then it is shortened to this size, and then `expr` is added.
      */
     template<StrExprForType<K> A>
     Impl& append_in(size_t pos, const A& expr) {
         return appendFromImpl<const A&>(pos, expr);
     }
     /*!
-     * @brief Заменить кусок строки на другую строку
-     * @param from - начальная позиция для замены
-     * @param len - длина заменяемой части
-     * @param other - строка, на которую эта часть меняется 
+     * @ru @brief Заменить кусок строки на другую строку.
+     * @param from - начальная позиция для замены.
+     * @param len - длина заменяемой части.
+     * @param other - строка, на которую эта часть меняется .
      * @return Impl& - ссылку на себя же
+     * @en @brief Replace a piece of string with another string.
+     * @param from - starting position for replacement.
+     * @param len - length of the part to be replaced.
+     * @param other - the string this part is changed to.
+     * @return Impl& - a reference to yourself.
      */
     Impl& change(size_t from, size_t len, str_piece other) {
         return changeImpl<str_piece>(from, len, other);
     }
     /*!
-     * @brief Заменить кусок строки на строковое выражение
-     * @param from - начальная позиция для замены
-     * @param len - длина заменяемой части
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Заменить кусок строки на строковое выражение.
+     * @param from - начальная позиция для замены.
+     * @param len - длина заменяемой части.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Replace a piece of string with a string expression.
+     * @param from - starting position for replacement.
+     * @param len - length of the part to be replaced.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
      */
     template<StrExprForType<K> A>
     Impl& change(size_t from, size_t len, const A& expr) {
         return changeImpl<const A&>(from, len, expr);
     }
     /*!
-     * @brief Вставить строку в указанную позицию
-     * @param to - позиция для вставки
-     * @param other - вставляемая строка
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Вставить строку в указанную позицию.
+     * @param to - позиция для вставки.
+     * @param other - вставляемая строка.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Insert a line at the specified position.
+     * @param to - insertion position.
+     * @param other - the string to be inserted.
+     * @return Impl& - a reference to yourself.
      */
     Impl& insert(size_t to, str_piece other) {
         return changeImpl<str_piece>(to, 0, other);
     }
     /*!
-     * @brief Вставить строковое выражение в указанную позицию
-     * @param to - позиция для вставки
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Вставить строковое выражение в указанную позицию.
+     * @param to - позиция для вставки.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Insert a string expression at the specified position.
+     * @param to - insertion position.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
      */
     template<StrExprForType<K> A>
     Impl& insert(size_t to, const A& expr) {
         return changeImpl<const A&>(to, 0, expr);
     }
     /*!
-     * @brief Удалить часть строку
-     * @param from - позиция, с которой удалить
-     * @param len - длина удаляемой части
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Удалить часть строки.
+     * @param from - позиция, с которой удалить.
+     * @param len - длина удаляемой части.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Remove part of a line.
+     * @param from - the position from which to delete.
+     * @param len - length of the part to be deleted.
+     * @return Impl& - a reference to yourself.
      */
     Impl& remove(size_t from, size_t len) {
         return changeImpl<const empty_expr<K>&>(from, len, {});
     }
     /*!
-     * @brief Добавить другую строку в начало строки
-     * @param other - другая строка
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить другую строку в начало строки.
+     * @param other - другая строка.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add another line to the beginning of the line.
+     * @param other - another string.
+     * @return Impl& - a reference to yourself.
      */
     Impl& prepend(str_piece other) {
         return changeImpl<str_piece>(0, 0, other);
     }
     /*!
-     * @brief Добавить строковое выражение в начало строки
-     * @param expr - строковое выражение
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Добавить строковое выражение в начало строки.
+     * @param expr - строковое выражение.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Add a string expression to the beginning of a line.
+     * @param expr - string expression.
+     * @return Impl& - a reference to yourself.
      */
     template<StrExprForType<K> A>
     Impl& prepend(const A& expr) {
         return changeImpl<const A&>(0, 0, expr);
     }
     /*!
-     * @brief Заменить вхождения подстроки на другую строку
-     * @param pattern - искомая подстрока
-     * @param repl - строка замены
-     * @param offset  - начальная позиция для поиска
-     * @param maxCount - максимальное количество замен, 0 - без ограничений
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Заменить вхождения подстроки на другую строку.
+     * @param pattern - искомая подстрока.
+     * @param repl - строка замены.
+     * @param offset  - начальная позиция для поиска.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Replace occurrences of a substring with another string.
+     * @param pattern - the substring to search for.
+     * @param repl - replacement string.
+     * @param offset - the starting position for the search.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     * @return Impl& - a reference to yourself.
      */
     Impl& replace(str_piece pattern, str_piece repl, size_t offset = 0, size_t maxCount = 0) {
         offset = d().find(pattern, offset);
@@ -3241,6 +3972,7 @@ public:
 
         if (patternLength == replLength) {
             // Заменяем inplace на подстроку такой же длины
+            // Replace inplace with a substring of the same length
             K* ptr = str();
             for (size_t i = 0; i < maxCount; i++) {
                 traits::copy(ptr + offset, repl.symbols(), replLength);
@@ -3250,6 +3982,7 @@ public:
             }
         } else if (patternLength > replLength) {
             // Заменяем на более короткий кусок, длина текста уменьшится, идём слева направо
+            // Replace with a shorter piece, the length of the text will decrease, go from left to right
             K* ptr = str();
             traits::copy(ptr + offset, repl.symbols(), replLength);
             size_t posWrite = offset + replLength;
@@ -3303,11 +4036,13 @@ public:
                     }
                     bool needMore = maxCount > 0 && idx == std::size(finded) && offset < source.length() - pattern.length();
                     if (needMore) {
-                        replace(offset); // здесь произведутся замены в оставшемся хвосте
+                        replace(offset); // здесь произведутся замены в оставшемся хвосте | replacements will be made here in the remaining tail
                     }
                     // Теперь делаем свои замены
+                    // Now we make our replacements
                     if (!reserve_for_copy) {
                         // Только начинаем
+                        // Just getting started
                         end_of_piece = source.length();
                         total_length = end_of_piece + all_delta;
                         reserve_for_copy = source.alloc_for_copy(total_length);
@@ -3333,13 +4068,20 @@ public:
         return d();
     }
     /*!
-     * @brief Скопировать строку-источник, заменив вхождения подстрок на другую строку
-     * @param f - строка-источник
-     * @param pattern - искомая подстрока
-     * @param repl - строка замены
-     * @param offset  - начальная позиция для поиска
-     * @param maxCount - максимальное количество замен, 0 - без ограничений
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Скопировать строку-источник, заменив вхождения подстрок на другую строку.
+     * @param f - строка-источник.
+     * @param pattern - искомая подстрока.
+     * @param repl - строка замены.
+     * @param offset  - начальная позиция для поиска.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Copy the source string, replacing occurrences of substrings with another string.
+     * @param f - source string.
+     * @param pattern - the substring to search for.
+     * @param repl - replacement string.
+     * @param offset - the starting position for the search.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     * @return Impl& - a reference to yourself.
      */
     template<StrType<K> From>
     Impl& replace_from(const From& f, str_piece pattern, str_piece repl, size_t offset = 0, size_t maxCount = 0) {
@@ -3380,17 +4122,28 @@ public:
         return d();
     }
     /*!
-     * @brief Заполнение буфера строки с помощью функтора
-     * @param from - начальная позиция для заполнения
+     * @ru @brief Заполнение буфера строки с помощью функтора.
+     * @param from - начальная позиция для заполнения.
      * @param fillFunction - size_t(K*, size_t) функтор, получающий адрес буфера строки и его ёмкость,
-     *        возвращающий необходимый размер строки
-     * @return Impl& - ссылку на себя же
+     *        возвращающий необходимый размер строки.
+     * @return Impl& - ссылку на себя же.
      * @details Функция вызывает функтор, передавая ему адрес буфера строки и его ёмкость.
      *    Функтор может изменять буфер в пределах выделенной ёмкости, и должен вернуть размер итоговой строки.
      *    Пока возвращаемый размер больше ёмкости (т.е. строка не может поместиться в буфер),
      *    выделятся память как минимум возвращенного размера, и функтор вызывается снова.
      *    До тех пор, пока возвращённый размер не будет помещаться в буфер строки.
      *    Этот размер и становится длиной строки.
+     * @en @brief Fill a string buffer using a functor.
+     * @param from - starting position to fill.
+     * @param fillFunction - size_t(K*, size_t) functor that receives the address of the string buffer and its capacity,
+     * returning the required string size.
+     * @return Impl& - a reference to yourself.
+     * @details The function calls the functor, passing it the address of the string buffer and its capacity.
+     *    The functor can modify the buffer within the allocated capacity, and must return the size of the resulting string.
+     *    As long as the returned size is larger than capacity (i.e. the string cannot fit into the buffer),
+     *    memory of at least the returned size is allocated and the functor is called again.
+     *    Until the returned size fits into the string buffer.
+     *    This size becomes the length of the line.
      */
     template<typename Op>
     Impl& fill(size_t from, const Op& fillFunction) {
@@ -3412,9 +4165,12 @@ public:
         return d();
     }
     /*!
-     * @brief Заполняет строку методом fill с нулевой позиции
-     * @param fillFunction - функтор заполнения строки, size_t(K*, size_t)
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Заполняет строку методом fill с нулевой позиции.
+     * @param fillFunction - функтор заполнения строки, size_t(K*, size_t).
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Fills a string with the fill method from position zero.
+     * @param fillFunction - string filling functor, size_t(K*, size_t).
+     * @return Impl& - a reference to yourself.
      */
     template<typename Op>
         requires std::is_invocable_v<Op, K*, size_t>
@@ -3422,9 +4178,12 @@ public:
         return fill(0, fillFunction);
     }
     /*!
-     * @brief Заполняет строку методом fill после конца строки
-     * @param fillFunction - функтор заполнения строки, size_t(K*, size_t)
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Заполняет строку методом fill после конца строки.
+     * @param fillFunction - функтор заполнения строки, size_t(K*, size_t).
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Fills a string with the fill method after the end of the string.
+     * @param fillFunction - string filling functor, size_t(K*, size_t).
+     * @return Impl& - a reference to yourself.
      */
     template<typename Op>
         requires std::is_invocable_v<Op, K*, size_t>
@@ -3432,9 +4191,12 @@ public:
         return fill(_len(), fillFunction);
     }
     /*!
-     * @brief Вызывает переданный функтор, передав ссылку на себя
-     * @param fillFunction - фуктор void(my_type&)
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Вызывает переданный функтор, передав ссылку на себя.
+     * @param fillFunction - фуктор void(my_type&).
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Calls the passed functor, passing a reference to itself.
+     * @param fillFunction - фуктор void(my_type&).
+     * @return Impl& - a reference to yourself.
      */
     template<typename Op>
         requires std::is_invocable_v<Op, my_type&>
@@ -3443,12 +4205,18 @@ public:
         return d();
     }
     /*!
-     * @brief Добавляет отформатированный с помощью sprintf вывод, начиная с указанной позиции
-     * @param from - начальная позиция добавления
-     * @param format - форматная строка
-     * @param ...args - аргументы для sprintf
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью sprintf вывод, начиная с указанной позиции.
+     * @param from - начальная позиция добавления.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для sprintf.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends sprintf formatted output starting at the specified position.
+     * @param from - starting position of adding.
+     * @param format - format string.
+     * @param ...args - arguments for sprintf.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& printf_from(size_t from, const K* format, T&&... args) {
@@ -3463,6 +4231,9 @@ public:
         // Тут грязный хак для u8s и wide_char. u8s версия snprintf сразу возвращает размер нужного буфера, если он мал
         // а swprintf - возвращает -1. Под windows оба варианта xxx_p - тоже возвращают -1.
         // Поэтому для них надо тупо увеличивать буфер наугад, пока не подойдет
+        // Here's a dirty hack for u8s and wide_char. u8s version of snprintf immediately returns the size of the required buffer if it is small
+        // and swprintf returns -1. Under Windows, both options xxx_p also return -1.
+        // Therefore, for them you need to stupidly increase the buffer at random until it fits
         if constexpr (sizeof(K) == 1 && !isWindowsOs) {
             result = printf_selector::snprintf(ptr + from, capacity + 1, format, std::forward<T>(args)...);
             if (result > (int)capacity) {
@@ -3475,6 +4246,8 @@ public:
                 if (result < 0) {
                     // Не хватило буфера или ошибка конвертации.
                     // Попробуем увеличить буфер в два раза
+                    // Not enough buffer or conversion error.
+                    // Let's try to double the buffer
                     capacity *= 2;
                     ptr = from == 0 ? d().reserve_no_preserve(capacity) : d().set_size(from + capacity);
                 } else
@@ -3488,22 +4261,32 @@ public:
         return d();
     }
     /*!
-     * @brief Форматирует строку помощью sprintf
-     * @param format - форматная строка
-     * @param ...args - аргументы для sprintf
+     * @ru @brief Форматирует строку помощью sprintf.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для sprintf.
      * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Formats a string using sprintf.
+     * @param format - format string.
+     * @param ...args - arguments for sprintf.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& printf(const K* format, T&&... args) {
         return printf_from(0, format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Добавляет отформатированный с помощью sprintf вывод в конец строки
-     * @param format - форматная строка
-     * @param ...args - аргументы для sprintf
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью sprintf вывод в конец строки.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для sprintf.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends sprintf formatted output to the end of the line.
+     * @param format - format string.
+     * @param ...args - arguments for sprintf.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the row buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& append_printf(const K* format, T&&... args) {
@@ -3549,12 +4332,18 @@ public:
         using difference_type = int;
     };
     /*!
-     * @brief Добавляет отформатированный с помощью std::format вывод, начиная с указанной позиции
-     * @param from - начальная позиция добавления
-     * @param format - форматная строка, константная
-     * @param ...args - аргументы для std::format
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью std::format вывод, начиная с указанной позиции.
+     * @param from - начальная позиция добавления.
+     * @param format - форматная строка, константная.
+     * @param ...args - аргументы для std::format.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends std::format-formatted output starting at the specified position.
+     * @param from - starting position of adding.
+     * @param format - format string, constant.
+     * @param ...args - arguments for std::format.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& format_from(size_t from, const FmtString<K, T...>& format, T&&... args) {
@@ -3570,13 +4359,20 @@ public:
         return d();
     }
     /*!
-     * @brief Добавляет отформатированный с помощью std::vformat вывод, начиная с указанной позиции
-     * @param from - начальная позиция добавления
-     * @param max_write - максимальное количество записываемых символов
-     * @param format - форматная строка
-     * @param ...args - аргументы для std::vformat
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью std::vformat вывод, начиная с указанной позиции.
+     * @param from - начальная позиция добавления.
+     * @param max_write - максимальное количество записываемых символов.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для std::vformat.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends std::vformat formatted output starting at the specified position.
+     * @param from - starting position of adding.
+     * @param max_write - the maximum number of characters to write.
+     * @param format - format string.
+     * @param ...args - arguments for std::vformat.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& vformat_from(size_t from, size_t max_write, str_piece format, T&&... args) {
@@ -3602,78 +4398,114 @@ public:
         return d();
     }
     /*!
-     * @brief Форматирует строку с помощью std::format
-     * @param format - форматная строка, константная
-     * @param ...args - аргументы для std::format
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Форматирует строку с помощью std::format.
+     * @param pattern - форматная строка, константная.
+     * @param ...args - аргументы для std::format.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Formats a string using std::format.
+     * @param pattern - format string, constant.
+     * @param ...args - arguments for std::format.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& format(const FmtString<K, T...>& pattern, T&&... args) {
         return format_from(0, pattern, std::forward<T>(args)...);
     }
     /*!
-     * @brief Добавляет отформатированный с помощью std::format вывод в конец строки
-     * @param format - форматная строка, константная
-     * @param ...args - аргументы для std::format
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью std::format вывод в конец строки.
+     * @param format - форматная строка, константная.
+     * @param ...args - аргументы для std::format.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends std::format-formatted output to the end of the line.
+     * @param format - format string, constant.
+     * @param ...args - arguments for std::format.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& append_formatted(const FmtString<K, T...>& format, T&&... args) {
         return format_from(_len(), format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Форматирует строку с помощью std::vformat
-     * @param format - форматная строка
-     * @param ...args - аргументы для std::vformat
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Форматирует строку с помощью std::vformat.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для std::vformat.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Formats a string using std::vformat.
+     * @param format - format string.
+     * @param ...args - arguments for std::vformat.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& vformat(str_piece format, T&&... args) {
         return vformat_from(0, -1, format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Добавляет отформатированный с помощью std::vformat вывод в конец строки
-     * @param format - форматная строка
-     * @param ... - аргументы для std::vformat
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Добавляет отформатированный с помощью std::vformat вывод в конец строки.
+     * @param format - форматная строка.
+     * @param ... - аргументы для std::vformat.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends std::vformat-formatted output to the end of the line.
+     * @param format - format string.
+     * @param ... - arguments for std::vformat.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& append_vformatted(str_piece format, T&&... args) {
         return vformat_from(_len(), -1, format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Форматирует строку с помощью std::vformat не более указанного размера
-     * @param max_write - максимальное количество записываемых символов
-     * @param format - форматная строка
-     * @param ...args - аргументы для std::vformat
-     * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @ru @brief Форматирует строку с помощью std::vformat не более указанного размера.
+     * @param max_write - максимальное количество записываемых символов.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для std::vformat.
+     * @return Impl& - ссылку на себя же.
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Formats a string using std::vformat up to the specified size.
+     * @param max_write - the maximum number of characters to write.
+     * @param format - format string.
+     * @param ...args - arguments for std::vformat.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& vformat_n(size_t max_write, str_piece format, T&&... args) {
         return vformat_from(0, max_write, format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Добавляет отформатированный с помощью std::vformat вывод в конец строки, записывая не более указанного количества символов
-     * @param max_write - максимальное количество записываемых символов
-     * @param format - форматная строка
-     * @param ...args - аргументы для std::vformat
+     * @ru @brief Добавляет отформатированный с помощью std::vformat вывод в конец строки, записывая не более указанного количества символов.
+     * @param max_write - максимальное количество записываемых символов.
+     * @param format - форматная строка.
+     * @param ...args - аргументы для std::vformat.
      * @return Impl& - ссылку на себя же
-     * @details При необходимости автоматически увеличивает размер буфера строки
+     * @details При необходимости автоматически увеличивает размер буфера строки.
+     * @en @brief Appends std::vformat-formatted output to the end of the line, writing no more than the specified number of characters.
+     * @param max_write - the maximum number of characters to write.
+     * @param format - format string.
+     * @param ...args - arguments for std::vformat.
+     * @return Impl& - a reference to yourself.
+     * @details Automatically increases the string buffer size if necessary.
      */
     template<typename... T> requires (is_one_of_std_char_v<K>)
     Impl& append_vformatted_n(size_t max_write, str_piece format, T&&... args) {
         return vformat_from(_len(), max_write, format, std::forward<T>(args)...);
     }
     /*!
-     * @brief Вызов функтора со строкой и переданными аргументами
-     * @param fillFunction - функтор, принимающий первым параметром ссылку на строку
-     * @param ...args - аргументы, передаваемые в функтор
-     * @return Impl& - ссылку на себя же
+     * @ru @brief Вызов функтора со строкой и переданными аргументами.
+     * @param fillFunction - функтор, принимающий первым параметром ссылку на строку.
+     * @param ...args - аргументы, передаваемые в функтор.
+     * @return Impl& - ссылку на себя же.
+     * @en @brief Call a functor with a string and passed arguments.
+     * @param fillFunction - a functor that takes a string reference as its first parameter.
+     * @param ...args - arguments passed to the functor.
+     * @return Impl& - a reference to yourself.
      */
     template<typename Op, typename... Args>
     Impl& with(const Op& fillFunction, Args&&... args) {
@@ -3684,7 +4516,7 @@ public:
 
 template<typename K>
 struct SharedStringData {
-    std::atomic_size_t ref_; // Счетчик ссылок
+    std::atomic_size_t ref_; // Счетчик ссылок | Reference count
 
     SharedStringData() {
         ref_ = 1;
@@ -3715,6 +4547,7 @@ struct SharedStringData {
 };
 
 // Дефолтный аллокатор для строк, может работать статически
+// Default allocator for strings, can work statically
 class string_common_allocator {
 public:
     void* allocate(size_t bytes) {
@@ -3729,6 +4562,9 @@ string_common_allocator default_string_allocator_selector(...);
 // Если вы хотите задать свой дефолтный аллокатор для строк, перед включение sstring.h
 // объявите функцию
 // ваш_тип_аллокатора default_string_allocator_selector(int);
+// If you want to set your default allocator for strings, before including sstring.h
+// declare a function
+// your_allocator_type default_string_allocator_selector(int);
 using allocator_string = decltype(default_string_allocator_selector(int(0)));
 
 template<typename K, Allocatorable Allocator>
@@ -3736,20 +4572,32 @@ class sstring;
 
 /*
 * Так как у класса несколько базовых классов, MSVC не применяет автоматом empty base optimization,
-* и без явного указания - вставит в начало класса пустые байты, сдвинув поле size на 4 байта.
-* Укажем ему явно
+* и без явного указания - вставит в начало класса пустые байты, сдвинув поле size на 4-8 байта.
+* Укажем ему явно.
+* Since a class has several base classes, MSVC does not automatically apply empty base optimization,
+* and without explicit indication - will insert empty bytes at the beginning of the class, shifting the size field by 4-8 bytes.
+* Let's tell him explicitly.
 */
 
 /*!
- * @brief Класс мутабельной, владеющей строки. Содержит внутренний буфер для строк заданного размера.
+ * @ru @brief Класс мутабельной, владеющей строки. Содержит внутренний буфер для строк заданного размера.
  * @tparam K - тип символа.
- * @tparam N - размер внутреннего строкового буфера не менее N
+ * @tparam N - размер внутреннего строкового буфера не менее N.
  * @tparam forShared - аллоцировать внешний буфер в формате, совместимом с sstring.
- * @tparam Allocator - тип аллокатора
+ * @tparam Allocator - тип аллокатора.
  * @details "Локальная" строка. Хранит в себе указатель на символы и длину строки, а за ней либо сами данные до N
  * символов + нуль, либо если данные длиннее N, то размер выделенного буфера.
  * При этом, если планируется потом результат переместить в sstring, то для динамического буфера
  * выделяется +n байтов, чтобы потом не копировать данные.
+ * @en @brief The mutable, owning string class. Contains an internal buffer for text of a given size.
+ * @tparam K - symbol type.
+ * @tparam N - the size of the internal string buffer is at least N.
+ * @tparam forShared - allocate an external buffer in a format compatible with sstring.
+ * @tparam Allocator - allocator type.
+ * @details "Local" string. Stores a pointer to characters and the length of the string, followed by either the data itself up to N
+ * characters + zero, or if the data is longer than N, then the size of the allocated buffer.
+ * At the same time, if you plan to later move the result to sstring, then for a dynamic buffer
+ * +n bytes are allocated so as not to copy the data later.
  */
 template<typename K, size_t N, bool forShared = false, Allocatorable Allocator = allocator_string>
 class decl_empty_bases lstring :
@@ -3782,12 +4630,15 @@ protected:
     friend base_utf;
     friend class sstring<K, Allocator>;
 
-    // Данные
     K* data_;
-    size_t size_; // Поле не должно инициализироваться, так как может устанавливаться в базовых конструкторах
+    // Поле не должно инициализироваться, так как может устанавливаться в базовых конструкторах
+    // The field should not be initialized, as it can be set in base constructors
+    size_t size_;
 
     union {
-        size_t capacity_; // Поле не должно инициализироваться, так как может устанавливаться в базовых конструкторах
+        // Поле не должно инициализироваться, так как может устанавливаться в базовых конструкторах
+        // The field should not be initialized, as it can be set in base constructors
+        size_t capacity_;
         K local_[LocalCapacity + 1];
     };
 
@@ -3813,7 +4664,7 @@ protected:
         }
         return str();
     }
-    // Методы для себя
+    // Методы для себя | Methods for yourself
     bool is_alloced() const noexcept {
         return data_ != local_;
     }
@@ -3836,17 +4687,21 @@ protected:
         return from_real_address(base_storable::allocator().allocate((newSize + 1) * sizeof(K) + extra));
     }
     // Вызывается при replace, когда меняют на более длинную замену
+    // Called on replace when changing to a longer replacement
     K* alloc_for_copy(size_t newSize) {
         if (capacity() >= newSize) {
             // Замена войдёт в текущий буфер
+            // Replacement will go into the current buffer
             return data_;
         }
         return alloc_place(calc_capacity(newSize));
     }
     // Вызывается после replace, когда меняли на более длинную замену, могли скопировать в новый буфер
+    // Called after replace, when they changed to a longer replacement, they could have copied it to a new buffer
     void set_from_copy(K* ptr, size_t newSize) {
         if (ptr != data_) {
             // Да, копировали в новый буфер
+            // Yes, copied to a new buffer
             dealloc();
             data_ = ptr;
             capacity_ = calc_capacity(newSize);
@@ -3866,8 +4721,10 @@ public:
     }
 
     /*!
-     * @brief Копирование из другой строки такого же типа
-     * @param other - другая строка
+     * @ru @brief Копирование из другой строки такого же типа.
+     * @param other - другая строка.
+     * @en @brief Copy from another string of the same type.
+     * @param other - another string.
      */
     lstring(const my_type& other) : base_storable(other.allocator()) {
         if (other.size_) {
@@ -3875,9 +4732,12 @@ public:
         }
     }
     /*!
-     * @brief Копирование из другой строки такого же типа, но с другим аллокатором
-     * @param other - другая строка
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Копирование из другой строки такого же типа, но с другим аллокатором.
+     * @param other - другая строка.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Copy from another string of the same type, but with a different allocator.
+     * @param other - another string.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires(sizeof...(Args) > 0 && std::is_convertible_v<allocator_t, Args...>)
@@ -3888,9 +4748,12 @@ public:
     }
 
     /*!
-     * @brief Конструктор из строкового литерала
-     * @param value - строковый литерал
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор из строкового литерала.
+     * @param value - строковый литерал.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief String literal constructor.
+     * @param value - string literal.
+     * @param ...args - parameter for initialization allocator.
      */
     template<typename T, size_t I = const_lit_for<K, T>::Count, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -3903,8 +4766,10 @@ public:
             create_empty();
     }
     /*!
-     * @brief Конструктор перемещения из строки такого же типа
-     * @param other - другая строка
+     * @ru @brief Конструктор перемещения из строки такого же типа.
+     * @param other - другая строка.
+     * @en @brief Constructor for moving from a string of the same type.
+     * @param other - another string.
      */
     lstring(my_type&& other) noexcept : base_storable(std::move(other.allocator())) {
         if (other.size_) {
@@ -3922,9 +4787,12 @@ public:
         }
     }
     /*!
-     * @brief Конструктор заполнения с помощью функтора (см. str_mutable::fill)
-     * @param op - функтов заполнения
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор заполнения с помощью функтора (см. str_mutable::fill).
+     * @param op - функтов заполнения.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief A fill constructor using a functor (see str_mutable::fill).
+     * @param op - filling functions.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename Op, typename... Args>
         requires(std::is_constructible_v<Allocator, Args...> && (std::is_invocable_v<Op, my_type&> || std::is_invocable_v<Op, K*, size_t>))
@@ -3934,14 +4802,20 @@ public:
     
     // copy and swap для присваиваний здесь не очень применимо, так как для строк с большим локальным буфером лишняя копия даже перемещением будет дорого стоить
     // Поэтому реализуем копирующее и перемещающее присваивание отдельно
+    // copy and swap for assignments is not very applicable here, since for strings with a large local buffer, an extra copy, even by moving, will be expensive
+    // Therefore, we implement the copy and move assignment separately
     
     /*!
-     * @brief Оператор присваивания копией из строки такого же типа
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присваивания копией из строки такого же типа.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Copy assignment operator from a string of the same type.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     my_type& operator=(const my_type& other) {
         // Так как между этими объектами не может быть косвенной зависимости, достаточно проверить только на равенство
+        // Since there cannot be an indirect dependency between these objects, it is enough to check only for equality
         if (&other != this) {
             traits::copy(reserve_no_preserve(other.size_), other.data_, other.size_ + 1);
             size_ = other.size_;
@@ -3949,12 +4823,16 @@ public:
         return *this;
     }
     /*!
-     * @brief Оператор присваивания перемещением из строки такого же типа
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присваивания перемещением из строки такого же типа.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator by moving from a string of the same type.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     my_type& operator=(my_type&& other) noexcept {
         // Так как между этими объектами не может быть косвенной зависимости, достаточно проверить только на равенство
+        // Since there cannot be an indirect dependency between these objects, it is enough to check only for equality
         if (&other != this) {
             dealloc();
             if (other.is_alloced()) {
@@ -3976,6 +4854,8 @@ public:
             if (isIntersect) {
                 // Особый случай, нам пытаются присвоить кусок нашей же строки.
                 // Просто переместим текст в буфере, и установим новый размер
+                // A special case, they are trying to assign us a piece of our own string.
+                // Just move the text in the buffer and set a new size
                 if (other > data_) {
                     traits::move(data_, other, len);
                 }
@@ -3988,27 +4868,37 @@ public:
         return *this;
     }
     /*!
-     * @brief Оператор присваивания из simple_str
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присваивания из simple_str.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator from simple_str.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     my_type& operator=(simple_str<K> other) {
         return assign(other.str, other.len);
     }
     /*!
-     * @brief Оператор присваивания строкового литерала
-     * @param other - строковый литерал, копируется в буфер строки
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присваивания строкового литерала.
+     * @param other - строковый литерал, копируется в буфер строки.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief String literal assignment operator.
+     * @param other - string literal, copied to the string buffer.
+     * @return my_type& - a reference to yourself.
      */
     template<typename T, size_t S = const_lit_for<K, T>::Count>
     my_type& operator=(T&& other) {
         return assign(other, S - 1);
     }
     /*!
-     * @brief Оператор присаивания строкового выражения
-     * @param other - строковое выражение, материализуемое в буфер строки
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присаивания строкового выражения.
+     * @param expr - строковое выражение, материализуемое в буфер строки.
+     * @return my_type& - ссылку на себя же.
      * @details Если в строковом выражении что-либо ссылается на части этой же строки, то результат не определён.
+     * @en @brief String expression appending operator.
+     * @param expr - a string expression materialized into the string buffer.
+     * @return my_type& - a reference to yourself.
+     * @details If anything in a string expression refers to parts of the same string, then the result is undefined.
      */
     my_type& operator=(const StrExprForType<K> auto& expr) {
         size_t newLen = expr.length();
@@ -4019,36 +4909,41 @@ public:
         data_[size_] = 0;
         return *this;
     }
-    /// Длина строки
+    /// @ru Длина строки. @en String length.
     size_t length() const noexcept {
         return size_;
     }
-    /// Указатель на константные символы
+    /// @ru Указатель на константные символы. @en Pointer to constant characters.
     const K* symbols() const noexcept {
         return data_;
     }
-    /// Указатель на буфер строки
+    /// @ru Указатель на буфер строки. @en Pointer to a string buffer.
     K* str() noexcept {
         return data_;
     }
-    /// Пустая ли строка
+    /// @ru Пустая ли строка. @en Is the string empty?
     bool is_empty() const noexcept {
         return size_ == 0;
     }
-    /// Пустая ли строка, для совместимости с std::string
+    /// @ru Пустая ли строка, для совместимости с std::string. @en Whether the string is empty, for compatibility with std::string.
     bool empty() const noexcept {
         return size_ == 0;
     }
-    /// Текущая ёмкость буфера строки
+    /// @ru Текущая ёмкость буфера строки. @en Current row buffer capacity.
     size_t capacity() const noexcept {
         return is_alloced() ? capacity_ : LocalCapacity;
     }
     /*!
-     * @brief Выделить буфер, достаточный для размещения newSize символов плюс завершающий ноль.
-     * @param newSize - новый размер строки
-     * @return K* - указатель на буфер
+     * @ru @brief Выделить буфер, достаточный для размещения newSize символов плюс завершающий ноль.
+     * @param newSize - новый размер строки.
+     * @return K* - указатель на буфер.
      * @details Содержимое буфера не определено, и не гарантируется сохранение старого содержимого.
      *          Размер строки устанавливается в newSize.
+     * @en @brief Allocate a buffer large enough to hold newSize characters plus a terminating null.
+     * @param newSize - new string size.
+     * @return K* - pointer to the buffer.
+     * @details The contents of the buffer are undefined and the old contents are not guaranteed to be retained.
+     *          The string size is set to newSize.
      */
     K* reserve_no_preserve(size_t newSize) {
         if (newSize > capacity()) {
@@ -4061,11 +4956,16 @@ public:
         return data_;
     }
     /*!
-     * @brief Выделить буфер, достаточный для размещения newSize символов плюс завершающий ноль.
-     * @param newSize - новый размер строки
-     * @return K* - указатель на буфер
+     * @ru @brief Выделить буфер, достаточный для размещения newSize символов плюс завершающий ноль.
+     * @param newSize - новый размер строки.
+     * @return K* - указатель на буфер.
      * @details Содержимое строки сохраняется. При увеличении буфера размер выделяется не больше запрошенного.
      *          Размер строки устанавливается в newSize.
+     * @en @brief Allocate a buffer large enough to hold newSize characters plus a terminating null.
+     * @param newSize - new string size.
+     * @return K* - pointer to the buffer.
+     * @details The contents of the string are preserved. When increasing the buffer, the size allocated is no larger than the requested one.
+     *          The string size is set to newSize.
      */
     K* reserve(size_t newSize) {
         if (newSize > capacity()) {
@@ -4079,11 +4979,16 @@ public:
         return data_;
     }
     /*!
-     * @brief Устанавливает размер текущей строки, при необходимости выделяя место.
-     * @param newSize - новый размер строки
-     * @return K* - указатель на буфер
+     * @ru @brief Устанавливает размер текущей строки, при необходимости выделяя место.
+     * @param newSize - новый размер строки.
+     * @return K* - указатель на буфер.
      * @details Содержимое строки сохраняется. При увеличении буфера размер выделяется не менее чем 2 старого размера буфера.
      *          Размер строки устанавливается в newSize.
+     * @en @brief Sets the size of the current string, allocating space if necessary.
+     * @param newSize - new string size.
+     * @return K* - pointer to the buffer.
+     * @details The contents of the string are preserved. When increasing the buffer size, at least 2 times the old buffer size are allocated.
+     *          The string size is set to newSize.
      */
     K* set_size(size_t newSize) {
         size_t cap = capacity();
@@ -4099,14 +5004,17 @@ public:
         return data_;
     }
     /*!
-     * @brief Узнать, локальный или внешний буфер используется для символов
+     * @ru @brief Узнать, локальный или внешний буфер используется для символов.
+     * @en @brief Find out whether a local or external buffer is used for characters.
      */
     bool is_local() const noexcept {
         return !is_alloced();
     }
     /*!
-     * @brief Определить длину строки.
+     * @ru @brief Определить длину строки.
      * Ищет символ 0 в буфере строки до его ёмкости, после чего устаналивает длину строки по найденному 0.
+     * @en @brief Determine the length of the string.
+     * Searches for the character 0 in the string buffer to its capacity, and then sets the length of the line to the found 0.
      */
     void define_size() {
         size_t cap = capacity();
@@ -4120,8 +5028,10 @@ public:
         data_[size_] = 0;
     }
     /*!
-     * @brief Уменьшает размер внешнего буфера до минимально возможного для хранения строки.
+     * @ru @brief Уменьшает размер внешнего буфера до минимально возможного для хранения строки.
      * Если строка уместится во внутренний буфер - копирует её в него и освобождает внешний буфер.
+     * @en @brief Reduces the size of the external buffer to the smallest possible size to hold the string.
+     * If the string fits into the internal buffer, it copies it into it and frees the external buffer.
      */
     void shrink_to_fit() {
         size_t need_capacity = calc_capacity(size_);
@@ -4136,11 +5046,11 @@ public:
             }
         }
     }
-    /// Делает строку пустой, не меняя буфер строки.
+    /// @ru Делает строку пустой, не меняя буфер строки. @en Makes a string empty without changing the string buffer.
     void clear() {
         set_size(0);
     }
-    /// Делает строку пустой и освобождает внешний буфер, если он был
+    /// @ru Делает строку пустой и освобождает внешний буфер, если он был. @en Makes the string empty and frees the external buffer, if there was one.
     void reset() {
         dealloc();
         local_[0] = 0;
@@ -4192,9 +5102,9 @@ template<typename T>
 constexpr const size_t local_count = _local_count<sizeof(size_t), sizeof(T)>;
 
 /*!
- * @brief Класс иммутабельной владеющей строки
- * @tparam K - тип символов
- * @tparam Allocator - тип аллокатора
+ * @ru @brief Класс иммутабельной владеющей строки.
+ * @tparam K - тип символов.
+ * @tparam Allocator - тип аллокатора.
  * @details "shared" строка.
  * Класс с small string optimization плюс разделяемый иммутабельный буфер строки.
  * Так как буфер строки в этом классе иммутабельный, то:
@@ -4217,8 +5127,32 @@ constexpr const size_t local_count = _local_count<sizeof(size_t), sizeof(T)>;
  * - для u8s  - 24 байта, хранит строки до 23 символов + 0
  * - для u16s - 32 байта, хранит строки до 15 символов + 0
  * - для u32s - 32 байта, хранит строки до 7 символов + 0
+ * @en @brief Immutable owning string class.
+ * @tparam K - character type.
+ * @tparam Allocator - allocator type.
+ * @details "shared" string.
+ * Class with small string optimization plus a shared immutable string buffer.
+ * Since the string buffer in this class is immutable, then:
+ * Firstly, there is no need to store the size of the allocated buffer; we will not change it anyway.
+ * Secondly, another type of string appears - a string initialized with a string literal.
+ * For it, we simply save a pointer to symbols and do not count references.
+ * Thus, initializing a string object in a program with a literal does not copy anything anywhere -
+ * neither into itself nor into dynamic memory, and does not cost more than initialization
+ * a raw pointer to a string, and even more optimal, since it also immediately substitutes the size,
+ * but does not calculate it at runtime.
+ * ```cpp
+ *     stringa text = "text or very very very long text"; // costs nothing!
+ *     string copy = anotherString; // All you need to do is copy the bytes of the object itself, plus possibly one atomic increment
+ * ```
+ * In the case of a shared buffer, the size of the string is still stored not in the shared buffer, but in each object.
+ * Because of SSO, there is still enough space, and you will have to go to memory less for the length.
+ * For example, calculating the sum of the lengths of strings in a vector will only go through the memory in the vector.
+ *
+ * Sizes for x64:
+ * - for u8s - 24 bytes, stores strings up to 23 characters + 0
+ * - for u16s - 32 bytes, stores strings of up to 15 characters + 0
+ * - for u32s - 32 bytes, stores strings of up to 7 characters + 0
  */
-
 template<typename K, Allocatorable Allocator = allocator_string>
 class decl_empty_bases sstring :
     public str_algs<K, simple_str<K>, sstring<K, Allocator>, false>,
@@ -4249,17 +5183,24 @@ protected:
         // пишется, сколько символов ещё можно вписать. Когда строка занимает всё
         // возможное место, то localRemain становится 0, type в этом случае тоже 0,
         // и в итоге после символов строки получается 0, как и надо!
+        // When we have a short string, it lies in the object itself, and in localRemain
+        // writes how many more characters can be entered. When a line takes up everything
+        // possible location, then localRemain becomes 0, type in this case is also 0,
+        // and as a result, after the characters of the line we get 0, as it should!
         struct {
-            K buf_[LocalCount]; // Локальный буфер строки
+            K buf_[LocalCount]; // Локальный буфер строки | Local line buffer
             uns_type localRemain_ : sizeof(uns_type) * CHAR_BIT - 2;
             uns_type type_ : 2;
         };
         struct {
             union {
-                const K* cstr_; // Указатель на конcтантную строку
-                const K* sstr_; // Указатель на строку, перед которой лежит SharedStringData
+                // Указатель на конcтантную строку | Pointer to a constant string
+                const K* cstr_;
+                // Указатель на строку, перед которой лежит SharedStringData
+                // Pointer to the string preceded by SharedStringData
+                const K* sstr_;
             };
-            size_t bigLen_; // Длина не локальной строки.
+            size_t bigLen_; // Длина не локальной строки | Non-local string length
         };
     };
 
@@ -4285,6 +5226,8 @@ protected:
     K* set_size(size_t newSize) {
         // Вызывается при создании строки при необходимости изменить размер.
         // Других ссылок на shared buffer нет.
+        // Called when a string is created and needs to be resized.
+        // There are no other references to the shared buffer.
         size_t size = length();
         if (newSize != size) {
             if (type_ == Constant) {
@@ -4330,23 +5273,27 @@ public:
     sstring() = default;
 
     /*!
-     * @brief Конструктор пустой строки
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Конструктор пустой строки.
+     * @param ...args - параметры для инициализации аллокатора.
+     * @en @brief Constructor for the empty string.
+     * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
         requires(sizeof...(Args) > 0 && std::is_constructible_v<Allocator, Args...>)
     sstring(Args&&... args) : Allocator(std::forward<Args>(args)...) {}
 
     static const sstring<K> empty_str;
-    /// Деструктор строки
+    /// @ru Деструктор строки. @en String destructor.
     ~sstring() {
         if (type_ == Shared) {
             SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
         }
     }
     /*!
-     * @brief Конструктор копирования строки
-     * @param other - копируемая строка
+     * @ru @brief Конструктор копирования строки.
+     * @param other - копируемая строка.
+     * @en @brief String copy constructor.
+     * @param other - the string to be copied.
      */
     sstring(const my_type& other) noexcept : base_storable(other.allocator()) {
         memcpy(buf_, other.buf_, sizeof(buf_) + sizeof(K));
@@ -4354,8 +5301,10 @@ public:
             SharedStringData<K>::from_str(sstr_)->incr();
     }
     /*!
-     * @brief Конструктор перемещения
-     * @param other - перемещаемая строка
+     * @ru @brief Конструктор перемещения.
+     * @param other - перемещаемая строка.
+     * @en @brief Move constructor.
+     * @param other - the string to be moved.
      */
     sstring(my_type&& other) noexcept : base_storable(std::move(other.allocator())) {
         memcpy(buf_, other.buf_, sizeof(buf_) + sizeof(K));
@@ -4363,10 +5312,14 @@ public:
     }
 
     /*!
-     * @brief Конструктор перемещения из lstring с совместимым с sstring внешним буфером
-     * @param src - перемещаемая строка
+     * @ru @brief Конструктор перемещения из lstring с совместимым с sstring внешним буфером.
+     * @param src - перемещаемая строка.
      * @details В случае, если символы в lstring лежат во внешнем аллоцированном буфере,
      *  просто забираем указатель на буфер, он нам подойдёт.
+     * @en @brief A move constructor from lstring with an sstring-compatible external buffer.
+     * @param src - the string to be moved.
+     * @details If the characters in lstring are in an external allocated buffer,
+     * we just take the pointer to the buffer, it will suit us.
      */
     template<size_t N>
     sstring(lstring<K, N, true, Allocator>&& src) : base_storable(std::move(src.allocator())) {
@@ -4374,9 +5327,11 @@ public:
         if (size) {
             if (src.is_alloced()) {
                 // Там динамический буфер, выделенный с запасом для SharedStringData.
+                // There is a dynamic buffer allocated with a reserve for SharedStringData.
                 K* str = src.str();
                 if (size > LocalCount) {
                     // Просто присвоим его себе.
+                    // Let's just assign it to ourselves.
                     sstr_ = str;
                     bigLen_ = size;
                     type_ = Shared;
@@ -4384,14 +5339,17 @@ public:
                     new (SharedStringData<K>::from_str(str)) SharedStringData<K>();
                 } else {
                     // Скопируем локально
+                    // Copy locally
                     type_ = Local;
                     localRemain_ = LocalCount - size;
                     traits::copy(buf_, str, size + 1);
                     // Освободим тот буфер, у локальной строки буфер не разделяется с другими
+                    // Let's free that buffer; a local string's buffer is not shared with others
                     src.dealloc();
                 }
             } else {
                 // Копируем из локального буфера
+                // Copy from local buffer
                 K* str = init(src.size_);
                 traits::copy(str, src.symbols(), size + 1);
             }
@@ -4401,10 +5359,14 @@ public:
     }
 
     /*!
-     * @brief Инициализация из строкового литерала
-     * @param s - строковый литерал
-     * @param ...args - параметры для инициализации аллокатора
+     * @ru @brief Инициализация из строкового литерала.
+     * @param s - строковый литерал.
+     * @param ...args - параметры для инициализации аллокатора.
      * @details В этом случае просто запоминаем указатель на строку и её длину.
+     * @en @brief Initialize from a string literal.
+     * @param s - string literal.
+     * @param ...args - parameters for initializing the allocator.
+     * @details In this case, we simply remember the pointer to the string and its length.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
@@ -4424,61 +5386,82 @@ public:
         std::swap(base_storable::allocator(), other.allocator());
     }
     /*!
-     * @brief Оператор присвоения другой строки того же типа
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения другой строки того же типа.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator to another string of the same type.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     my_type& operator=(my_type other) noexcept {
         swap(std::move(other));
         return *this;
     }
     /*!
-     * @brief Оператор присвоения другой строки другого типа
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения другой строки другого типа.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator to another string of a different type.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     my_type& operator=(simple_str<K> other) {
         return operator=(my_type{other, base_storable::allocator()});
     }
     /*!
-     * @brief Оператор присвоения строкового литерала
-     * @param other - строковый литера
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения строкового литерала.
+     * @param other - строковый литера.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief String literal assignment operator.
+     * @param other - string character.
+     * @return my_type& - a reference to yourself.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     my_type& operator=(T&& other) {
         return operator=(my_type{other, base_storable::allocator()});
     }
     /*!
-     * @brief Оператор присвоения другой строки типа lstring
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения другой строки типа lstring.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator to another string of type lstring.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     template<size_t N, bool forShared, typename A>
     my_type& operator=(const lstring<K, N, forShared, A>& other) {
         return operator=(my_type{other.to_str(), base_storable::allocator()});
     }
     /*!
-     * @brief Оператор присвоения перемещаемой строки типа lstring с совместимым буфером
-     * @param other - другая строка
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения перемещаемой строки типа lstring с совместимым буфером.
+     * @param other - другая строка.
+     * @return my_type& - ссылку на себя же.
+     * @en @brief Assignment operator to a movable string of type lstring with a compatible buffer.
+     * @param other - another string.
+     * @return my_type& - a reference to yourself.
      */
     template<size_t N>
     my_type& operator=(lstring<K, N, true, Allocator>&& other) {
         return operator=(my_type{std::move(other)});
     }
     /*!
-     * @brief Оператор присвоения строкового выражения
-     * @param expr - строковое выражения
-     * @return my_type& - ссылку на себя же
+     * @ru @brief Оператор присвоения строкового выражения.
+     * @param expr - строковое выражения.
+     * @return my_type& - ссылку на себя же.
      * @details В строковом выражение допустимо ссылаться на части этой же строки, так как сначала создаётся копия.
+     * @en @brief String expression assignment operator.
+     * @param expr - string expression.
+     * @return my_type& - a reference to yourself.
+     * @details In a string expression, it is possible to refer to parts of the same string, since a copy is created first.
      */
     my_type& operator=(const StrExprForType<K> auto& expr) {
         return operator=(my_type{expr, base_storable::allocator()});
     }
     /*!
-     * @brief Сделать строку пустой
+     * @ru @brief Сделать строку пустой.
      * @return my_type& - ссылку на себя же
+     * @en @brief Make the string empty.
+     * @return my_type& - a reference to yourself.
      */
     my_type& make_empty() noexcept {
         if (type_ == Shared)
@@ -4486,48 +5469,61 @@ public:
         create_empty();
         return *this;
     }
-    /// Указатель на символы строки
+    /// @ru Указатель на символы строки. @en Pointer to characters in the string.
     const K* symbols() const noexcept {
         return type_ == Local ? buf_ : cstr_;
     }
-    /// Длина строки
+    /// @ru Длина строки. @en Line length.
     size_t length() const noexcept {
         return type_ == Local ? LocalCount - localRemain_ : bigLen_;
     }
-    /// Пустая ли строка
+    /// @ru Пустая ли строка. @en Is the string empty?
     bool is_empty() const noexcept {
         return length() == 0;
     }
-    /// for std::string compatibility
+    /// @ru Пустая ли строка, для совместимости с std::string. @en Whether the string is empty, for compatibility with std::string.
     bool empty() const noexcept {
         return is_empty();
     }
     /*!
-     * @brief Получить строку, отформатированную с помощью `std::sprintf`
-     * @param pattern - форматная строка
-     * @param ...args  - аргументы для `sprintf`
-     * @return my_type
+     * @ru @brief Получить строку, отформатированную с помощью `std::sprintf`.
+     * @param pattern - форматная строка.
+     * @param ...args  - аргументы для `sprintf`.
+     * @return my_type.
      * @details Для Windows поддерживаются posix позиционные аргументы, используется `_sprintf_p`.
+     * @en @brief Get a string formatted with `std::sprintf`.
+     * @param pattern - format string.
+     * @param ...args - arguments for `sprintf`.
+     * @return my_type.
+     * @details On Windows, posix positional arguments are supported, using `_sprintf_p`.
      */
     template<typename... T>
     static my_type printf(const K* pattern, T&&... args) {
         return my_type{lstring<K, 256, true>{}.printf(pattern, std::forward<T>(args)...)};
     }
     /*!
-     * @brief Получить строку, отформатированную с помощью `std::format`
-     * @param pattern - константная форматная строка
-     * @param ...args  - аргументы для `std::format`
-     * @return my_type 
+     * @ru @brief Получить строку, отформатированную с помощью `std::format`.
+     * @param fmtString - константная форматная строка.
+     * @param ...args  - аргументы для `std::format`.
+     * @return my_type.
+     * @en @brief Get a string formatted with `std::format`.
+     * @param fmtString - constant format string.
+     * @param ...args - arguments for `std::format`.
+     * @return my_type.
      */
     template<typename... T>
     static my_type format(const FmtString<K, T...>& fmtString, T&&... args) {
         return my_type{lstring<K, 256, true, Allocator>{}.format(fmtString, std::forward<T>(args)...)};
     }
     /*!
-     * @brief Получить строку, отформатированную с помощью `std::vformat`
-     * @param pattern - форматная строка
-     * @param ...args  - аргументы для `std::vformat`
-     * @return my_type 
+     * @ru @brief Получить строку, отформатированную с помощью `std::vformat`.
+     * @param fmtString - форматная строка.
+     * @param ...args  - аргументы для `std::vformat`.
+     * @return my_type.
+     * @en @brief Get a string formatted with `std::vformat`.
+     * @param fmtString - format string.
+     * @param ...args - arguments for `std::vformat`.
+     * @return my_type.
      */
     template<typename... T>
     static my_type vformat(simple_str<K> fmtString, T&&... args) {
@@ -4565,9 +5561,11 @@ constexpr size_t fromInt(K* bufEnd, T val) {
         need_sign<K, std::is_signed_v<T>, T> sign(val);
         K* itr = bufEnd;
         // Когда у нас минимальное отрицательное число, оно не меняется и остается меньше нуля
+        // When we have a minimum negative number, it does not change and remains less than zero
         if constexpr (std::is_signed_v<T>) {
             if (val < 0) {
                 // Возьмем две последние цифры
+                // Take the last two digits
                 const char* ptr = twoDigit - (val % 100) * 2;
                 *--itr = static_cast<K>(ptr[1]);
                 *--itr = static_cast<K>(ptr[0]);
@@ -4619,10 +5617,14 @@ struct expr_num {
 
 /*!
  * @ingroup StrExprs
- * @brief Оператор конкатенации для строкового выражения и целого числа.
- * @param a - строковое выражение
- * @param s - число
+ * @ru @brief Оператор конкатенации для строкового выражения и целого числа.
+ * @param a - строковое выражение.
+ * @param s - число.
  * @details Число конвертируется в десятичное строковое представление.
+ * @en @brief Concatenation operator for string expression and integer.
+ * @param a is a string expression.
+ * @param s - number.
+ * @details The number is converted to a decimal string representation.
  */
 template<StrExpr A, FromIntNumber T>
 inline constexpr auto operator + (const A& a, T s) {
@@ -4631,10 +5633,14 @@ inline constexpr auto operator + (const A& a, T s) {
 
 /*!
  * @ingroup StrExprs
- * @brief Оператор конкатенации для целого числа и строкового выражения.
- * @param s - число
- * @param a - строковое выражение
+ * @ru @brief Оператор конкатенации для целого числа и строкового выражения.
+ * @param s - число.
+ * @param a - строковое выражение.
  * @details Число конвертируется в десятичное строковое представление.
+ * @en @brief Concatenation operator for integer and string expression.
+ * @param s - number.
+ * @param a is a string expression.
+ * @details The number is converted to a decimal string representation.
  */
 template<StrExpr A, FromIntNumber T>
 inline constexpr auto operator + (T s, const A& a) {
@@ -4643,12 +5649,18 @@ inline constexpr auto operator + (T s, const A& a) {
 
 /*!
  * @ingroup StrExprs
- * @brief Преобразование целого числа в строковое выражение
- * @tparam K - тип символов
- * @tparam T - тип числа, выводится из аргумента
- * @param t - число
+ * @ru @brief Преобразование целого числа в строковое выражение.
+ * @tparam K - тип символов.
+ * @tparam T - тип числа, выводится из аргумента.
+ * @param t - число.
  * @details Возвращает строковое выражение, которое генерирует десятичное представление заданного числа.
- * Может использоваться, когда надо конкатенировть число и строковый литерал
+ * Может использоваться, когда надо конкатенировть число и строковый литерал.
+ * @en @brief Convert an integer to a string expression.
+ * @tparam K - character type.
+ * @tparam T - number type, inferred from the argument.
+ * @param t - number.
+ * @details Returns a string expression that generates the decimal representation of the given number.
+ * Can be used when you need to concatenate a number and a string literal.
  */
 template<typename K, typename T>
 inline constexpr auto e_num(T t) {
@@ -4691,10 +5703,14 @@ struct expr_real {
 
 /*!
  * @ingroup StrExprs
- * @brief Оператор конкатенации для строкового выражения и вещественного числа (`float`, `double`).
- * @param a - строковое выражение
- * @param s - число
+ * @ru @brief Оператор конкатенации для строкового выражения и вещественного числа (`float`, `double`).
+ * @param a - строковое выражение.
+ * @param s - число.
  * @details Число конвертируется в строковое представление через sprintf("%.16g").
+ * @en @brief Concatenation operator for string expression and real number (`float`, `double`).
+ * @param a is a string expression.
+ * @param s - number.
+ * @details The number is converted to a string representation via sprintf("%.16g").
  */
 template<StrExpr A, typename R>
     requires(is_one_of_std_char_v<typename A::symb_type> && (std::is_same_v<R, double> || std::is_same_v<R, float>))
@@ -4704,10 +5720,14 @@ inline constexpr auto operator+(const A& a, R s) {
 
 /*!
  * @ingroup StrExprs
- * @brief Оператор конкатенации для вещественного числа (`float`, `double`) и строкового выражения.
- * @param s - число
- * @param a - строковое выражение
+ * @ru @brief Оператор конкатенации для вещественного числа (`float`, `double`) и строкового выражения.
+ * @param s - число.
+ * @param a - строковое выражение.
  * @details Число конвертируется в строковое представление через `sprintf("%.16g")`.
+ * @en @brief Concatenation operator for float (`float`, `double`) and string expression.
+ * @param s - number.
+ * @param a is a string expression.
+ * @details The number is converted to a string representation via `sprintf("%.16g")`.
  */
 template<StrExpr A, typename R>
     requires(is_one_of_std_char_v<typename A::symb_type> && (std::is_same_v<R, double> || std::is_same_v<R, float>))
@@ -4717,10 +5737,14 @@ inline constexpr auto operator+(R s, const A& a) {
 
 /*!
  * @ingroup StrExprs
- * @brief Преобразование `double` числа в строковое выражение
- * @param t - число
- * @details Возвращает строковое выражение, которое генерирует десятичное представление заданного числа
- * с помощью `sprintf("%.16g")`. Может использоваться, когда надо конкатенировть число и строковый литерал
+ * @ru @brief Преобразование `double` числа в строковое выражение.
+ * @param t - число.
+ * @details Возвращает строковое выражение, которое генерирует десятичное представление заданного числа.
+ * с помощью `sprintf("%.16g")`. Может использоваться, когда надо конкатенировть число и строковый литерал.
+ * @en @brief Convert a `double` number to a string expression.
+ * @param t - number.
+ * @details Returns a string expression that generates the decimal representation of the given number.
+ * using `sprintf("%.16g")`. Can be used when you need to concatenate a number and a string literal.
  */
 template<typename K> requires(is_one_of_std_char_v<K>)
 inline constexpr auto e_real(double t) {
@@ -4735,6 +5759,13 @@ inline constexpr auto e_real(double t) {
 * tail - добавлять разделитель после последнего элемента контейнера.
 *        Если контейнер пустой, разделитель в любом случае не добавляется
 * skip_empty - пропускать пустые строки без добавления разделителя
+* To create string concatenations with vectors and lists joined by a constant delimiter
+* K is the symbols
+* T - type of string container (vector, list)
+* I - length of separator in characters
+* tail - add a separator after the last element of the container.
+* If the container is empty, the separator is not added anyway
+* skip_empty - skip empty lines without adding a separator
 */
 template<typename K, typename T, size_t I, bool tail, bool skip_empty>
 struct expr_join {
@@ -4781,11 +5812,16 @@ struct expr_join {
 
 /*!
  * @ingroup StrExprs
- * @brief Получить строковое выражение, конкатенирующее строки в контейнере в одну строку с заданным разделителем
- * @tparam tail - добавлять ли разделитель после последней строки
- * @tparam skip_empty - пропускать пустые строки без добавления разделителя
+ * @ru @brief Получить строковое выражение, конкатенирующее строки в контейнере в одну строку с заданным разделителем.
+ * @tparam tail - добавлять ли разделитель после последней строки.
+ * @tparam skip_empty - пропускать пустые строки без добавления разделителя.
  * @param s - контейнер со строками, должен поддерживать `range for`.
- * @param d - разделитель, строковый литерал
+ * @param d - разделитель, строковый литерал.
+ * @en @brief Get a string expression concatenating the strings in the container into a single string with the given delimiter.limiter.limiter.
+ * @tparam tail - whether to add a separator after the last line.
+ * @tparam skip_empty - skip empty lines without adding a separator.
+ * @param s - container with strings, must support `range for`.
+ * @param d - delimiter, string literal.
  */
 template<bool tail = false, bool skip_empty = false, typename L, typename K = typename const_lit<L>::symb_type, size_t I = const_lit<L>::Count, typename T>
 inline constexpr auto e_join(const T& s, L&& d) {
@@ -4864,11 +5900,16 @@ struct expr_replaces {
 
 /*!
  * @ingroup StrExprs
- * @brief Получить строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки
- * @tparam K - тип символа, выводится из первого аргумента
- * @param w - начальная строка
- * @param p - строковый литерал, искомая подстрока
- * @param r - строковый литерал, на что заменять
+ * @ru @brief Получить строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
+ * @tparam K - тип символа, выводится из первого аргумента.
+ * @param w - начальная строка.
+ * @param p - строковый литерал, искомая подстрока.
+ * @param r - строковый литерал, на что заменять.
+ * @en @brief Get a string expression that generates a string with all occurrences of a given substring replaced.
+ * @tparam K - the type of the symbol, inferred from the first argument.
+ * @param w - starting line.
+ * @param p - string literal, searched substring.
+ * @param r - string literal, what to replace with.
  */
 template<typename K, typename T, size_t N = const_lit_for<K, T>::Count, typename X, size_t L = const_lit_for<K, X>::Count>
     requires(N > 1)
@@ -4878,11 +5919,17 @@ inline constexpr auto e_repl(simple_str<K> w, T&& p, X&& r) {
 
 /*!
  * @ingroup StrExprs
- * @brief Строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
- * @tparam K - тип строкиs
+ * @ru @brief Строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
+ * @tparam K - тип строки.
  * @details `e_repl` позволяет заменять только с использование строковых литералов.
  *  В случае, когда искомая подстрока или строка замены не известны при компиляции, и задаются в runtime,
  *  следует использовать этот тип, например:
+ * @en @brief A string expression that generates a string replacing all occurrences of the given substring.
+ * @tparam K - string type.
+ * @details `e_repl` only allows replacement using string literals.
+ * In the case when the required substring or replacement string is not known at compilation, and is set at runtime,
+ * this type should be used, for example:
+ * @~
  * ```cpp
  *      stringa result = "<header>" + expr_replaced<u8s>{source, pattern, repl} + "</header>";
  * ```
@@ -4896,10 +5943,14 @@ struct expr_replaced {
     const simple_str<K> repl;
     mutable size_t first_, last_;
     /*!
-     * @brief Конструктор
-     * @param w - исходная строка
-     * @param p - искомая подстрока
-     * @param r - строка замены
+     * @ru @brief Конструктор.
+     * @param w - исходная строка.
+     * @param p - искомая подстрока.
+     * @param r - строка замены.
+     * @en @brief Constructor.
+     * @param w - source string.
+     * @param p - the searched substring.
+     * @param r - replacement string.
      */
     constexpr expr_replaced(simple_str<K> w, simple_str<K> p, simple_str<K> r) : what(w), pattern(p), repl(r) {}
 
@@ -4973,9 +6024,9 @@ struct replace_search_result_store<true> : std::vector<std::pair<size_t, size_t>
 
 /*!
  * @ingroup StrExprs
- * @brief Тип для строкового выражения, генерирующее строку, в которой заданные символы заменяются на заданные строки.
- * @tparam K - тип символа
- * @tparam UseVectorForReplace - использовать вектор для запоминания результатов поиска вхождений символов
+ * @ru @brief Тип для строкового выражения, генерирующее строку, в которой заданные символы заменяются на заданные строки.
+ * @tparam K - тип символа.
+ * @tparam UseVectorForReplace - использовать вектор для запоминания результатов поиска вхождений символов.
  * @details Этот тип применяется, когда состав символов или соответствующих им замен не известен в compile time,
  * а определяется в runtime. В конструктор передается вектор из пар `символ - строка замены`.
  * Параметр `UseVectorForReplace` задаёт стратегию реализации. Дело в том, что работа любых строковых выражений
@@ -4991,6 +6042,24 @@ struct replace_search_result_store<true> : std::vector<std::pair<size_t, size_t>
  * фазе - не нужно добавлять элементы в вектор, не нужна динамическая аллокация.
  * В разных сценариях использования более оптимальными могут быть та или иная стратегия, и вы можете сами решить,
  * что в каждом конкретном случае больше подойдёт.
+ * @en @brief A type for a string expression that generates a string in which the given characters are replaced by the given strings.
+ * @tparam K - symbol type.
+ * @tparam UseVectorForReplace - use a vector to remember the results of searching for occurrences of characters.
+ * @details This type is used when the composition of symbols or their corresponding replacements is not known at compile time,
+ * and is defined at runtime. A vector of `character - replacement string` pairs is passed to the constructor.
+ * The `UseVectorForReplace` parameter specifies the implementation strategy. The point is that the work of any string expressions
+ * is divided into two phases - the `length()` call, which counts the number of characters in the result,
+ * and a call to `place()`, which places the result in the provided buffer.
+ * When `UseVectorForReplace == true` during the phase of counting the number of characters, the position of the found occurrences
+ * are stored in the vector, and during the second phase the search is no longer performed, and the positions are taken from the vector.
+ * This, on the one hand, reduces the time in the second phase - there is no need to search again, but it increases
+ * time in the first phase - adding elements to the vector is not free, and takes time.
+ * When `UseVectorForReplace == false` during the phase of counting the number of characters, positions in the local array are remembered
+ * the first 16 occurrences and their total number, and during the second phase, if there are more than 16 occurrences, then the search is repeated,
+ * but only from the position of the 16th occurrence. This may increase the time in the second phase, but reduces the time in the first
+ * phase - no need to add elements to the vector, no need for dynamic allocation.
+ *In different use cases, one or another strategy may be more optimal, and you can decide for yourself
+ * whichever is more suitable in each specific case.
  */
 template<typename K, bool UseVectorForReplace = false>
 struct expr_replace_symbols {
@@ -5006,10 +6075,15 @@ struct expr_replace_symbols {
 
     uu8s bit_mask_[sizeof(K) == 1 ? 32 : 64]{};
     /*!
-     * @brief Конструктор выражения
-     * @param source - исходная строка
+     * @ru @brief Конструктор выражения.
+     * @param source - исходная строка.
      * @param repl - вектор из пар "символ->строка замены".
      * @details Пример:
+     * @en @brief Expression constructor.
+     * @param source - source string.
+     * @param repl - a vector of "character->replacement string" pairs.
+     * @details Example:
+     * @~
      *  ```cpp
         stringa result = expr_replace_symbols<u8s, true>{source, {
             {'-', ""},
@@ -5020,9 +6094,12 @@ struct expr_replace_symbols {
             {'&', "&amp;"},
         }};
      *  ```
-     * Пример приведен для наглядности использования. В данном случае и заменяемые символы, и строки замены
+     * @ru Пример приведен для наглядности использования. В данном случае и заменяемые символы, и строки замены
      * известны в compile time, и в этом случае лучше применять e_repl_const_symbols, а этот класс
      * используется, когда символы или замены задаются в runtime.
+     * @en An example is provided for clarity of use. In this case, both the characters to be replaced and the replacement strings
+     * known at compile time, in which case it is better to use e_repl_const_symbols, and this class
+     * is used when characters or replacements are specified at runtime.
      */
     constexpr expr_replace_symbols(simple_str<K> source, const std::vector<std::pair<K, simple_str<K>>>& repl )
         : source_(source), replaces_(repl)
@@ -5183,6 +6260,7 @@ protected:
 };
 
 // Строковое выражение для замены символов
+// String expression to replace characters
 template<typename K, size_t N, bool UseVectorForReplace>
 struct expr_replace_const_symbols {
     using symb_type = K;
@@ -5360,21 +6438,35 @@ protected:
 
 /*!
  * @ingroup StrExprs
- * @brief Возвращает строковое выражение, генерирующее строку, в которой заданные символы
+ * @ru @brief Возвращает строковое выражение, генерирующее строку, в которой заданные символы
  * заменены на заданные подстроки.
  * @tparam UseVector - использовать вектор для сохранения результатов поиска символов.
  *      Более подробно описано в `expr_replace_symbols`.
- * @param src - исходная строка
- * @param symbol - константный символ, который надо заменять
- * @param repl - строковый литерал, на который заменять символ
- * @param ... symbol, repl - другие символы и строки
+ * @param src - исходная строка.
+ * @param symbol - константный символ, который надо заменять.
+ * @param repl - строковый литерал, на который заменять символ.
+ * @param ... symbol, repl - другие символы и строки.
  * @details Применяется для генерации замены символов на строки, в случае если все они известны
  * в compile time. Пример:
+ * @en @brief Returns a string expression that generates a string containing the given characters
+ * replaced with given substrings.
+ * @tparam UseVector - use a vector to save symbol search results.
+ *      Described in more detail in `expr_replace_symbols`.
+ * @param src - source string.
+ * @param symbol - constant symbol that needs to be replaced.
+ * @param repl - string literal to replace the character with.
+ * @param ... symbol, repl - other symbols and strings.
+ * @details Used to generate character replacements for strings if all of them are known
+ * at compile time. Example:
+ * @~
  *  ```cpp
  *  out += "<div>" + e_repl_const_symbols(text, '\"', "&quot;", '<', "&lt;", '\'', "&#39;", '&', "&amp;") + "</div>";
  *  ```
- * В принипе, `e_repl_const_symbols` вполне безопасно возвращать из функции, если исходная строка
- * внешняя по отношению к функции
+ * @ru В принипе, `e_repl_const_symbols` вполне безопасно возвращать из функции, если исходная строка
+ * внешняя по отношению к функции.
+ * @en In principle, `e_repl_const_symbols` is quite safe to return from a function if the source string
+ * external to function.
+ * @~
  *  ```cpp
  *  auto repl_html_symbols(ssa text) {
  *      return e_repl_const_symbols(text, '\"', "&quot;", '<', "&lt;", '\'', "&#39;", '&', "&amp;");
@@ -5473,7 +6565,7 @@ template<typename K>
 struct strhash;
 
 /*!
- * @brief Контейнер для более эффективного поиска по строковым ключам.
+ * @ru @brief Контейнер для более эффективного поиска по строковым ключам.
  * @details Используется для хранения и поиска ключей любого строкового типа.
  * Как unordered_map, но чуть лучше.
  * В качестве ключей хранит simple_str вместе с посчитанным хешем и пустым местом для sstring.
@@ -5519,6 +6611,52 @@ struct strhash;
  * типов, позволяющий избежать лишних ненужных преобразований ключей при поиске и вставке.
  * То, что при этом может улучшится производительность - не цель, а побочный эффект - приятный, если он есть,
  * но и не смертельный, если его нет.
+ * @en @brief Container for more efficient searching by string keys.
+ * @details Used to store and lookup keys of any string type.
+ * Like unordered_map, but a little better.
+ * Stores simple_str as keys along with the calculated hash and an empty space for sstring.
+ * After insertion, creates an sstring in this empty space so that simple_str has something to refer to.
+ * Allows you to use any simstr string objects for insertion and search, creating an object from them
+ * sstring only for real insertion.
+ * Since C++20, unordered_map has the ability to perform heterogeneous search by key with type,
+ * different from the type of the key being stored, but this requires some dancing with hash types and comparisons.
+ * Search with insertion (try_emplace) by a type other than the key type appears in the standard only with C++26.
+ * There is a hashing and comparison implementation for the options:
+ * - case sensitive
+ * - case insensitive, ASCII only
+ * - case insensitive, simplified Unicode (up to 0xFFFF).
+ * Hashing is performed by the FNV-1A algorithm.
+ * Automatic conversion of simstr string objects to the type of the stored key (i.e. with a calculated hash),
+ * and also saving sstring in the key when inserting - performed for the try_emplace, emplace, at, methods
+ * find, operator[], erase. When using other search methods, you need to provide the correct
+ * calculated hash in the StoreType key. Do not use insertion methods other than those listed; they are not
+ * will save sstring in the key.
+ *
+ * The main thing I would like to focus on is the very purpose of strHashMap, for which it was originally invented.
+ * The goal was not to somehow beat unordered_map in terms of performance/memory (otherwise why make strHashMap on
+ * unordered_map database?) The main problem that was solved is that we have several options for string objects,
+ * and I would like to be able to use any type of string object to insert and search for keys.
+ * We have simple_str, simple_str_nt, sstring, and lstring<N> in general for every N is a new object type.
+ * In std everything was simple - there was only string, and accordingly, we used unordered_map<string, Something there>.
+ * And by the way, in std we encountered the same problem: the keys are const char*, and with C++17 and string_view (this is like our simple_str),
+ * searching in unordered_map<string, Type> is not very good, you have to convert the key to string every time, although you can
+ * do without this.
+ * Therefore, starting from C++20, the possibility of heterogeneous search was added to unordered_map - on
+ * https://en.cppreference.com/w/cpp/container/unordered_map/find these are syntaxes (3) and (4).
+ * True, this requires ritual dances with a tambourine - a special type is required for hashing (which, of course, in
+ * the standard is no longer included and you need to implement it yourself), which can hash different types of keys,
+ * and contains typename `is_transparent`. In fact, there is an example of it on the same page.
+ * This solved part of the problem - search, but did not solve the insertion problem - for inserting into unordered_map<string, Type>
+ * still only requires string. And only in the future C++26 we expect the possibility of heterogeneous insertion in the form
+ * try_emplace (https://en.cppreference.com/w/cpp/container/unordered_map/try_emplace) in syntax (6), which
+ * will allow you to accept keys of other types and convert them to the desired type only if the insertion is actually carried out.
+ * In my string library, I encountered this problem even before C++17, and so I’m not so cool as to
+ * influence the standard, I simply created my own class - a descendant of unordered_map, with wrappers around the insertion/search methods.
+ * Well, I also added two more hashing/comparison options: case-insensitive ASCII, case-insensitive simple unicode.
+ * Thus, we have a class that extends the standard unordered_map with the ability to work with string keys of different
+ * types, allowing you to avoid unnecessary unnecessary key conversions when searching and inserting.
+ * The fact that performance may improve is not the goal, but a side effect - pleasant, if there is one,
+ * but not fatal if it is not there.
  */
 template<typename K, typename T, typename H = strhash<K>, typename E = streql<K>>
 class hashStrMap : public std::unordered_map<StoreType<K, H>, T, H, E> {
@@ -5571,6 +6709,7 @@ public:
     }
 
     // При входе хэш должен быть уже посчитан
+    // When entering, the hash must already be calculated
     template<typename... ValArgs>
     auto try_emplace(const InStore& key, ValArgs&&... args) {
         auto it = hash_t::try_emplace(key, std::forward<ValArgs>(args)...);
@@ -5765,20 +6904,26 @@ struct strhashiu {
 };
 
 /*!
- * @brief Для построения длинных динамических строк конкатенацией мелких кусочков.
+ * @ru @brief Для построения длинных динамических строк конкатенацией мелких кусочков.
  * @details Выделяет по мере надобности отдельные блоки заданного размера (или кратного ему для больших вставок),
  * чтобы избежать релокации длинных строк. После построения можно слить в одну строку.
  * Как показали замеры, если сливать потом в одну строку, работает медленнее, чем lstring +=,
  * но экономнее по памяти. Если не сливать в одну строку, а дальше перебирать буфера - быстрее.
  * Сам является строковым выражением.
+ * @en @brief For constructing long dynamic strings by concatenating small pieces.
+ * @details Selects individual blocks of a given size (or a multiple of it for large inserts) as needed.
+ * to avoid relocation of long strings. After construction, you can merge it into one line.
+ * As measurements have shown, if you then merge it into one line, it works slower than lstring +=,
+ * but more economical in memory. If you don't merge it into one line, and then iterate through buffers, it's faster.
+ * Itself is a string expression.
 */
 template<typename K>
 class chunked_string_builder {
     using chunk_t = std::pair<std::unique_ptr<K[]>, size_t>;
-    std::vector<chunk_t> chunks; // блоки и длина данных в них
-    K* write{};                  // Текущая позиция записи
-    size_t len{};                // Общая длина
-    size_t remain{};             // Сколько осталось места в текущем блоке
+    std::vector<chunk_t> chunks; // блоки и длина данных в них | blocks and data length in them
+    K* write{};                  // Текущая позиция записи | Current write position
+    size_t len{};                // Общая длина | Total length
+    size_t remain{};             // Сколько осталось места в текущем блоке | How much space is left in the current block
     size_t align{1024};
 
 public:
@@ -5803,27 +6948,32 @@ public:
         return *this;
     }
 
-    ///  Добавление порции данных
+    /// @ru Добавление порции данных. @en Adding a piece of data.
     my_type& operator<<(simple_str<K> data) {
         if (data.len) {
             len += data.len;
             if (data.len <= remain) {
                 // Добавляемые данные влезают в выделенный блок, просто скопируем их
+                // The added data fits into the selected block, just copy it
                 ch_traits<K>::copy(write, data.str, data.len);
-                write += data.len;                // Сдвинем позицию  записи
-                chunks.back().second += data.len; // Увеличим длину хранимых в блоке данных
-                remain -= data.len;               // Уменьшим остаток места в блоке
+                write += data.len;                // Сдвинем позицию  записи | Let's move the recording position
+                chunks.back().second += data.len; // Увеличим длину хранимых в блоке данных | Let's increase the length of the data stored in the block
+                remain -= data.len;               // Уменьшим остаток места в блоке | Reduce the remaining space in the block
             } else {
-                // Не влезают
+                // Не влезают | They don't fit
                 if (remain) {
                     // Сначала запишем сколько влезет
+                    // First, write down as much as we can
                     ch_traits<K>::copy(write, data.str, remain);
                     data.len -= remain;
                     data.str += remain;
-                    chunks.back().second += remain; // Увеличим длину хранимых в блоке данных
+                    chunks.back().second += remain; // Увеличим длину хранимых в блоке данных | Let's increase the length of the data stored in the block
                 }
                 // Выделим новый блок и впишем в него данные
-                size_t blockSize = (data.len + align - 1) / align * align; // Рассчитаем размер блока, кратного заданному выравниванию
+                // Рассчитаем размер блока, кратного заданному выравниванию
+                // Select a new block and write data into it
+                // Calculate the block size that is a multiple of the given alignment
+                size_t blockSize = (data.len + align - 1) / align * align;
                 chunks.emplace_back(std::make_unique<K[]>(blockSize), data.len);
                 write = chunks.back().first.get();
                 ch_traits<K>::copy(write, data.str, data.len);
@@ -5833,7 +6983,7 @@ public:
         }
         return *this;
     }
-    /// Добавление строкового выражения
+    /// @ru Добавление строкового выражения. @en Adding a string expression.
     my_type& operator<<(const StrExprForType<K> auto& expr) {
         size_t l = expr.length();
         if (l) {
@@ -5856,18 +7006,18 @@ public:
         }
         return *this;
     }
-    /// Добавление символа
+    /// @ru Добавление символа. @en Adding a symbol.
     template<typename T>
     my_type& operator<<(T data)
         requires std::is_same_v<T, K>
     {
         return operator<<(expr_char<K>(data));
     }
-    /// Длина сохранённого текста
+    /// @ru Длина сохранённого текста. @en Length of the saved text.
     constexpr size_t length() const noexcept {
         return len;
     }
-    /// Сбрасывает содержимое, но при этом не удаляет первый буфер, чтобы потом избежать аллокации
+    /// @ru Сбрасывает содержимое, но при этом не удаляет первый буфер, чтобы потом избежать аллокации. @en Resets the contents, but does not delete the first buffer in order to avoid allocation later.
     void reset() {
         if (chunks.empty()) {
             return;
@@ -5890,9 +7040,12 @@ public:
         return p;
     }
     /*!
-     * @brief Применяет функтор к каждому сохранённому буферу
-     * @tparam Op - тип функтора, функция вида (const K* ptr, size_t len)
-     * @param o - функтор
+     * @ru @brief Применяет функтор к каждому сохранённому буферу.
+     * @tparam Op - тип функтора, функция вида (const K* ptr, size_t len).
+     * @param o - функтор.
+     * @en @brief Applies a functor to each stored buffer.
+     * @tparam Op - type of the functor, function type (const K* ptr, size_t len).
+     * @param o is a functor.
      */
     template<typename Op>
     void out(const Op& o) const {
@@ -5900,7 +7053,8 @@ public:
             o(block.first.get(), block.second);
     }
     /*!
-     * @brief Проверяет, расположен ли весь текст одним непрерывным куском в памяти
+     * @ru @brief Проверяет, расположен ли весь текст одним непрерывным куском в памяти.
+     * @en @brief Checks whether all text is located in one contiguous chunk in memory.
      */
     bool is_continuous() const {
         if (chunks.size()) {
@@ -5914,14 +7068,17 @@ public:
         return true;
     }
     /*!
-     * @brief Получить указатель на начало первого буфера.
-     * Имеет смысл применять только если is_continuous true
+     * @ru @brief Получить указатель на начало первого буфера.
+     * Имеет смысл применять только если is_continuous true.
+     * @en @brief Get a pointer to the beginning of the first buffer.
+     * It makes sense to apply only if is_continuous true.
      */
     const K* begin() const {
         return chunks.size() ? chunks.front().first.get() : simple_str_nt<K>::empty_str.str;
     }
     /*!
-     * @brief Очистить объект, освободив все выделенные буфера.
+     * @ru @brief Очистить объект, освободив все выделенные буфера.
+     * @en @brief Clear the object, freeing all allocated buffers.
      */
     void clear() {
         chunks.clear();
@@ -5930,23 +7087,28 @@ public:
         remain = 0;
     }
     /*!
-     * @brief Объект, позволяющий последовательно копировать содержимое
-     * в буфер заданного размера
+     * @ru @brief Объект, позволяющий последовательно копировать содержимое в буфер заданного размера.
+     * @en @brief An object that allows you to sequentially copy content into a buffer of a given size.
      */
     struct portion_store {
         typename decltype(chunks)::const_iterator it, end;
         size_t writedFromCurrentChunk;
         /*!
-         * @brief Проверить, что данные ещё не кончились 
+         * @ru @brief Проверить, что данные ещё не кончились.
+         * @en @brief Check that the data has not yet run out.
          */
         bool is_end() {
             return it == end;
         }
         /*!
-         * @brief Сохранить очередную порцию данных в буфер
-         * @param buffer - указатель на буфер для сохранения данных
-         * @param size - размер буфера
+         * @ru @brief Сохранить очередную порцию данных в буфер.
+         * @param buffer - указатель на буфер для сохранения данных.
+         * @param size - размер буфера.
          * @return size_t - количество скопированных СИМВОЛОВ (не байтов).
+         * @en @brief Save the next portion of data to the buffer.
+         * @param buffer - pointer to the buffer for storing data.
+         * @param size - buffer size.
+         * @return size_t - the number of CHARACTERS (not bytes) copied.
          */
         size_t store(K* buffer, size_t size) {
             size_t writed = 0;
@@ -5967,16 +7129,19 @@ public:
         }
     };
     /*!
-     * @brief Получить portion_store, черезк который можно последовательно
-     * извлекать данные во внешний буфер
-     * @return portion_store 
+     * @ru @brief Получить portion_store, через который можно последовательно извлекать данные во внешний буфер.
+     * @return portion_store.
+     * @en @brief Get a portion_store through which data can be sequentially retrieved into an external buffer.
+     * @return portion_store.
      */
     portion_store get_portion() const {
         return {chunks.begin(), chunks.end(), 0};
     }
     /*!
-     * @brief Получить внутренние буфера с данными
-     * @return const auto& 
+     * @ru @brief Получить внутренние буфера с данными.
+     * @return const auto&.
+     * @en @brief Get internal data buffers.
+     * @return const auto&.
      */
     const auto& data() const {
         return chunks;
@@ -5990,67 +7155,79 @@ using stringuu = sstring<u32s>;
 static_assert(sizeof(stringa) == (sizeof(void*) == 8 ? 24 : 16), "Bad size of sstring");
 
 /*!
- * @brief Тип хеш-словаря для char строк, регистрозависимый поиск
+ * @ru @brief Тип хеш-словаря для char строк, регистрозависимый поиск.
+ * @en @brief Type of hash dictionary for char strings, case sensitive search.
  */
 template<typename T>
 using hashStrMapA = hashStrMap<u8s, T, strhash<u8s>, streql<u8s>>;
 /*!
- * @brief Тип хеш-словаря для char строк, регистронезависимый поиск для ASCII символов
+ * @ru @brief Тип хеш-словаря для char строк, регистронезависимый поиск для ASCII символов.
+ * @en @brief Type of hash dictionary for char strings, case-insensitive lookup for ASCII characters.
  */
 template<typename T>
 using hashStrMapAIA = hashStrMap<u8s, T, strhashia<u8s>, streqlia<u8s>>;
 /*!
- * @brief Тип хеш-словаря для char строк, регистронезависимый поиск для Unicode символов до 0xFFFF
+ * @ru @brief Тип хеш-словаря для char строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
+ * @en @brief Hash dictionary type for char strings, case-insensitive search for Unicode characters up to 0xFFFF.
  */
 template<typename T>
 using hashStrMapAIU = hashStrMap<u8s, T, strhashiu<u8s>, streqliu<u8s>>;
 
 /*!
- * @brief Тип хеш-словаря для wchar_t строк, регистрозависимый поиск
+ * @ru @brief Тип хеш-словаря для wchar_t строк, регистрозависимый поиск.
+ * @en @brief Hash dictionary type for wchar_t strings, case sensitive search.
  */
 template<typename T>
 using hashStrMapW = hashStrMap<wchar_t, T, strhash<wchar_t>, streql<wchar_t>>;
 
 /*!
- * @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для ASCII символов
+ * @ru @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для ASCII символов.
+ * @en @brief Hash dictionary type for wchar_t strings, case-insensitive lookup for ASCII characters.
  */
 template<typename T>
 using hashStrMapWIA = hashStrMap<wchar_t, T, strhashia<wchar_t>, streqlia<wchar_t>>;
 
 /*!
- * @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF
+ * @ru @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
+ * @en @brief Hash dictionary type for wchar_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
 template<typename T>
 using hashStrMapWIU = hashStrMap<wchar_t, T, strhashiu<wchar_t>, streqliu<wchar_t>>;
 
 /*!
- * @brief Тип хеш-словаря для char16_t строк, регистрозависимый поиск
+ * @ru @brief Тип хеш-словаря для char16_t строк, регистрозависимый поиск.
+ * @en @brief Hash dictionary type for char16_t strings, case sensitive search.
  */
 template<typename T>
 using hashStrMapU = hashStrMap<u16s, T, strhash<u16s>, streql<u16s>>;
 template<typename T>
 /*!
- * @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для ASCII символов
+ * @ru @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для ASCII символов.
+ * @en @brief Hash dictionary type for char16_t strings, case-insensitive lookup for ASCII characters.
  */
 using hashStrMapUIA = hashStrMap<u16s, T, strhashia<u16s>, streqlia<u16s>>;
 /*!
- * @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF
+ * @ru @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
+ * @en @brief Hash dictionary type for char16_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
 template<typename T>
 using hashStrMapUIU = hashStrMap<u16s, T, strhashiu<u16s>, streqliu<u16s>>;
 
 /*!
- * @brief Тип хеш-словаря для char32_t строк, регистрозависимый поиск
+ * @ru @brief Тип хеш-словаря для char32_t строк, регистрозависимый поиск.
+ * @en @brief Hash dictionary type for char32_t strings, case sensitive search.
  */
 template<typename T>
 using hashStrMapUU = hashStrMap<u32s, T, strhash<u32s>, streql<u32s>>;
 /*!
- * @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для ASCII символов
+ * @ru @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для ASCII символов.
+ * @en @brief Hash dictionary type for char32_t strings, case-insensitive lookup for ASCII characters.
  */
 template<typename T>
 using hashStrMapUUIA = hashStrMap<u32s, T, strhashia<u32s>, streqlia<u32s>>;
 /*!
- * @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF
+ * @ru @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
+ * @en @brief Hash dictionary type for char32_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
 template<typename T>
 using hashStrMapUUIU = hashStrMap<u32s, T, strhashiu<u32s>, streqliu<u32s>>;
@@ -6064,46 +7241,64 @@ inline namespace literals {
 Находил подобное https://developercommunity.visualstudio.com/t/User-defined-literals-not-constant-expre/10108165
 Пишут, что баг исправлен, но видимо не до конца.
 Без этого в тестах в двух местах не понимает "text"_ss, хотя в других местах - нормально работает*/
+/* MSVC sometimes fails to do "text"_ss consteval and gives error C7595.
+Found something like this https://developercommunity.visualstudio.com/t/User-defined-literals-not-constant-expre/10108165
+They write that the bug has been fixed, but apparently not completely.
+Without this, in tests in two places it does not understand “text”_ss, although in other places it works fine */
 #define SS_CONSTEVAL constexpr
 #else
 #define SS_CONSTEVAL consteval
 #endif
 
 /*!
- * @brief Оператор литерал в simple_str_nt
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return simple_str_nt
+ * @ru @brief Оператор литерал в simple_str_nt.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return simple_str_nt.
+ * @en @brief Operator literal in simple_str_nt.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return simple_str_nt.
  */
 SS_CONSTEVAL simple_str_nt<u8s> operator""_ss(const u8s* ptr, size_t l) {
     return simple_str_nt<u8s>{ptr, l};
 }
-
 /*!
- * @brief Оператор литерал в simple_str_nt
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return simple_str_nt
+ * @ru @brief Оператор литерал в simple_str_nt.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return simple_str_nt.
+ * @en @brief Operator literal in simple_str_nt.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return simple_str_nt.
  */
 SS_CONSTEVAL simple_str_nt<uws> operator""_ss(const uws* ptr, size_t l) {
     return simple_str_nt<uws>{ptr, l};
 }
-
 /*!
- * @brief Оператор литерал в simple_str_nt
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return simple_str_nt
+ * @ru @brief Оператор литерал в simple_str_nt.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return simple_str_nt.
+ * @en @brief Operator literal in simple_str_nt.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return simple_str_nt.
  */
 SS_CONSTEVAL simple_str_nt<u16s> operator""_ss(const u16s* ptr, size_t l) {
     return simple_str_nt<u16s>{ptr, l};
 }
 
 /*!
- * @brief Оператор литерал в simple_str_nt
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return simple_str_nt
+ * @ru @brief Оператор литерал в simple_str_nt.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return simple_str_nt.
+ * @en @brief Operator literal in simple_str_nt.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return simple_str_nt.
  */
 SS_CONSTEVAL simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
     return simple_str_nt<u32s>{ptr, l};
@@ -6114,120 +7309,168 @@ template<typename K> using HashKeyIA = StoreType<K, strhashia<K>>;
 template<typename K> using HashKeyIU = StoreType<K, strhashiu<K>>;
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-sensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKey<u8s> operator""_h(const u8s* ptr, size_t l) {
     return HashKey<u8s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-insensitive ASCII hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKeyIA<u8s> operator""_ia(const u8s* ptr, size_t l) {
     return HashKeyIA<u8s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a simple unicode case-insensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 inline HashKeyIU<u8s> operator""_iu(const u8s* ptr, size_t l) {
     return HashKeyIU<u8s>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-sensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKey<u16s> operator""_h(const u16s* ptr, size_t l) {
     return HashKey<u16s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-insensitive ASCII hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKeyIA<u16s> operator""_ia(const u16s* ptr, size_t l) {
     return HashKeyIA<u16s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a simple unicode case-insensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 inline HashKeyIU<u16s> operator""_iu(const u16s* ptr, size_t l) {
     return HashKeyIU<u16s>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-sensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKey<u32s> operator""_h(const u32s* ptr, size_t l) {
     return HashKey<u32s>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-insensitive ASCII hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKeyIA<u32s> operator""_ia(const u32s* ptr, size_t l) {
     return HashKeyIA<u32s>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a simple unicode case-insensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 inline HashKeyIU<u32s> operator""_iu(const u32s* ptr, size_t l) {
     return HashKeyIU<u32s>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-sensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKey<uws> operator""_h(const uws* ptr, size_t l) {
     return HashKey<uws>{{ptr, l}, fnv_hash_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-insensitive ASCII hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 consteval HashKeyIA<uws> operator""_ia(const uws* ptr, size_t l) {
     return HashKeyIA<uws>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
 }
 
 /*!
- * @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode
- * @param ptr - указатель на строку
- * @param l - длина строки
- * @return StoreType
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a simple unicode case-insensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
  */
 inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
     return HashKeyIU<uws>{{ptr, l}, strhashiu<uws>{}(simple_str<uws>{ptr, l})};
@@ -6235,70 +7478,98 @@ inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
 } // namespace literals
 
 /*!
- * @brief Оператор вывода в поток simple_str
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток simple_str.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&. 
+ * @en @brief Stream output operator simple_str.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::ostream& operator<<(std::ostream& stream, ssa text) {
     return stream << std::string_view{text.symbols(), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток simple_str
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток simple_str.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Stream output operator simple_str.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::wostream& operator<<(std::wostream& stream, ssw text) {
     return stream << std::wstring_view{text.symbols(), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток simple_str
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток simple_str.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Stream output operator simple_str.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::wostream& operator<<(std::wostream& stream, simple_str<wchar_type> text) {
     return stream << std::wstring_view{from_w(text.symbols()), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток sstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток sstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator for outputting sstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::ostream& operator<<(std::ostream& stream, const stringa& text) {
     return stream << std::string_view{text.symbols(), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток sstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток sstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator for outputting sstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::wostream& operator<<(std::wostream& stream, const stringw& text) {
     return stream << std::wstring_view{text.symbols(), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток sstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток sstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator for outputting sstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 inline std::wostream& operator<<(std::wostream& stream, const sstring<wchar_type>& text) {
     return stream << std::wstring_view{from_w(text.symbols()), text.length()};
 }
 
 /*!
- * @brief Оператор вывода в поток lstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток lstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator to output lstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 template<size_t N, bool S, simstr::Allocatorable A>
 inline std::ostream& operator<<(std::ostream& stream, const lstring<u8s, N, S, A>& text) {
@@ -6306,10 +7577,14 @@ inline std::ostream& operator<<(std::ostream& stream, const lstring<u8s, N, S, A
 }
 
 /*!
- * @brief Оператор вывода в поток lstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток lstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator to output lstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 template<size_t N, bool S, simstr::Allocatorable A>
 inline std::wostream& operator<<(std::wostream& stream, const lstring<uws, N, S, A>& text) {
@@ -6317,10 +7592,14 @@ inline std::wostream& operator<<(std::wostream& stream, const lstring<uws, N, S,
 }
 
 /*!
- * @brief Оператор вывода в поток lstring
- * @param stream - поток вывода
- * @param text - текст
- * @return std::ostream& 
+ * @ru @brief Оператор вывода в поток lstring.
+ * @param stream - поток вывода.
+ * @param text - текст.
+ * @return std::ostream&.
+ * @en @brief Operator to output lstring to stream.
+ * @param stream - output stream.
+ * @param text - text.
+ * @return std::ostream&.
  */
 template<size_t N, bool S, simstr::Allocatorable A>
 inline std::wostream& operator<<(std::wostream& stream, const lstring<wchar_type, N, S, A>& text) {
@@ -6330,7 +7609,8 @@ inline std::wostream& operator<<(std::wostream& stream, const lstring<wchar_type
 } // namespace simstr
 
 /*!
- * @brief Форматтер для использования в std::format значений типа simple_str
+ * @ru @brief Форматтер для использования в std::format значений типа simple_str.
+ * @en @brief Formatter to use in std::format for values ​​of type simple_str.
  */
 template<typename K>
 struct std::formatter<simstr::simple_str<K>, K> : std::formatter<std::basic_string_view<K>, K> {
@@ -6342,7 +7622,8 @@ struct std::formatter<simstr::simple_str<K>, K> : std::formatter<std::basic_stri
 };
 
 /*!
- * @brief Форматтер для использования в std::format значений типа simple_str_nt
+ * @ru @brief Форматтер для использования в std::format значений типа simple_str_nt.
+ * @en @brief Formatter to use in std::format for values ​​of type simple_str_nt.
  */
 template<typename K>
 struct std::formatter<simstr::simple_str_nt<K>, K> : std::formatter<std::basic_string_view<K>, K> {
@@ -6354,7 +7635,8 @@ struct std::formatter<simstr::simple_str_nt<K>, K> : std::formatter<std::basic_s
 };
 
 /*!
- * @brief Форматтер для использования в std::format значений типа sstring
+ * @ru @brief Форматтер для использования в std::format значений типа sstring.
+ * @en @brief Formatter to use in std::format for values ​​of type string.
  */
 template<typename K>
 struct std::formatter<simstr::sstring<K>, K> : std::formatter<std::basic_string_view<K>, K> {
@@ -6366,7 +7648,8 @@ struct std::formatter<simstr::sstring<K>, K> : std::formatter<std::basic_string_
 };
 
 /*!
- * @brief Форматтер для использования в std::format значений типа lstring
+ * @ru @brief Форматтер для использования в std::format значений типа lstring.
+ * @en @brief Formatter to use in std::format for values ​​of type lstring.
  */
 template<typename K, size_t N, bool S, typename A>
 struct std::formatter<simstr::lstring<K, N, S, A>, K> : std::formatter<std::basic_string_view<K>, K> {
