@@ -1,7 +1,7 @@
 # Strings in C++
 (, what's wrong with you?)
 
-[On Russian|По-русски](overview_ru.md)
+<span class="obfuscator"><a href="overview_ru.md">On Russian | По-русски</a></span>
 
 <cite>
 In a 1991 retrospective on the history of C++, its creator Bjarne Stroustrup called the lack of a standard string type

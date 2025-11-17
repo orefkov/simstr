@@ -3,7 +3,7 @@
 
 Version 1.2.4.
 
-[On Russian|По-русски](readme_ru.md)
+<span class="obfuscator"><a href="readme_ru.md">On Russian | По-русски</a></span>
 
 This library contains the implementation of several types of string objects and various algorithms for working with strings.
 
@@ -88,8 +88,9 @@ the sizes of SSO buffers in objects are smaller.
 - [Benchmark results](https://snegopat.ru/simstr/results.html)
 
 ## Usage examples
-While no separate usage examples have been prepared, you can look at the texts of [tests](tests/test_str.cpp),
-[benchmarks](bench/bench_str.cpp), and [html preparation utilities](bench/process_result.cpp) from the benchmark results.
+While no separate usage examples have been prepared, you can look at the texts of [tests](https://github.com/orefkov/simstr/blob/main/tests/test_str.cpp),
+[benchmarks](https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp), and
+[html preparation utilities](https://github.com/orefkov/simstr/blob/main/bench/process_result.cpp) from the benchmark results.
 Also, simstr is used in my [v8sqlite](https://github.com/orefkov/v8sqlite) project
 
 ## Generated documentation
