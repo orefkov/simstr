@@ -95,7 +95,11 @@ the sizes of SSO buffers in objects are smaller.
 While no separate usage examples have been prepared, you can look at the texts of [tests](https://github.com/orefkov/simstr/blob/main/tests/test_str.cpp),
 [benchmarks](https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp), and
 [html preparation utilities](https://github.com/orefkov/simstr/blob/main/bench/process_result.cpp) from the benchmark results.
-Also, simstr is used in my [v8sqlite](https://github.com/orefkov/v8sqlite) project
+
+Also simstr is used in my projects:
+- [simjson](https://github.com/orefkov/simjson) - a library for simple work with JSON using simstr strings.
+- [simrex](https://github.com/orefkov/simrex) - a wrapper for working with [Oniguruma](https://github.com/kkos/oniguruma) regular expressions using simstr strings.
+- [v8sqlite](https://github.com/orefkov/v8sqlite) - external component for 1C-Enterprise V8 for working with sqlite.
 
 ## Generated documentation
 [Located here](https://snegopat.ru/simstr/docs/)
