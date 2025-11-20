@@ -1,7 +1,7 @@
 # simstr - библиотека строковых объектов и функций
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.2.4.
+Версия 1.2.5.
 
 <span class="obfuscator"><a href="readme.md">On English | По-английски</a></span>
 
