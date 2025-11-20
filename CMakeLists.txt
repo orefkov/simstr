@@ -57,7 +57,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
         add_custom_command(
             TARGET simstr_simstr PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/for_debug/simstr.natvis
+            ${CMAKE_CURRENT_SOURCE_DIR}/for_debug/simstr.natvis
             ${CMAKE_CURRENT_BINARY_DIR}/simstr.natvis
         )
         target_link_options(simstr_simstr PUBLIC "/natvis:simstr.natvis")
