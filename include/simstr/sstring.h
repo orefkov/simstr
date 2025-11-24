@@ -75,6 +75,7 @@ const bool isx64 = sizeof(void*) == 8; // NOLINT
 #include <memory>
 #include <string.h>
 #include <iostream>
+#include <cmath>
 
 #ifdef _WIN32
 #include <stdio.h>
@@ -1460,43 +1461,74 @@ public:
      * @return double. So far it only works for strings of char, wchar_t and types compatible with wchar_t in size.
      */
     double to_double() const noexcept {
-        static_assert(sizeof(K) == 1 || sizeof(K) == sizeof(wchar_t), "Only char and wchar available for conversion to double now");
-        size_t len = _len();
-        if (len) {
-            const size_t copyLen = 64;
-            K buf[copyLen + 1];
-            const K* ptr = _str();
-            if (ptr[len] != 0) {
+        if constexpr (is_one_of_std_char_v<K>) {
+            size_t len = _len();
+            if (len) {
+                const size_t copyLen = 64;
+                K buf[copyLen + 1];
+                const K* ptr = _str();
+                if (ptr[len] != 0) {
+                    while (len && uns_type(*ptr) <= ' ') {
+                        len--;
+                        ptr++;
+                    }
+                    if (len) {
+                        len = std::min(copyLen, len);
+                        traits::copy(buf, ptr, len);
+                        buf[len] = 0;
+                        ptr = buf;
+                    }
+                }
+                if (len) {
+    #ifdef _MSC_VER
+                    static const _locale_t lc = _wcreate_locale(LC_NUMERIC, L"C");
+                    if constexpr (sizeof(K) == 1) {
+                        return _strtod_l(ptr, nullptr, lc);
+                    }
+                    if constexpr (sizeof(K) == sizeof(wchar_t)) {
+                        return _wcstod_l((const wchar_t*)ptr, nullptr, lc);
+                    }
+    #else
+                    if constexpr (sizeof(K) == 1) {
+                        return std::strtod(ptr, nullptr);
+                    } else if constexpr (sizeof(K) == sizeof(wchar_t)) {
+                        return std::wcstod((const wchar_t*)ptr, nullptr);
+                    }
+    #endif
+                }
+            }
+            return std::nan("0");
+        } else {
+            size_t len = _len();
+            if (len) {
+                const size_t copyLen = 64;
+                char buf[copyLen + 1];
+                const K* ptr = _str();
                 while (len && uns_type(*ptr) <= ' ') {
                     len--;
                     ptr++;
                 }
                 if (len) {
                     len = std::min(copyLen, len);
-                    traits::copy(buf, ptr, len);
+                    for (unsigned idx = 0; idx < len; idx++) {
+                        if (ptr[idx] > 128) {
+                            return std::nan("0");
+                        }
+                        buf[idx] = ptr[idx];
+                    }
                     buf[len] = 0;
-                    ptr = buf;
+                }
+                if (len) {
+    #ifdef _MSC_VER
+                    static const _locale_t lc = _wcreate_locale(LC_NUMERIC, L"C");
+                    return _strtod_l(buf, nullptr, lc);
+    #else
+                    return std::strtod(buf, nullptr);
+    #endif
                 }
             }
-            if (len) {
-#ifdef _MSC_VER
-                static const _locale_t lc = _wcreate_locale(LC_NUMERIC, L"C");
-                if constexpr (sizeof(K) == 1) {
-                    return _strtod_l(ptr, nullptr, lc);
-                }
-                if constexpr (sizeof(K) == sizeof(wchar_t)) {
-                    return _wcstod_l((const wchar_t*)ptr, nullptr, lc);
-                }
-#else
-                if constexpr (sizeof(K) == 1) {
-                    return std::strtod(ptr, nullptr);
-                } else if constexpr (sizeof(K) == sizeof(wchar_t)) {
-                    return std::wcstod((const wchar_t*)ptr, nullptr);
-                }
-#endif
-            }
+            return std::nan("0");
         }
-        return 0.0;
     }
 
     /*!
