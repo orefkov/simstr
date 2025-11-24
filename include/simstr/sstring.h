@@ -658,7 +658,7 @@ public:
     }
     /*!
      * @ru @brief Размер строки в символах.
-     * @return size_t 
+     * @return size_t
      * @en @brief The size of the string in characters.
      * @return size_t
      */
@@ -690,7 +690,8 @@ public:
      * @en @brief Convert to std::string_view.
      * @return std::string_view.
      */
-    std::string_view to_sv() const noexcept {
+    template<typename=int> requires is_one_of_std_char_v<K>
+    std::basic_string_view<K> to_sv() const noexcept {
         return {_str(), _len()};
     }
     /*!
@@ -699,7 +700,8 @@ public:
      * @en @brief Convert to std::string.
      * @return std::string.
      */
-    std::string to_string() const noexcept {
+    template<typename=int> requires is_one_of_std_char_v<K>
+    std::basic_string<K> to_string() const noexcept {
         return {_str(), _len()};
     }
     /*!
@@ -1090,7 +1092,7 @@ public:
         // We don't look for an empty line or a line longer than the text.
         if (!lenPattern || lenPattern > lenText)
             return str::npos;
-        
+
         lenPattern--;
         const K *text = _str() + lenPattern, last = pattern[lenPattern];
         lenText -= lenPattern;
@@ -2312,7 +2314,7 @@ struct simple_str_nt : simple_str<K> {
      * @details Это единственный конструктор из всех строковых объектов, принимающий C-строку.
      * Вычисляет её длину при инициализации. Все остальные строковые объекты не инициализируются
      * C-строками. Это для того, чтобы `strlen` вызывалась только в одном месте библиотеки,
-     * длина C-строки вычислялась только один раз и далее не терялась случайно при передаче между разными 
+     * длина C-строки вычислялась только один раз и далее не терялась случайно при передаче между разными
      * типами строковых объектов.
      * @en @brief Explicit constructor from C-string.
      * @param p - pointer to a C-string (null-terminated string).
@@ -4352,7 +4354,7 @@ public:
             from = size;
         size_t capacity = d().capacity();
         K* ptr = str();
-        
+
         auto result = std::format_to(writer{d(), ptr + from, ptr + capacity, size_t(-1)},
             std::forward<decltype(format)>(format), std::forward<T>(args)...);
         d().set_size(result.ptr - _str());
@@ -4800,12 +4802,12 @@ public:
     lstring(const Op& op, Args&&... args) : base_storable(std::forward<Args>(args)...) {
         this->operator<<(op);
     }
-    
+
     // copy and swap для присваиваний здесь не очень применимо, так как для строк с большим локальным буфером лишняя копия даже перемещением будет дорого стоить
     // Поэтому реализуем копирующее и перемещающее присваивание отдельно
     // copy and swap for assignments is not very applicable here, since for strings with a large local buffer, an extra copy, even by moving, will be expensive
     // Therefore, we implement the copy and move assignment separately
-    
+
     /*!
      * @ru @brief Оператор присваивания копией из строки такого же типа.
      * @param other - другая строка.
@@ -5682,22 +5684,32 @@ consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<uws> 
 
 #define uni_string(K, p) select_str<K>(p, L##p, u##p, U##p)
 
-template<typename K> requires (is_one_of_std_char_v<K>)
+template<typename K>
 struct expr_real {
     using symb_type = K;
-    mutable K buf[40];
+    mutable std::conditional_t<is_one_of_std_char_v<K>, K, u8s> buf[40];
     mutable size_t l;
     double v;
     expr_real(double d) : v(d) {}
     expr_real(float d) : v(d) {}
 
     size_t length() const noexcept {
-        printf_selector::snprintf(buf, 40, uni_string(K, "%.16g").str, v);
-        l = (size_t)ch_traits<K>::length(buf);
+        if constexpr (is_one_of_std_char_v<K>) {
+            printf_selector::snprintf(buf, 40, uni_string(K, "%.16g").str, v);
+            l = (size_t)ch_traits<K>::length(buf);
+        } else {
+            l = std::snprintf(buf, sizeof(buf), "%.16g", v);
+        }
         return l;
     }
     K* place(K* ptr) const noexcept {
-        ch_traits<K>::copy(ptr, buf, l);
+        if constexpr (is_one_of_std_char_v<K>) {
+            ch_traits<K>::copy(ptr, buf, l);
+        } else {
+            for (size_t i = 0; i < l; i++) {
+                ptr[i] = buf[i];
+            }
+        }
         return ptr + l;
     }
 };
@@ -5714,7 +5726,7 @@ struct expr_real {
  * @details The number is converted to a string representation via sprintf("%.16g").
  */
 template<StrExpr A, typename R>
-    requires(is_one_of_std_char_v<typename A::symb_type> && (std::is_same_v<R, double> || std::is_same_v<R, float>))
+    requires(std::is_same_v<R, double> || std::is_same_v<R, float>)
 inline constexpr auto operator+(const A& a, R s) {
     return strexprjoin_c<A, expr_real<typename A::symb_type>>{a, s};
 }
@@ -6204,7 +6216,7 @@ struct expr_replace_symbols {
         ch_traits<K>::copy(ptr, text + start, tail);
         return ptr + tail;
     }
-    
+
 protected:
     size_t index_of(K s) const {
         return pattern_.find(s);
@@ -6354,7 +6366,7 @@ struct expr_replace_const_symbols {
         ch_traits<K>::copy(ptr, text + start, tail);
         return ptr + tail;
     }
-    
+
 protected:
     template<typename ... Repl>
     constexpr expr_replace_const_symbols(int, simple_str<K> source, K s, simple_str<K> r, Repl&&... repl) :
@@ -6684,7 +6696,7 @@ public:
     }
 
     hashStrMap(my_type&& o) = default;
-    
+
     my_type& operator=(const my_type& other) {
         hash_t::operator=(other);
         for (const auto& [k, v] : *this) {
@@ -6816,15 +6828,6 @@ public:
 
     auto erase(simple_str<K> key) {
         return erase(toStoreType(key));
-    }
-
-    bool lookup(const K* txt, T& val) const {
-        auto it = find(e_s(txt));
-        if (it != hash_t::end()) {
-            val = it->second;
-            return true;
-        }
-        return false;
     }
 
     bool lookup(simple_str<K> txt, T& val) const {
@@ -7482,7 +7485,7 @@ inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
  * @ru @brief Оператор вывода в поток simple_str.
  * @param stream - поток вывода.
  * @param text - текст.
- * @return std::ostream&. 
+ * @return std::ostream&.
  * @en @brief Stream output operator simple_str.
  * @param stream - output stream.
  * @param text - text.
