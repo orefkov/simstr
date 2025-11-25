@@ -6,6 +6,7 @@
 #include "bench.h"
 #include <sstream>
 #include <string>
+#include <charconv>
 
 using namespace simstr;
 using namespace std::literals;
@@ -175,9 +176,9 @@ void ToIntStr0(benchmark::State& state, const std::string& s, int c) {
 }
 
 void ToIntFromChars10(benchmark::State& state, const std::string_view& s, int c) {
-#ifdef __EMSCRIPTEN__
-    state.SkipWithError("not implemented");
-#else
+//#ifdef __EMSCRIPTEN__
+    //state.SkipWithError("not implemented");
+//#else
     for (auto _: state) {
         int res = 0;
         std::from_chars(s.data(), s.data() + s.size(), res, 10);
@@ -189,13 +190,13 @@ void ToIntFromChars10(benchmark::State& state, const std::string_view& s, int c)
     #endif
         benchmark::DoNotOptimize(res);
     }
-#endif
+//#endif
 }
 
 void ToIntFromChars16(benchmark::State& state, const std::string_view& s, int c) {
-#ifdef __EMSCRIPTEN__
-    state.SkipWithError("not implemented");
-#else
+//#ifdef __EMSCRIPTEN__
+//    state.SkipWithError("not implemented");
+//#else
     for (auto _: state) {
         int res = 0;
         std::from_chars(s.data(), s.data() + s.size(), res, 16);
@@ -207,7 +208,7 @@ void ToIntFromChars16(benchmark::State& state, const std::string_view& s, int c)
     #endif
         benchmark::DoNotOptimize(res);
     }
-#endif
+//#endif
 }
 
 template<typename T>
@@ -502,7 +503,7 @@ void AppendStream2String(benchmark::State& state) {
 void AppendStdStr2String(benchmark::State& state) {
     std::string s1 = TEXT_16;
     std::string s2 = TEXT_16;
-    
+
     for (auto _: state) {
         std::string result;
         for (size_t c = 0; c < 32; c++) {
@@ -846,7 +847,7 @@ void ReplaceSymbolsStdString(benchmark::State& state) {
         "abcdefg124 < jhsfjsh sjdfsh jfhjd && jdjdj >"
         " ksjd-fksjd \"dkjfs-jkhdf dfj ' kdkd \"dkfdkfkdjf"
         ;
-                      
+
     const std::string_view repl_from = "-<>'\"&";
     const std::string_view repl_to[] = {"", "&lt;", "&gt;", "&#39;", "&quot;", "&amp;"};
 
@@ -1073,7 +1074,7 @@ void ShortReplaceSymbolsStdString(benchmark::State& state) {
     std::string_view source =
         "abcdefg124 < jhsfjsh sjdfsh jfhjd && jdjdj >"
         ;
-                      
+
     const std::string_view repl_from = "-<>'\"&";
     const std::string_view repl_to[] = {"", "&lt;", "&gt;", "&#39;", "&quot;", "&amp;"};
 
@@ -1193,7 +1194,7 @@ void ReplaceAllLongerStdString(benchmark::State& state) {
         big_source += source;
         big_sample += sample;
     }
-    
+
     for (auto _: state) {
         std::string result{big_source};
         size_t start_pos = 0;
@@ -1218,7 +1219,7 @@ template<size_t N, size_t Count>
 void ReplaceAllLongerSimString(benchmark::State& state) {
     ssa source = "aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba";
     ssa sample = "aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a";
-    
+
     lstringa<2048> big_source{Count, source}, big_sample{Count, sample};
 
     for (auto _: state) {
@@ -1241,7 +1242,7 @@ template<size_t Count>
 void ReplaceAllLongerSimStringExpr(benchmark::State& state) {
     ssa source = "aaaaaaaaaaaaaaaaaaabbbaaaaaaaabbbbaaaaabaaaaaaaaaaaaaaaaaaaaabba";
     ssa sample = "aaaaaaaaaaaaaaaaaaa----baaaaaaaa--------aaaaabaaaaaaaaaaaaaaaaaaaaa----a";
-    
+
     lstringa<2048> big_source{Count, source}, big_sample{Count, sample};
 
     for (auto _: state) {
@@ -1320,7 +1321,7 @@ void ReplaceAllEqualSimStringExpr(benchmark::State& state) {
     ssa sample = "aaaaaaaaaaaaaaaaaaa--baaaaaaaa----aaaaabaaaaaaaaaaaaaaaaaaaaa--a";
     ssa pattern = "bb";
     ssa repl = "--";
-    
+
     lstringa<2048> big_source{Count, source}, big_sample{Count, sample};
 
     for (auto _: state) {
@@ -1602,7 +1603,7 @@ struct type_set {
                 str += "}";
             }
         }
-        return str;      
+        return str;
     }
     void to_stdstr(std::string& str) const {
         if (!value) {

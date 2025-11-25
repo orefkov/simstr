@@ -475,6 +475,15 @@ TEST(SimStr, ToInt) {
 TEST(SimStr, to_double) {
     EXPECT_EQ(ssa{"  123"}.to_double(), 123.0);
     EXPECT_EQ(ssa{"  123.1"}.to_double(), 123.1);
+    EXPECT_EQ(ssu{u"  123.13434"}.to_double(), 123.13434);
+    EXPECT_EQ(ssuu{U"  123.13434"}.to_double(), 123.13434);
+    EXPECT_EQ(ssw{L"  123.13434"}.to_double(), 123.13434);
+
+    EXPECT_EQ(ssa{"  -123"}.to_double(), -123.0);
+    EXPECT_EQ(ssa{"  +123.12"}.to_double(), 123.12);
+    EXPECT_EQ(ssu{u"  123.134e5"}.to_double(), 123.134e5);
+    EXPECT_EQ(ssuu{U"  123.13E-2"}.to_double(), 123.13e-2);
+    EXPECT_EQ(ssa{"  ab.1fp4"}.to_double_hex(), 0xab.1fp4);
 }
 
 TEST(SimStr, Split) {
@@ -1368,7 +1377,7 @@ TEST(SimStr, HashMap) {
     EXPECT_EQ(fnv_hash_ia( "asdfGhjkl"), unicode_traits<u8s> ::hashia(_S( "asDFghjkl")));
     EXPECT_EQ(fnv_hash_ia(u"asdfghJkl"), unicode_traits<u16s>::hashia(_S(u"asDFghjkl")));
     EXPECT_EQ(fnv_hash_ia(U"asDFghJkl"), unicode_traits<u32s>::hashia(_S(U"asdFGhjkl")));
-  
+
 
     EXPECT_EQ(fnv_hash_ia(               "asdfGhjklaaaaaaaaaaaaaaaaaaasDFghjklaaaaaaaaaaaaaaaaaa"),
         unicode_traits<u8s> ::hashia(_S( "asDFghjklaaaaaaaaaaaaaaaaaaasdfGhjklaaaaaaaaaaaaaaaaaa")));

@@ -18,6 +18,7 @@
  * @includedoc{doc} "overview.md"
  */
 #pragma once
+#include <optional>
 #ifndef __has_declspec_attribute
 #define __has_declspec_attribute(x) 0
 #endif
@@ -76,6 +77,7 @@ const bool isx64 = sizeof(void*) == 8; // NOLINT
 #include <string.h>
 #include <iostream>
 #include <cmath>
+#include <charconv>
 
 #ifdef _WIN32
 #include <stdio.h>
@@ -292,7 +294,6 @@ template<typename T, unsigned Base>
 constexpr unsigned max_overflow_digits = (sizeof(T) * CHAR_BIT) / digit_width<Base>();
 
 struct int_convert { // NOLINT
-private:
     inline static const uint8_t NUMBERS[] = {
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,   1,   2,   3,
@@ -306,7 +307,7 @@ private:
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
     template<typename K, unsigned Base>
-    static uint8_t toDigit(K s) {
+    static std::make_unsigned_t<K> toDigit(K s) {
         auto us = static_cast<std::make_unsigned_t<K>>(s);
         if constexpr (Base <= 10) {
             return us - '0';
@@ -339,7 +340,7 @@ private:
 
         if (no_need_check_o_f) {
             for (;;) {
-                const unsigned char digit = toDigit<K, Base>(*current);
+                const u_type digit = toDigit<K, Base>(*current);
                 if (digit >= Base) {
                     break;
                 }
@@ -351,7 +352,7 @@ private:
             }
         } else {
             for (;maxDigits; maxDigits--) {
-                const unsigned char digit = toDigit<K, Base>(*current);
+                const u_type digit = toDigit<K, Base>(*current);
                 if (digit >= Base) {
                     break;
                 }
@@ -362,7 +363,7 @@ private:
                 // Прошли все цифры, дальше надо с проверкой на overflow
                 // All numbers have passed, then we need to check for overflow
                 for (;;) {
-                    const unsigned char digit = toDigit<K, Base>(*current);
+                    const u_type digit = toDigit<K, Base>(*current);
                     if (digit >= Base) {
                         break;
                     }
@@ -475,6 +476,9 @@ public:
         return {0, IntConvertResult::NotNumber, ptr - start};
     }
 };
+
+template<typename K>
+SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end);
 
 template<typename K>
 class Splitter;
@@ -687,9 +691,9 @@ public:
     }
     /*!
      * @ru @brief Конвертировать в std::string_view.
-     * @return std::string_view.
+     * @return std::basic_string_view<K>.
      * @en @brief Convert to std::string_view.
-     * @return std::string_view.
+     * @return std::basic_string_view<K>.
      */
     template<typename=int> requires is_one_of_std_char_v<K>
     std::basic_string_view<K> to_sv() const noexcept {
@@ -697,9 +701,9 @@ public:
     }
     /*!
      * @ru @brief Конвертировать в std::string.
-     * @return std::string.
+     * @return std::basic_string<K>.
      * @en @brief Convert to std::string.
-     * @return std::string.
+     * @return std::basic_string<K>.
      */
     template<typename=int> requires is_one_of_std_char_v<K>
     std::basic_string<K> to_string() const noexcept {
@@ -1456,81 +1460,49 @@ public:
     }
     /*!
      * @ru @brief Преобразовать строку в double.
-     * @return double. Пока работает только для строк из char, wchar_t и типов, совместимых с wchar_t по размеру.
+     * @return std::optional<double>.
      * @en @brief Convert string to double.
-     * @return double. So far it only works for strings of char, wchar_t and types compatible with wchar_t in size.
+     * @return std::optional<double>.
      */
-    double to_double() const noexcept {
-        if constexpr (is_one_of_std_char_v<K>) {
-            size_t len = _len();
-            if (len) {
-                const size_t copyLen = 64;
-                K buf[copyLen + 1];
-                const K* ptr = _str();
-                if (ptr[len] != 0) {
-                    while (len && uns_type(*ptr) <= ' ') {
-                        len--;
-                        ptr++;
-                    }
-                    if (len) {
-                        len = std::min(copyLen, len);
-                        traits::copy(buf, ptr, len);
-                        buf[len] = 0;
-                        ptr = buf;
-                    }
-                }
-                if (len) {
-    #ifdef _MSC_VER
-                    static const _locale_t lc = _wcreate_locale(LC_NUMERIC, L"C");
-                    if constexpr (sizeof(K) == 1) {
-                        return _strtod_l(ptr, nullptr, lc);
-                    }
-                    if constexpr (sizeof(K) == sizeof(wchar_t)) {
-                        return _wcstod_l((const wchar_t*)ptr, nullptr, lc);
-                    }
-    #else
-                    if constexpr (sizeof(K) == 1) {
-                        return std::strtod(ptr, nullptr);
-                    } else if constexpr (sizeof(K) == sizeof(wchar_t)) {
-                        return std::wcstod((const wchar_t*)ptr, nullptr);
-                    }
-    #endif
-                }
+    template<bool SkipWS = true>
+    std::optional<double> to_double() const noexcept {
+        size_t len = _len();
+        const K* ptr = _str();
+        if constexpr (SkipWS) {
+            while (len && uns_type(*ptr) <= ' ') {
+                len--;
+                ptr++;
             }
-            return std::nan("0");
-        } else {
-            size_t len = _len();
-            if (len) {
-                const size_t copyLen = 64;
-                char buf[copyLen + 1];
-                const K* ptr = _str();
-                while (len && uns_type(*ptr) <= ' ') {
-                    len--;
-                    ptr++;
-                }
-                if (len) {
-                    len = std::min(copyLen, len);
-                    for (unsigned idx = 0; idx < len; idx++) {
-                        if (ptr[idx] > 128) {
-                            return std::nan("0");
-                        }
-                        buf[idx] = ptr[idx];
-                    }
-                    buf[len] = 0;
-                }
-                if (len) {
-    #ifdef _MSC_VER
-                    static const _locale_t lc = _wcreate_locale(LC_NUMERIC, L"C");
-                    return _strtod_l(buf, nullptr, lc);
-    #else
-                    return std::strtod(buf, nullptr);
-    #endif
-                }
-            }
-            return std::nan("0");
         }
+        if (len) {
+            return impl_to_double(ptr, ptr + len);
+        }
+        return {};
     }
-
+    /*!
+     * @ru @brief Преобразовать строку в double.
+     * @return std::optional<double>.
+     * @en @brief Convert string to double.
+     * @return std::optional<double>.
+     */
+    template<bool SkipWS = true> requires (sizeof(K) == 1)
+    std::optional<double> to_double_hex() const noexcept {
+        size_t len = _len();
+        const K* ptr = _str();
+        if constexpr (SkipWS) {
+            while (len && uns_type(*ptr) <= ' ') {
+                len--;
+                ptr++;
+            }
+        }
+        if (len) {
+            double d{};
+            if (std::from_chars(ptr, ptr + len, d, std::chars_format::hex).ec == std::errc{}) {
+                return d;
+            }
+        }
+        return {};
+    }
     /*!
      * @ru @brief Преобразовать строку в целое число.
      * @tparam T - тип числа, выводится из аргумента.
@@ -1540,7 +1512,7 @@ public:
      * @param t - the variable into which the result is written.
      */
     template<ToIntNumber T>
-    void as_number(T& t) {
+    void as_number(T& t) const {
         t = as_int<T>();
     }
     /*!
@@ -1549,8 +1521,9 @@ public:
      * @en @brief Convert string to double.
      * @param t - the variable into which the result is written.
      */
-    void as_number(double& t) {
-        t = to_double();
+    void as_number(double& t) const {
+        auto res = to_double();
+        t = res ? *res : std::nan("0");
     }
 
     template<typename T, typename Op>
