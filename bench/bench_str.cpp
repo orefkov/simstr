@@ -176,9 +176,6 @@ void ToIntStr0(benchmark::State& state, const std::string& s, int c) {
 }
 
 void ToIntFromChars10(benchmark::State& state, const std::string_view& s, int c) {
-//#ifdef __EMSCRIPTEN__
-    //state.SkipWithError("not implemented");
-//#else
     for (auto _: state) {
         int res = 0;
         std::from_chars(s.data(), s.data() + s.size(), res, 10);
@@ -190,13 +187,9 @@ void ToIntFromChars10(benchmark::State& state, const std::string_view& s, int c)
     #endif
         benchmark::DoNotOptimize(res);
     }
-//#endif
 }
 
 void ToIntFromChars16(benchmark::State& state, const std::string_view& s, int c) {
-//#ifdef __EMSCRIPTEN__
-//    state.SkipWithError("not implemented");
-//#else
     for (auto _: state) {
         int res = 0;
         std::from_chars(s.data(), s.data() + s.size(), res, 16);
@@ -208,13 +201,12 @@ void ToIntFromChars16(benchmark::State& state, const std::string_view& s, int c)
     #endif
         benchmark::DoNotOptimize(res);
     }
-//#endif
 }
 
 template<typename T>
 void ToIntSimStr10(benchmark::State& state, T t, int c) {
     for (auto _: state) {
-        int res = std::get<0>(t. template to_int<int, true, 10, false, false>());
+        int res = t. template to_int<int, true, 10, false, false>().value;
     #ifdef CHECK_RESULT
         if (res != c) {
             state.SkipWithError("not equal");
@@ -229,7 +221,7 @@ void ToIntSimStr10(benchmark::State& state, T t, int c) {
 template<typename T>
 void ToIntSimStr16(benchmark::State& state, T t, int c) {
     for (auto _: state) {
-        int res = std::get<0>(t. template to_int<int, true, 16, false, false>());
+        int res = t. template to_int<int, true, 16, false, false>().value;
     #ifdef CHECK_RESULT
         if (res != c) {
             state.SkipWithError("not equal");
@@ -244,7 +236,7 @@ void ToIntSimStr16(benchmark::State& state, T t, int c) {
 template<typename T>
 void ToIntSimStr0(benchmark::State& state, T t, int c) {
     for (auto _: state) {
-        int res = std::get<0>(t. template to_int<int>());
+        int res = t. template to_int<int>().value;
     #ifdef CHECK_RESULT
         if (res != c) {
             state.SkipWithError("not equal");
@@ -258,7 +250,7 @@ void ToIntSimStr0(benchmark::State& state, T t, int c) {
 
 void ToIntNoOverflow(benchmark::State& state, ssa t, int c) {
     for (auto _: state) {
-        int res = std::get<0>(t.to_int<int, false>());
+        int res = t.to_int<int, false>().value;
     #ifdef CHECK_RESULT
         if (res != c) {
             state.SkipWithError("not equal");
@@ -286,6 +278,63 @@ BENCHMARK(__)->Name("-----  Convert to int '    1234567'  ---------")->Repetitio
 BENCHMARK_CAPTURE(ToIntStr0, , std::string{"    123456789"}, 123456789)             ->Name("std::string s = \"    123456789\"; int res = std::strtol(s.c_str(), 0, 0);");
 BENCHMARK_CAPTURE(ToIntSimStr0, , stringa{"    123456789"}, 123456789)              ->Name("stringa s = \"    123456789\"; int res = s.to_int<int>; // Check overflow");
 BENCHMARK_CAPTURE(ToIntNoOverflow, , ssa{"    123456789"}, 123456789)               ->Name("ssa s = \"    123456789\"; int res = s.to_int<int, false>; // No check overflow");
+
+void ToDoubleStr(benchmark::State& state, const std::string& s, double c) {
+    for (auto _: state) {
+        char* ptr = nullptr;
+        double res = std::strtod(s.c_str(), &ptr);
+        if (ptr == s.c_str()) {
+            state.SkipWithError("not equal");
+        }
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError("not equal");
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+void ToDoubleFromChars(benchmark::State& state, const std::string_view& s, double c) {
+    for (auto _: state) {
+        double res = 0;
+        if (std::from_chars(s.data(), s.data() + s.size(), res).ec != std::errc{}) {
+            state.SkipWithError("not equal");
+        }
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError("not equal");
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+template<typename T>
+void ToDoubleSimStr(benchmark::State& state, T t, double c) {
+    for (auto _: state) {
+        auto r = t.template to_double<false>();
+        if (!r) {
+            state.SkipWithError("not equal");
+        }
+        double res = *r;
+    #ifdef CHECK_RESULT
+        if (res != c) {
+            state.SkipWithError("not equal");
+            break;
+        }
+    #endif
+        benchmark::DoNotOptimize(res);
+        benchmark::DoNotOptimize(t);
+    }
+}
+
+BENCHMARK(__)->Name("-----  Convert to double '1234.567e10'  ---------")->Repetitions(1);
+BENCHMARK_CAPTURE(ToDoubleStr, , std::string{"1234.567e10"}, 1234.567e10)                ->Name("std::string s = \"1234.567e10\"; double res = std::strtod(s.c_str(), nullptr);");
+BENCHMARK_CAPTURE(ToDoubleFromChars, , std::string_view{"1234.567e10"}, 1234.567e10)     ->Name("std::string_view s = \"1234.567e10\"; std::from_chars(s.data(), s.data() + s.size(), res);");
+BENCHMARK_CAPTURE(ToDoubleSimStr, , ssa{"1234.567e10"}, 1234.567e10)                     ->Name("ssa s = \"1234.567e10\"; double res = *s.to_double()");
 
 void AppendStreamConstLiteral(benchmark::State& state) {
     for (auto _: state) {

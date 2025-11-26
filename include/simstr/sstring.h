@@ -293,6 +293,13 @@ constexpr unsigned digit_width() {
 template<typename T, unsigned Base>
 constexpr unsigned max_overflow_digits = (sizeof(T) * CHAR_BIT) / digit_width<Base>();
 
+template<typename T>
+struct convert_result {
+    T value;
+    IntConvertResult ec;
+    size_t read;
+};
+
 struct int_convert { // NOLINT
     inline static const uint8_t NUMBERS[] = {
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -322,7 +329,7 @@ struct int_convert { // NOLINT
 
     template<typename K, ToIntNumber T, unsigned Base, bool CheckOverflow>
         requires(Base != 0)
-    static std::tuple<T, IntConvertResult, size_t> parse(const K* start, const K* current, const K* end, bool negate) {
+    static convert_result<T> parse(const K* start, const K* current, const K* end, bool negate) {
         using u_type = std::make_unsigned_t<T>;
         #ifndef HAS_BUILTIN_OVERFLOW
         u_type  maxMult = 0, maxAdd = 0;
@@ -406,7 +413,7 @@ struct int_convert { // NOLINT
         if (error == IntConvertResult::NotNumber && current > from) {
             error = IntConvertResult::BadSymbolAtTail;
         }
-        return {result, error, current - start};
+        return {result, error, size_t(current - start)};
     }
 public:
     // Если Base = 0 - то пытается определить основание по префиксу 0[xX] как 16, 0 как 8, иначе 10
@@ -415,7 +422,7 @@ public:
     // If Base = -1 - then tries to determine the base by the prefix 0[xX] as 16, 0[bB] as 2, 0[oO] or 0 as 8, otherwise 10
     template<typename K, ToIntNumber T, unsigned Base = 0, bool CheckOverflow = true, bool SkipWs = true, bool AllowSign = true>
         requires(Base == -1 || (Base < 37 && Base != 1))
-    static std::tuple<T, IntConvertResult, size_t> to_integer(const K* start, size_t len) noexcept {
+    static convert_result<T> to_integer(const K* start, size_t len) noexcept {
         const K *ptr = start, *end = ptr + len;
         bool negate = false;
         if constexpr (SkipWs) {
@@ -467,13 +474,13 @@ public:
                         }
                         return parse<K, T, 8, CheckOverflow>(start, --ptr, end, negate);
                     }
-                    return {0, IntConvertResult::Success, ptr - start};
+                    return {0, IntConvertResult::Success, size_t(ptr - start)};
                 }
                 return parse<K, T, 10, CheckOverflow>(start, ptr, end, negate);
             } else
                 return parse<K, T, Base, CheckOverflow>(start, ptr, end, negate);
         }
-        return {0, IntConvertResult::NotNumber, ptr - start};
+        return {0, IntConvertResult::NotNumber, size_t(ptr - start)};
     }
 };
 
@@ -1439,7 +1446,7 @@ public:
      *            - в остальных случаях 10.
      * @tparam SkipWs - пропускать пробельные символы в начале строки. Пропускаются все символы с ASCII кодами <= 32.
      * @tparam AllowSign - допустим ли знак '+' перед числом.
-     * @return std::tuple<T, IntConvertResult, size_t> - кортеж из полученного числа, успешности преобразования и количестве обработанных символов.
+     * @return convert_result<T> - кортеж из полученного числа, успешности преобразования и количестве обработанных символов.
      * @en @brief Convert a string to a number of the given type.
      * @tparam T - the desired number type.
      * @tparam CheckOverflow - check for overflow.
@@ -1452,10 +1459,10 @@ public:
      *        - in other cases 10.
      * @tparam SkipWs - skip whitespace characters at the beginning of the line. All characters with ASCII codes <= 32 are skipped.
      * @tparam AllowSign - whether the '+' sign is allowed before a number.
-     * @return std::tuple<T, IntConvertResult, size_t> - a tuple of the received number, the success of the conversion and the number of characters processed.
+     * @return convert_result<T> - a tuple of the received number, the success of the conversion and the number of characters processed.
      */
     template<ToIntNumber T, bool CheckOverflow = true, unsigned Base = 0, bool SkipWs = true, bool AllowSign = true>
-    std::tuple<T, IntConvertResult, size_t> to_int() const noexcept {
+    convert_result<T> to_int() const noexcept {
         return int_convert::to_integer<K, T, Base, CheckOverflow, SkipWs, AllowSign>(_str(), _len());
     }
     /*!
@@ -1464,7 +1471,7 @@ public:
      * @en @brief Convert string to double.
      * @return std::optional<double>.
      */
-    template<bool SkipWS = true>
+    template<bool SkipWS = true, bool AllowPlus = true>
     std::optional<double> to_double() const noexcept {
         size_t len = _len();
         const K* ptr = _str();
@@ -1474,15 +1481,30 @@ public:
                 ptr++;
             }
         }
-        if (len) {
-            return impl_to_double(ptr, ptr + len);
+        if constexpr (AllowPlus) {
+            if (len && *ptr == K('+')) {
+                ptr++;
+                len--;
+            }
         }
-        return {};
+        if (!len) {
+            return {};
+        }
+        #ifdef __linux__
+        if constexpr(sizeof(K) == 1) {
+            double d{};
+            if (std::from_chars(ptr, ptr + len, d).ec == std::errc{}) {
+                return d;
+            }
+            return {};
+        }
+        #endif
+        return impl_to_double(ptr, ptr + len);
     }
     /*!
-     * @ru @brief Преобразовать строку в double.
+     * @ru @brief Преобразовать строку в 16ричной записи в double. Пока работает только для char.
      * @return std::optional<double>.
-     * @en @brief Convert string to double.
+     * @en @brief Convert string in hex form to double.
      * @return std::optional<double>.
      */
     template<bool SkipWS = true> requires (sizeof(K) == 1)

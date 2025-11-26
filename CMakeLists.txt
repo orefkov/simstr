@@ -5,8 +5,8 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.2.5
-    DESCRIPTION "Yet another string library"
+    VERSION 1.2.6
+    DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
 )

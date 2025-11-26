@@ -84,9 +84,9 @@ results_vector get_results_infos() {
             }
         }
     }
-    
+
     results_vector results;
-    
+
     if (fileNames.size()) {
         std::sort(fileNames.begin(), fileNames.end());
         results.reserve(fileNames.size());
@@ -95,7 +95,7 @@ results_vector get_results_infos() {
             // В начале имени файла может идти число и дефис, для сортировки, уберём их
             // At the beginning of the file name there can be a number and a hyphen, for sorting, remove them
             if (auto delimeter = fileName.find('-'); delimeter + 1 > 1) {
-                if (std::get<1>(fileName(0, delimeter).to_int<unsigned, false, 10, false, false>()) == IntConvertResult::Success) {
+                if (fileName(0, delimeter).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
                     fileName.remove_prefix(delimeter + 1);
                 }
             }
@@ -187,7 +187,7 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
     static hashStrMapA<stringa> textes;
 
     size_t delim = benchName.find_last('/');
-    if (delim != str::npos && std::get<1>(benchName(delim + 1).to_int<unsigned, false, 10, false, false>()) == IntConvertResult::Success) {
+    if (delim != str::npos && benchName(delim + 1).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
         benchName.len = delim;
     }
     auto [it, not_exist] = textes.try_emplace(benchName);
@@ -326,6 +326,9 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
                 throw std::runtime_error{"Not expected end of file"};
             }
             line = splitters[idx].next();
+            if (line.starts_with("std::unordered_map<std::string, size_t> emplace & find std::string_view;_cv")) {
+                int t = 1;
+            }
         }
     }
     if (needFooter) {

@@ -1,11 +1,11 @@
 # simstr - String object and function library
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.2.5.
+Version 1.2.6.
 
 <span class="obfuscator"><a href="readme_ru.md">On Russian | По-русски</a></span>
 
-This library contains the implementation of several types of string objects and various algorithms for working with strings.
+This library contains the modern implementation of several types of string objects and various algorithms for working with strings.
 
 The goal of the library is to make working with strings in C++ as simple and easy as in many other languages, especially
 scripting languages, while maintaining optimality and performance at the level of C and C++, and even improving them.
@@ -47,8 +47,7 @@ then the simstr approach will also be clear to you.
 - Parsing integers with the possibility of "fine" tuning during compilation - you can set options for checking overflow,
   skipping whitespace characters, a specific radix or auto-selection by prefixes `0x`, `0`, `0b`, `0o`,
   admissibility of the `+` sign. Parsing is implemented for all types of strings and characters.
-- Parsing double is currently implemented by calling the standard library and only works for `char`, `wchar_t` strings and types compatible with
-  `wchar_t` in size.
+- Parsing doubles for all types of characters.
 - Minimal Unicode support is included when converting `upper`, `lower` and case-insensitive string comparison.
   It only works for characters in the first plane of Unicode (up to 0xFFFF), and when changing case, it does not take into account cases where one code point
   can be converted into several, that is, the case conversion of characters corresponds to `std::towupper`, `std::towlower` for the unicode locale, only faster and can work with any type of characters.

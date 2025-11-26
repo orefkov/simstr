@@ -544,6 +544,7 @@ SIMSTR_API size_t unicode_traits<u32s>::hashiu(const u32s* src, size_t l) {
     }
     return h;
 }
+
 namespace {
 // Based on simdjson sources https://github.com/simdjson/simdjson/blob/667d0ed3c77f55cbda2082b034168d69898d1f88/include/simdjson/compile_time_json-inl.h#L189
 
@@ -1385,18 +1386,22 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end) {
         return *pointer;
     };
     const K* srcinit = start;
-    bool negative = false;
-    if (get_value(start) == '+') {
-        start++;
-    } else {
-        negative = (get_value(start) == '-');
+    bool negative = (get_value(start) == '-');
+    start += (uint8_t)negative;
+    if (end - start == 3) {
+        if (!negative && (start[0] | 0x20) == K('n')) {
+            if ((start[1] | 0x20) == K('a') && (start[2] | 0x20) == K('n')) {
+                return std::nan("0");
+            }
+        } else if ((start[0] | 0x20) == K('i') && (start[1] | 0x20) == K('n') && (start[2] | 0x20) == K('f')) {
+            return negative ? -std::numeric_limits<double>::infinity() : std::numeric_limits<double>::infinity();
+        }
     }
-    start += uint8_t(negative);
-    uint64_t i = 0;
+    uint64_t digits = 0;
     const K* p = start;
-    p += parse_digit(get_value(p), i);
-    bool leading_zero = (i == 0);
-    while (parse_digit(get_value(p), i)) {
+    p += parse_digit(get_value(p), digits);
+    bool leading_zero = (digits == 0);
+    while (parse_digit(get_value(p), digits)) {
         p++;
     }
     if (p == start) {
@@ -1411,11 +1416,11 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end) {
     if (get_value(p) == '.') {
         p++;
         const K* start_decimal_digits = p;
-        if (!parse_digit(get_value(p), i)) {
+        if (!parse_digit(get_value(p), digits)) {
             return {};
         } // no decimal digits
         p++;
-        while (parse_digit(get_value(p), i)) {
+        while (parse_digit(get_value(p), digits)) {
             p++;
         }
         exponent = -(p - start_decimal_digits);
@@ -1448,11 +1453,11 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end) {
         exponent += exp_neg ? 0 - exp : exp;
     }
 
-    if (exponent < smallest_power || exponent > largest_power) {
+    if (exponent < smallest_power || exponent > largest_power || p != end) {
         return {};
     }
     double d;
-    if (!compute_float_64(exponent, i, negative, d)) {
+    if (!compute_float_64(exponent, digits, negative, d)) {
         return {};
     }
     return d;
