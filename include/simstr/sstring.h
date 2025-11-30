@@ -322,7 +322,7 @@ struct int_convert { // NOLINT
             if constexpr (sizeof(K) == 1) {
                 return NUMBERS[us];
             } else {
-                return us < 256 ? NUMBERS[us] : 255;
+                return us < 256 ? NUMBERS[us] : us;
             }
         }
     }

@@ -1463,9 +1463,9 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end) {
     return d;
 }
 
-template std::optional<double> impl_to_double<u8s>(const u8s* start, const u8s* end);
-template std::optional<double> impl_to_double<u16s>(const u16s* start, const u16s* end);
-template std::optional<double> impl_to_double<u32s>(const u32s* start, const u32s* end);
-template std::optional<double> impl_to_double<uws>(const uws* start, const uws* end);
+template SIMSTR_API std::optional<double> impl_to_double<u8s>(const u8s* start, const u8s* end);
+template SIMSTR_API std::optional<double> impl_to_double<u16s>(const u16s* start, const u16s* end);
+template SIMSTR_API std::optional<double> impl_to_double<u32s>(const u32s* start, const u32s* end);
+template SIMSTR_API std::optional<double> impl_to_double<uws>(const uws* start, const uws* end);
 
 } // namespace simstr
