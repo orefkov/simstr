@@ -21,8 +21,13 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     set(CLANG_COMPILER ON)
 endif()
 
-option(SIMSTR_BUILD_TESTS "Построить тесты" ON)
-option(SIMSTR_BENCHMARKS "Построить замеры производительности" Off)
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR "${CMAKE_CXX_SIMULATE_ID} " STREQUAL "MSVC ")
+    set(CAN_LINK_NATVIS On)
+endif()
+
+option(SIMSTR_BUILD_TESTS "Build tests" ON)
+option(SIMSTR_BENCHMARKS "Build benchmarks" Off)
+cmake_dependent_option(SIMSTR_LINK_NATVIS "Link natvis file" On CAN_LINK_NATVIS Off)
 
 add_library(simstr_simstr
     src/sstring.cpp
@@ -50,15 +55,17 @@ endif(EMSCRIPTEN)
 
 message("Configuring simstr for [${CMAKE_BUILD_TYPE}]")
 
-# Для MSVC подключаем natvis файл для красивой отладки
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR "${CMAKE_CXX_SIMULATE_ID} " STREQUAL "MSVC ")
-    add_custom_command(
-        TARGET simstr_simstr PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/for_debug/simstr.natvis
-        ${CMAKE_BINARY_DIR}/simstr.natvis
-    )
-    target_link_options(simstr_simstr PUBLIC "/natvis:${CMAKE_BINARY_DIR}/simstr.natvis")
+if (SIMSTR_LINK_NATVIS)
+    # Для MSVC подключаем natvis файл для красивой отладки
+    if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR "${CMAKE_CXX_SIMULATE_ID} " STREQUAL "MSVC ")
+        add_custom_command(
+            TARGET simstr_simstr PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_SOURCE_DIR}/for_debug/simstr.natvis
+            ${CMAKE_BINARY_DIR}/simstr.natvis
+        )
+        target_link_options(simstr_simstr PUBLIC "/natvis:${CMAKE_BINARY_DIR}/simstr.natvis")
+    endif()
 endif()
 
 set_target_properties(
