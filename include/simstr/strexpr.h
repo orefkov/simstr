@@ -163,7 +163,7 @@ public:
     template<typename T, size_t M = const_lit_for<K, T>::Count> requires (M == N + 1)
     constexpr const_lit_to_array(T&& s)
         : symbols_(s) {}
-    
+
     constexpr bool contain(K s) const {
         return exist<0>(s);
     }
@@ -186,11 +186,11 @@ public:
  * @en @brief Base concept of string object.
  * @tparam  A - tested type
  * @tparam K - type of symbols
- * @details The library can use different types of string objects for different purposes. 
- * We consider a string object to be any object that supports methods: 
- * - `is_empty()`: Returns whether the string is empty. 
- * - `length()`: returns the length of a string without a null terminator. 
- * - `symbols()`: returns a pointer to a string of symbols. 
+ * @details The library can use different types of string objects for different purposes.
+ * We consider a string object to be any object that supports methods:
+ * - `is_empty()`: Returns whether the string is empty.
+ * - `length()`: returns the length of a string without a null terminator.
+ * - `symbols()`: returns a pointer to a string of symbols.
  * - `typename symb_type`: sets the character type of the string
  */
 template<typename A, typename K>
@@ -212,10 +212,10 @@ concept StrType = requires(const A& a) {
  *
  *  При инициализации строковый объект запрашивает у строкового выражения его размер, выделяет необходимую память,
  *  и передает память строковому выражению, которое помещает символы в отведённый буфер.
- *  
+ *
  *  Все строковые объекты библиотеки сами являются строковыми выражениями, которые просто копирует исходную строку.
  *  В-основном строковые выражения используются для конкатенации или конвертации строк.
- *  
+ *
  *  Для всех строковых выражений определен @ref op_plus_str_expr "operator +", который из двух операндов создает новое строковое выражение
  *  simstr::strexprjoin, объединяющее два строковых выражения, и которое в методе `length` возвращает сумму `length` исходных операндов,
  *  а в методе `place` - размещает в буфер результата сначала первый операнд, потом второй.
@@ -227,9 +227,9 @@ concept StrType = requires(const A& a) {
  *  (числа конвертируются в десятичное представление), а также вы можете сами добавить желаемые типы строковых выражений.
  *  Пример:
  *    ```cpp
- *        stringa text = header + ", count = " + count + ", done"; 
+ *        stringa text = header + ", count = " + count + ", done";
  *    ```
- *  Существует несколько типов строковых выражений "из коробки", для выполнения различных операций со строками 
+ *  Существует несколько типов строковых выражений "из коробки", для выполнения различных операций со строками
  *    - `expr_spaces< ТипСимвола, КоличествоСимволов, Символ>{}`: выдает строку длиной КоличествоСимволов,
  *        заполненную заданным символом. Количество символов и символ - константы времени компиляции.
  *        Для некоторых случаев есть сокращенная запись:
@@ -497,11 +497,11 @@ struct is_one_of_type<T, void> : std::false_type {};
  *  @ru Пример: @en Example: @~
  *  ```cpp
  *  result = shost + e_choice(sserv.is_empty(), eea, ":" + sserv);
- *  ``` 
+ *  ```
  *
  *  ```cpp
  *  result += "E" + e_choice(adjusted_exponent > 0, "+"_ss, eea) + adjusted_exponent;
- *  ``` 
+ *  ```
  */
 template<typename K>
 struct empty_expr {
@@ -814,6 +814,75 @@ constexpr inline auto e_c(size_t l, K s) {
     return expr_pad<K>{ l, s };
 }
 
+template<typename K, size_t N>
+struct expr_repeat_lit {
+    using symb_type = K;
+    size_t repeat_;
+    const K (&s)[N + 1];
+    constexpr size_t length() const noexcept {
+        return N * repeat_;
+    }
+    constexpr symb_type* place(symb_type* p) const noexcept {
+        for (size_t i = 0; i < repeat_; i++) {
+            std::char_traits<K>::copy(p, s, N);
+            p += N;
+        }
+        return p;
+    }
+};
+
+template<StrExpr A>
+struct expr_repeat_expr {
+    using symb_type = typename A::symb_type;
+    size_t repeat_;
+    const A& expr_;
+    constexpr size_t length() const noexcept {
+        return repeat_ * expr_.length();
+    }
+    constexpr symb_type* place(symb_type* p) const noexcept {
+        for (size_t i = 0; i < repeat_; i++) {
+            p = expr_.place(p);
+        }
+        return p;
+    }
+};
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Генерирует строку из l строковых констант s типа K
+ * @tparam K - тип символа
+ * @param l - количество повторов
+ * @param s - строковый литерал
+ * @return строковое выражение, генерирующее строку из l строк s
+ * @en @brief Generate a string from l string constants s of type K
+ * @tparam K - character type
+ * @param l - number of repetitions
+ * @param s - string literal
+ * @return a string expression generating a string of l strings s
+ */
+template<typename T, typename K = const_lit<T>::symb_type, size_t M = const_lit<T>::Count> requires (M > 0)
+constexpr inline auto e_repeat(T&& s, size_t l) {
+    return expr_repeat_lit<K, M - 1>{ l, s };
+}
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Генерирует строку из l строковых выражений s типа K
+ * @tparam K - тип символа
+ * @param l - количество повторов
+ * @param s - строковое выражение
+ * @return строковое выражение, генерирующее строку из l строковых выражений s
+ * @en @brief Generate a string from l string expressions s of type K
+ * @tparam K - character type
+ * @param l - number of repetitions
+ * @param s - string expression
+ * @return a string expression generating a string of l string expressions s
+ */
+template<StrExpr A>
+constexpr inline auto e_repeat(const A& s, size_t l) {
+    return expr_repeat_expr<A>{ l, s };
+}
+
 /*!
  * @ingroup StrExprs
  * @ru @brief Строковое выражение условного выбора.
@@ -875,7 +944,7 @@ struct expr_if {
  * @tparam A Тип ветки для true.
  * @details Выражение, в зависимости от истинности условия генерирующее либо выражение A, либо строку из строкового литерала.
  *  Напрямую тип обычно не используется, создаётся через e_choice().
- *  
+ *
  *  Так как строковые литералы не являются строковыми выражениями, то использовать их в виде одиночного выражения в частях
  *  e_choice или e_if требовало бы их обрамления какими-либо конструкциями, преобразующими их в строковое выражение.
  *  Приходилось бы писать например так:
@@ -897,7 +966,7 @@ struct expr_if {
  * @tparam A Branch type for true.
  * @details An expression that, depending on the truth of the condition, generates either expression A or a string from a string literal.
  * The type is usually not used directly; it is created via e_choice().
- *  
+ *
  * Since string literals are not string expressions, use them as a single expression in parts
  * e_choice or e_if would require them to be surrounded by some constructs that convert them to a string expression.
  * You would have to write something like this:
@@ -941,7 +1010,7 @@ struct expr_choice_one_lit {
  * @ru @brief Строковое выражение условного выбора.
  * @details Выражение, в зависимости от истинности условия генерирующее либо один строковый литерал, либо другой.
  *  Напрямую тип обычно не используется, создаётся через e_choice().
- *  
+ *
  *  Так как строковые литералы не являются строковыми выражениями, то использовать их в виде одиночного выражения в частях
  *  e_choice или e_if требовало бы их обрамления какими-либо конструкциями, преобразующими их в строковое выражение.
  *  Приходилось бы писать например так:
@@ -962,7 +1031,7 @@ struct expr_choice_one_lit {
  * @en @brief Conditional selection string expression.
  * @details An expression that, depending on the truth of the condition, generates either one string literal or another.
  * The type is usually not used directly; it is created via e_choice().
- *  
+ *
  * Since string literals are not string expressions, use them as a single expression in parts
  * e_choice or e_if would require them to be surrounded by some constructs that convert them to a string expression.
  * You would have to write something like this:
@@ -1019,7 +1088,7 @@ struct expr_choice_two_lit {
  * @param c is a Boolean condition.
  * @param a is a string expression that is executed when `c == true`.
  * @param b is a string expression that is executed when `c == false`.
- * @details Serves to allow you to select different options in one expression depending on the condition. 
+ * @details Serves to allow you to select different options in one expression depending on the condition.
  *
  *  @ru Примеры: @en Example: @~
  *  ```cpp
@@ -1079,7 +1148,7 @@ inline constexpr auto e_choice(bool c, T&& str_a, L&& str_b) {
  * @param c - boolean condition
  * @param a - string expression executed when `c == true`
  * @details Serves to allow one expression to generate, depending on the condition, either the specified option or an empty string.
- * 
+ *
  * @ru Примеры: @en Example @~
  *  ```cpp
  *  void sql_func_info::build_full_name() {

@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.2.8
+    VERSION 1.2.9
     DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -27,6 +27,7 @@ endif()
 
 option(SIMSTR_BUILD_TESTS "Build tests" ON)
 option(SIMSTR_BENCHMARKS "Build benchmarks" Off)
+option(USE_SYSTEM_DEPS "Use system dependencies" Off)
 cmake_dependent_option(SIMSTR_LINK_NATVIS "Link natvis file" On CAN_LINK_NATVIS Off)
 
 add_library(simstr_simstr
@@ -92,7 +93,11 @@ function(add_simdutf)
     FetchContent_MakeAvailable(simdutf)
 endfunction()
 
-add_simdutf()
+if (USE_SYSTEM_DEPS)
+    find_package(simdutf REQUIRED)
+else ()
+    add_simdutf()
+endif()
 
 target_link_libraries(simstr_simstr PUBLIC simdutf::simdutf)
 

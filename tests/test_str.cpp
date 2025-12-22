@@ -1769,4 +1769,10 @@ TEST(SimStr, HashStrMapAt) {
     EXPECT_EQ(test.find("Test")->second, 2);
 }
 
+TEST(SimStr, ExprRepeat) {
+    EXPECT_EQ(stringa{e_repeat("aa", 3)}, "aaaaaa");
+    int t = 1;
+    EXPECT_EQ(lstringa<40>{e_repeat("aa"_ss + t + "_", 3)}, "aa1_aa1_aa1_");
+}
+
 } // namespace simstr::tests

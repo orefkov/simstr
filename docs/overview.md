@@ -474,6 +474,11 @@ The number of characters and the symbol can be specified at runtime. Shorthand n
 
     e_c(NumberOfCharacters, Symbol)
 
+#### e_repeat{Str, count}
+Generates a repetition of a string literal or expression `Str` `count` times.
+
+    e_repeat("aa", 10);
+
 #### e_choice(bool Condition, StrExpr1, StrExpr2)
 If Condition == true, the result will be StrExpr1, otherwise StrExpr2.
 

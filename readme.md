@@ -1,7 +1,7 @@
 # simstr - String object and function library
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.2.8.
+Version 1.2.9.
 
 <span class="obfuscator"><a href="readme_ru.md">On Russian | По-русски</a></span>
 
