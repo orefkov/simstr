@@ -1,9 +1,9 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.2.4
+ * ver. 1.3.0
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.2.4
+* ver. 1.3.0
 * Classes for working with strings
  */
 
@@ -490,6 +490,18 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end);
 template<typename K>
 class Splitter;
 
+template<typename K, typename Impl>
+class null_terminated {
+public:
+    /*!
+     * @ru @brief Получить указатель на константный буфер символов строки
+     * @return const K* - указатель на константный буфер символов строки
+     * @en @brief Get a pointer to a constant character buffer of a string
+     * @return const K* - pointer to a constant string character buffer
+     */
+    const K* c_str() const { return static_cast<const Impl*>(this)->symbols(); }
+};
+
 template<typename K, typename Impl, bool Mutable> class buffer_pointers;
 
 /*!
@@ -504,13 +516,6 @@ template<typename K, typename Impl>
 class buffer_pointers<K, Impl, false> {
     const Impl& d() const { return *static_cast<const Impl*>(this); }
 public:
-    /*!
-     * @ru @brief Получить указатель на константный буфер символов строки
-     * @return const K* - указатель на константный буфер символов строки
-     * @en @brief Get a pointer to a constant character buffer of a string
-     * @return const K* - pointer to a constant string character buffer
-     */
-    const K* c_str() const { return d().symbols(); }
     /*!
      * @ru @brief  Получить указатель на константный буфер символов строки.
      * @return const K* - указатель на константный буфер символов строки.
@@ -532,6 +537,20 @@ public:
      * @return const K* - end of line.
      */
     const K* end() const   { return d().symbols() + d().length(); }
+    /*!
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
+     */
+    const K* cbegin() const { return d().symbols(); }
+    /*!
+     * @ru @brief  Указатель на константный символ после после последнего символа строки.
+     * @return const K* - конец строки.
+     * @en @brief  Pointer to a constant character after the last character of the string.
+     * @return const K* - end of line.
+     */
+    const K* cend() const   { return d().symbols() + d().length(); }
 };
 
 template<typename K, typename Impl>
@@ -560,6 +579,20 @@ public:
      * @return const K* - end of line.
      */
     const K* end() const   { return base::end(); }
+    /*!
+     * @ru @brief  Получить указатель на константный буфер символов строки.
+     * @return const K* - указатель на константный буфер символов строки.
+     * @en @brief  Get a pointer to a constant character buffer of a string.
+     * @return const K* - pointer to a constant buffer of string characters.
+     */
+    const K* cbegin() const { return base::cbegin(); }
+    /*!
+     * @ru @brief  Указатель на константный символ после после последнего символа строки.
+     * @return const K* - конец строки.
+     * @en @brief  Pointer to a constant character after the last character of the string.
+     * @return const K* - end of line.
+     */
+    const K* cend() const   { return base::cend(); }
     /*!
      * @ru @brief  Получить указатель на буфер символов строки.
      * @return K* - указатель на буфер символов строки.
@@ -2225,8 +2258,8 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
      *        provided that they are lvalue, that is, not temporary.
      */
     template<typename S>
-        requires(std::is_same_v<S, std::string&> || std::is_same_v<S, const std::string&>
-            || std::is_same_v<S, std::string_view&> || std::is_same_v<S, const std::string_view&>)
+        requires(std::is_same_v<S, std::basic_string<K>&> || std::is_same_v<S, const std::basic_string<K>&>
+            || std::is_same_v<S, std::basic_string_view<K>&> || std::is_same_v<S, const std::basic_string_view<K>&>)
     constexpr simple_str(S&& s) noexcept : str(s.data()), len(s.length()) {}
     /*!
      * @ru @brief Получить длину строки.
@@ -2326,7 +2359,7 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
  * during compilation, or classes that store strings.
  */
 template<typename K>
-struct simple_str_nt : simple_str<K> {
+struct simple_str_nt : simple_str<K>, null_terminated<K, simple_str_nt<K>> {
     using symb_type = K;
     using my_type = simple_str_nt<K>;
     using base = simple_str<K>;
@@ -2704,9 +2737,9 @@ struct utf_convert_selector<wchar_t, u32s> {
  *  `wchar_t` - in Windows UTF-16, in Linux - UTF-32.
  */
 template<typename K, typename Impl>
-class from_utf_convertable {
+class from_utf_convertible {
 protected:
-    from_utf_convertable() = default;
+    from_utf_convertible() = default;
     using my_type = Impl;
     /*
      Эти методы должен реализовать класс-наследник.
@@ -2717,7 +2750,7 @@ protected:
 public:
     template<typename O>
         requires(!std::is_same_v<O, K>)
-    from_utf_convertable(simple_str<O> init) {
+    from_utf_convertible(simple_str<O> init) {
         using worker = utf_convert_selector<O, K>;
         Impl* d = static_cast<Impl*>(this);
         size_t len = init.length();
@@ -2732,7 +2765,7 @@ public:
     }
     template<typename O, typename I, bool M>
         requires(!std::is_same_v<O, K>)
-    from_utf_convertable(const str_algs<O, simple_str<O>, I, M>& init) : from_utf_convertable(init.to_str()) {}
+    from_utf_convertible(const str_algs<O, simple_str<O>, I, M>& init) : from_utf_convertible(init.to_str()) {}
 };
 
 /*!
@@ -4633,7 +4666,8 @@ class decl_empty_bases lstring :
     public str_algs<K, simple_str<K>, lstring<K, N, forShared, Allocator>, true>,
     public str_mutable<K, lstring<K, N, forShared, Allocator>>,
     public str_storable<K, lstring<K, N, forShared, Allocator>, Allocator>,
-    public from_utf_convertable<K, lstring<K, N, forShared, Allocator>> {
+    public null_terminated<K, lstring<K, N, forShared, Allocator>>,
+    public from_utf_convertible<K, lstring<K, N, forShared, Allocator>> {
 public:
     using symb_type = K;
     using my_type = lstring<K, N, forShared, Allocator>;
@@ -4652,7 +4686,7 @@ protected:
     using base_algs = str_algs<K, simple_str<K>, my_type, true>;
     using base_storable = str_storable<K, my_type, Allocator>;
     using base_mutable = str_mutable<K, my_type>;
-    using base_utf = from_utf_convertable<K, my_type>;
+    using base_utf = from_utf_convertible<K, my_type>;
     using traits = ch_traits<K>;
 
     friend base_storable;
@@ -5187,7 +5221,8 @@ template<typename K, Allocatorable Allocator = allocator_string>
 class decl_empty_bases sstring :
     public str_algs<K, simple_str<K>, sstring<K, Allocator>, false>,
     public str_storable<K, sstring<K, Allocator>, Allocator>,
-    public from_utf_convertable<K, sstring<K, Allocator>> {
+    public null_terminated<K, sstring<K, Allocator>>,
+    public from_utf_convertible<K, sstring<K, Allocator>> {
 public:
     using symb_type = K;
     using uns_type = std::make_unsigned_t<K>;
@@ -5199,7 +5234,7 @@ public:
 protected:
     using base_algs = str_algs<K, simple_str<K>, my_type, false>;
     using base_storable = str_storable<K, my_type, Allocator>;
-    using base_utf = from_utf_convertable<K, my_type>;
+    using base_utf = from_utf_convertible<K, my_type>;
     using traits = ch_traits<K>;
     using uni = unicode_traits<K>;
 
