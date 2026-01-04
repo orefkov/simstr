@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.3.0
+ * ver. 1.3.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -49,10 +49,10 @@ using u32s = char32_t;
 using uu8s = std::make_unsigned<u8s>::type;
 
 template<typename K>
-inline constexpr bool is_one_of_char_v = std::is_same_v<K, u8s> || std::is_same_v<K, wchar_t> || std::is_same_v<K, u16s> || std::is_same_v<K, u32s>;
+constexpr bool is_one_of_char_v = std::is_same_v<K, u8s> || std::is_same_v<K, wchar_t> || std::is_same_v<K, u16s> || std::is_same_v<K, u32s>;
 
 template<typename K>
-inline constexpr bool is_one_of_std_char_v = std::is_same_v<K, u8s> || std::is_same_v<K, wchar_t> || std::is_same_v<K, wchar_type>;
+constexpr bool is_one_of_std_char_v = std::is_same_v<K, u8s> || std::is_same_v<K, wchar_t> || std::is_same_v<K, wchar_type>;
 
 template<typename From>
 requires (is_one_of_std_char_v<From>)
@@ -143,7 +143,7 @@ template<typename K, size_t N>
 class const_lit_to_array {
 
     template<size_t Idx>
-    size_t find(K s) const {
+    constexpr size_t find(K s) const {
         if constexpr (Idx < N) {
             return s == symbols_[Idx] ? Idx : find<Idx + 1>(s);
         }
@@ -151,7 +151,7 @@ class const_lit_to_array {
     }
 
     template<size_t Idx>
-    bool exist(K s) const {
+    constexpr bool exist(K s) const {
         if constexpr (Idx < N) {
             return s == symbols_[Idx] || exist<Idx + 1>(s);
         }
@@ -412,8 +412,8 @@ struct strexprjoin {
  * expressions, which are then “materialized” into the final result in one call.
  */
 template<StrExpr A, StrExprForType<typename A::symb_type> B>
-inline auto operator+(const A& a, const B& b) {
-    return strexprjoin<A, B>{a, b};
+constexpr strexprjoin<A, B> operator+(const A& a, const B& b) {
+    return {a, b};
 }
 
 /*!
@@ -566,8 +566,8 @@ struct expr_char {
  *  ```
  */
 template<typename K, StrExprForType<K> A>
-constexpr inline auto operator+(const A& a, K s) {
-    return strexprjoin_c<A, expr_char<K>>{a, s};
+constexpr strexprjoin_c<A, expr_char<K>> operator+(const A& a, K s) {
+    return {a, s};
 }
 
 /*!
@@ -581,8 +581,8 @@ constexpr inline auto operator+(const A& a, K s) {
  * @return string expression for a single character string.
  */
 template<typename K>
-constexpr inline auto e_char(K s) {
-    return expr_char<K>{s};
+constexpr expr_char<K> e_char(K s) {
+    return {s};
 }
 
 template<typename K, size_t N>
@@ -652,8 +652,8 @@ struct expr_literal {
  * All these methods work and give the same result. Which one to use is a matter of taste.
  */
 template<typename T, size_t N = const_lit<T>::Count>
-constexpr inline auto e_t(T&& s) {
-    return expr_literal<typename const_lit<T>::symb_type, static_cast<size_t>(N - 1)>{s};
+constexpr expr_literal<typename const_lit<T>::symb_type, static_cast<size_t>(N - 1)> e_t(T&& s) {
+    return {s};
 }
 
 template<bool first, typename K, size_t N, typename A>
@@ -692,8 +692,8 @@ struct expr_literal_join {
  * @return A string expression concatenating the operands.
  */
 template<StrExpr A, typename K = typename A::symb_type, typename T, size_t N = const_lit_for<K, T>::Count>
-constexpr inline auto operator+(const A& a, T&& s) {
-    return expr_literal_join<false, K, (N - 1), A>{s, a};
+constexpr expr_literal_join<false, K, (N - 1), A> operator+(const A& a, T&& s) {
+    return {s, a};
 }
 
 /*!
@@ -704,8 +704,8 @@ constexpr inline auto operator+(const A& a, T&& s) {
  * @return A string expression concatenating the operands.
  */
 template<StrExpr A, typename K = typename A::symb_type, typename T, size_t N = const_lit_for<K, T>::Count>
-constexpr inline auto operator+(T&& s, const A& a) {
-    return expr_literal_join<true, K, (N - 1), A>{s, a};
+constexpr expr_literal_join<true, K, (N - 1), A> operator+(T&& s, const A& a) {
+    return {s, a};
 }
 
 /*!
@@ -748,8 +748,8 @@ struct expr_spaces {
  *  ```
  */
 template<size_t N>
-constexpr inline auto e_spca() {
-    return expr_spaces<u8s, N>();
+constexpr expr_spaces<u8s, N> e_spca() {
+    return {};
 }
 
 /*!
@@ -766,8 +766,8 @@ constexpr inline auto e_spca() {
  *  ```
  */
 template<size_t N>
-constexpr inline auto e_spcw() {
-    return expr_spaces<uws, N>();
+constexpr expr_spaces<uws, N> e_spcw() {
+    return {};
 }
 
 /*!
@@ -810,8 +810,8 @@ struct expr_pad {
  * @return a string expression that generates a string of l characters k.
  */
 template<typename K>
-constexpr inline auto e_c(size_t l, K s) {
-    return expr_pad<K>{ l, s };
+constexpr expr_pad<K> e_c(size_t l, K s) {
+    return { l, s };
 }
 
 template<typename K, size_t N>
@@ -861,8 +861,8 @@ struct expr_repeat_expr {
  * @return a string expression generating a string of l strings s
  */
 template<typename T, typename K = const_lit<T>::symb_type, size_t M = const_lit<T>::Count> requires (M > 0)
-constexpr inline auto e_repeat(T&& s, size_t l) {
-    return expr_repeat_lit<K, M - 1>{ l, s };
+constexpr expr_repeat_lit<K, M - 1> e_repeat(T&& s, size_t l) {
+    return { l, s };
 }
 
 /*!
@@ -879,8 +879,8 @@ constexpr inline auto e_repeat(T&& s, size_t l) {
  * @return a string expression generating a string of l string expressions s
  */
 template<StrExpr A>
-constexpr inline auto e_repeat(const A& s, size_t l) {
-    return expr_repeat_expr<A>{ l, s };
+constexpr expr_repeat_expr<A> e_repeat(const A& s, size_t l) {
+    return { l, s };
 }
 
 /*!
@@ -1103,8 +1103,8 @@ struct expr_choice_two_lit {
  *  which is not optimal and will reduce performance. (This is checked in the "Build Full Func Name" benchmark)
  */
 template<StrExpr A, StrExprForType<typename A::symb_type> B>
-inline constexpr auto e_choice(bool c, const A& a, const B& b) {
-    return expr_choice<A, B>{a, b, c};
+constexpr expr_choice<A, B> e_choice(bool c, const A& a, const B& b) {
+    return {a, b, c};
 }
 
 /*!
@@ -1113,8 +1113,8 @@ inline constexpr auto e_choice(bool c, const A& a, const B& b) {
  * @en @brief Overload e_choice when the third argument is a string literal.
  */
 template<StrExpr A, typename T, size_t N = const_lit_for<typename A::symb_type, T>::Count>
-inline constexpr auto e_choice(bool c, const A& a, T&& str) {
-    return expr_choice_one_lit<A, N - 1, true>{str, a, c};
+constexpr expr_choice_one_lit<A, N - 1, true> e_choice(bool c, const A& a, T&& str) {
+    return {str, a, c};
 }
 
 /*!
@@ -1123,8 +1123,8 @@ inline constexpr auto e_choice(bool c, const A& a, T&& str) {
  * @en @brief Overload e_choice when the second argument is a string literal.
  */
 template<StrExpr A, typename T, size_t N = const_lit_for<typename A::symb_type, T>::Count>
-inline constexpr auto e_choice(bool c, T&& str, const A& a) {
-    return expr_choice_one_lit<A, N - 1, false>{str, a, c};
+constexpr expr_choice_one_lit<A, N - 1, false> e_choice(bool c, T&& str, const A& a) {
+    return {str, a, c};
 }
 /*!
  * @ingroup StrExprs
@@ -1132,8 +1132,8 @@ inline constexpr auto e_choice(bool c, T&& str, const A& a) {
  * @en @brief Overload e_choice when the second and third arguments are string literals.
  */
 template<typename T, typename L, size_t N = const_lit<T>::Count, size_t M = const_lit_for<typename const_lit<T>::symb_type, L>::Count>
-inline constexpr auto e_choice(bool c, T&& str_a, L&& str_b) {
-    return expr_choice_two_lit<typename const_lit<T>::symb_type, N -1, M - 1>{str_a, str_b, c};
+constexpr expr_choice_two_lit<typename const_lit<T>::symb_type, N -1, M - 1> e_choice(bool c, T&& str_a, L&& str_b) {
+    return {str_a, str_b, c};
 }
 
 /*!
@@ -1179,8 +1179,8 @@ inline constexpr auto e_choice(bool c, T&& str_a, L&& str_b) {
  *  which is not optimal and will reduce performance. (This example is tested in the "Build Full Func Name" benchmark)
  */
 template<StrExpr A>
-inline constexpr auto e_if(bool c, const A& a) {
-    return expr_if<A>{a, c};
+constexpr expr_if<A> e_if(bool c, const A& a) {
+    return {a, c};
 }
 /*!
  * @ingroup StrExprs
@@ -1188,7 +1188,7 @@ inline constexpr auto e_if(bool c, const A& a) {
  * @en @brief Overload e_if when the second argument is a string literal.
  */
 template<typename T, size_t N = const_lit<T>::Count>
-inline constexpr auto e_if(bool c, T&& str) {
+constexpr auto e_if(bool c, T&& str) {
     const typename const_lit<T>::symb_type empty[1] = {0};
     return expr_choice_two_lit<typename const_lit<T>::symb_type, N - 1, 0>{str, empty, c};
 }
@@ -1225,8 +1225,8 @@ struct expr_stdstr {
  * @en @brief Addition operator for char string expression and std::string.
  */
 template<StrExprForType<u8s> A>
-auto operator+(const A& a, const std::string& s) {
-    return strexprjoin_c<A, expr_stdstr<u8s, std::string>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<u8s, std::string>, true> operator+(const A& a, const std::string& s) {
+    return {a, s};
 }
 
 /*!
@@ -1235,8 +1235,8 @@ auto operator+(const A& a, const std::string& s) {
  * @en @brief Addition operator for std::string and char string expression.
  */
 template<StrExprForType<u8s> A>
-auto operator+(const std::string& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<u8s, std::string>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<u8s, std::string>, false> operator+(const std::string& s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1245,8 +1245,8 @@ auto operator+(const std::string& s, const A& a) {
  * @en @brief Addition operator for char string expression and std::string_view.
  */
 template<StrExprForType<u8s> A>
-auto operator+(const A& a, const std::string_view& s) {
-    return strexprjoin_c<A, expr_stdstr<u8s, std::string_view>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<u8s, std::string_view>, true> operator+(const A& a, const std::string_view& s) {
+    return {a, s};
 }
 
 /*!
@@ -1255,8 +1255,8 @@ auto operator+(const A& a, const std::string_view& s) {
  * @en @brief Addition operator for std::string_view and char string expression.
  */
 template<StrExprForType<u8s> A>
-auto operator+(const std::string_view& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<u8s, std::string_view>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<u8s, std::string_view>, false> operator+(const std::string_view& s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1265,8 +1265,8 @@ auto operator+(const std::string_view& s, const A& a) {
  * @en @brief Addition operator for wchar_t string expression and std::wstring.
  */
 template<StrExprForType<uws> A>
-auto operator+(const A& a, const std::wstring& s) {
-    return strexprjoin_c<A, expr_stdstr<uws, std::wstring>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<uws, std::wstring>, true> operator+(const A& a, const std::wstring& s) {
+    return {a, s};
 }
 
 /*!
@@ -1275,8 +1275,8 @@ auto operator+(const A& a, const std::wstring& s) {
  * @en @brief Addition operator for std::wstring and wchar_t string expression.
  */
 template<StrExprForType<uws> A>
-auto operator+(const std::wstring& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<uws, std::wstring>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<uws, std::wstring>, false> operator+(const std::wstring& s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1285,8 +1285,8 @@ auto operator+(const std::wstring& s, const A& a) {
  * @en @brief Addition operator for wchar_t string expression and std::wstring_view.
  */
 template<StrExprForType<uws> A>
-auto operator+(const A& a, const std::wstring_view& s) {
-    return strexprjoin_c<A, expr_stdstr<uws, std::wstring_view>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<uws, std::wstring_view>, true> operator+(const A& a, const std::wstring_view& s) {
+    return {a, s};
 }
 
 /*!
@@ -1295,8 +1295,8 @@ auto operator+(const A& a, const std::wstring_view& s) {
  * @en @brief Addition operator for std::wstring_view and wchar_t string expression.
  */
 template<StrExprForType<uws> A>
-auto operator+(const std::wstring_view& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<uws, std::wstring_view>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<uws, std::wstring_view>, false> operator+(const std::wstring_view& s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1307,8 +1307,8 @@ auto operator+(const std::wstring_view& s, const A& a) {
  * char32_t, depending on the compiler) and std::wstring.
  */
 template<StrExprForType<wchar_type> A>
-auto operator+(const A& a, const std::wstring& s) {
-    return strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring>, true> operator+(const A& a, const std::wstring& s) {
+    return {a, s};
 }
 
 /*!
@@ -1319,8 +1319,8 @@ auto operator+(const A& a, const std::wstring& s) {
  * (char16_t or char32_t, depending on the compiler).
  */
 template<StrExprForType<wchar_type> A>
-auto operator+(const std::wstring& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring>, false> operator+(const std::wstring& s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1331,8 +1331,8 @@ auto operator+(const std::wstring& s, const A& a) {
  * char32_t, depending on the compiler) and std::wstring_view.
  */
 template<StrExprForType<wchar_type> A>
-auto operator+(const A& a, const std::wstring_view& s) {
-    return strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring_view>, true>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring_view>, true> operator+(const A& a, const std::wstring_view& s) {
+    return {a, s};
 }
 
 /*!
@@ -1343,8 +1343,8 @@ auto operator+(const A& a, const std::wstring_view& s) {
  * (char16_t or char32_t, depending on the compiler).
  */
 template<StrExprForType<wchar_type> A>
-auto operator+(const std::wstring_view& s, const A& a) {
-    return strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring_view>, false>{a, s};
+constexpr strexprjoin_c<A, expr_stdstr<wchar_type, std::wstring_view>, false> operator+(const std::wstring_view& s, const A& a) {
+    return {a, s};
 }
 
 }// namespace simstr

@@ -1,7 +1,7 @@
 # simstr - String object and function library
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.3.0.
+Version 1.3.1.
 
 <span class="obfuscator"><a href="readme_ru.md">On Russian | По-русски</a></span>
 
@@ -70,6 +70,8 @@ then the simstr approach will also be clear to you.
 `simstr` consists of three header files and two source files. You can connect as a CMake project via `add_subdirectory` (the `simstr` library),
 you can simply include the files in your project. Building also requires [simdutf](https://github.com/simdutf/simdutf) (when using CMake
 it is downloaded automatically).
+
+The library is included in [vcpkg](https://vcpkg.io), use as `orefkov-simstr`.
 
 `simstr` requires a compiler of standard no lower than C++20 to work - concepts and std::format are used.
 The work was tested under Windows on MSVC-19 and Clang-19, under Linux - on GCC-13 and Clang-21.

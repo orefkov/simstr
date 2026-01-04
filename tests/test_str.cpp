@@ -522,42 +522,42 @@ TEST(SimStr, IsAscii) {
 }
 
 TEST(SimStr, ChangeCase) {
-    EXPECT_EQ(ssa{"TEST"}.uppered_only_ascii<stringa>(), "TEST");
-    EXPECT_EQ(ssa{"Test"}.uppered_only_ascii<stringa>(), "TEST");
+    EXPECT_EQ(ssa{"TEST"}.upperred_only_ascii<stringa>(), "TEST");
+    EXPECT_EQ(ssa{"Test"}.upperred_only_ascii<stringa>(), "TEST");
     EXPECT_EQ(ssa{"test"}.lowered_only_ascii<stringa>(), "test");
     EXPECT_EQ(ssa{"Test"}.lowered_only_ascii<stringa>(), "test");
-    EXPECT_EQ(ssa{"TestПрОвЕрКа"}.uppered_only_ascii<stringa>(), "TESTПрОвЕрКа");
+    EXPECT_EQ(ssa{"TestПрОвЕрКа"}.upperred_only_ascii<stringa>(), "TESTПрОвЕрКа");
     EXPECT_EQ(ssa{"TestПрОвЕрКа"}.lowered_only_ascii<stringa>(), "testПрОвЕрКа");
-    EXPECT_EQ(ssa{"TestПрОвЕрКа"}.uppered<stringa>(), "TESTПРОВЕРКА");
+    EXPECT_EQ(ssa{"TestПрОвЕрКа"}.upperred<stringa>(), "TESTПРОВЕРКА");
     EXPECT_EQ(ssa{"tesTПрОвЕрКа"}.lowered<stringa>(), "testпроверка");
-    EXPECT_EQ(ssa{"TEST"}.uppered<stringa>(), "TEST");
+    EXPECT_EQ(ssa{"TEST"}.upperred<stringa>(), "TEST");
     EXPECT_EQ(ssa{"test"}.lowered<stringa>(), "test");
-    EXPECT_EQ(ssa{"TESTПРОВЕРКА"}.uppered<stringa>(), "TESTПРОВЕРКА");
+    EXPECT_EQ(ssa{"TESTПРОВЕРКА"}.upperred<stringa>(), "TESTПРОВЕРКА");
     EXPECT_EQ(ssa{"testпроверка"}.lowered<stringa>(), "testпроверка");
     EXPECT_EQ(ssa{"tesTİiȺⱥȾⱦẞßΩФывAsd"}.lowered<stringa>(), "testiiⱥⱥⱦⱦßßωфывasd");
-    EXPECT_EQ(ssa{"testⱢɱⱮɽⱤWas"}.uppered<stringa>(), "TESTⱢⱮⱮⱤⱤWAS");
+    EXPECT_EQ(ssa{"testⱢɱⱮɽⱤWas"}.upperred<stringa>(), "TESTⱢⱮⱮⱤⱤWAS");
 
-    EXPECT_EQ(ssu{u"TEST"}.uppered_only_ascii<stringu>(), u"TEST");
+    EXPECT_EQ(ssu{u"TEST"}.upperred_only_ascii<stringu>(), u"TEST");
     EXPECT_EQ(ssu{u"test"}.lowered_only_ascii<stringu>(), u"test");
-    EXPECT_EQ(ssu{u"Test"}.uppered_only_ascii<stringu>(), u"TEST");
+    EXPECT_EQ(ssu{u"Test"}.upperred_only_ascii<stringu>(), u"TEST");
     EXPECT_EQ(ssu{u"Test"}.lowered_only_ascii<stringu>(), u"test");
-    EXPECT_EQ(ssu{u"TestПрОвЕрКа"}.uppered_only_ascii<stringu>(), u"TESTПрОвЕрКа");
+    EXPECT_EQ(ssu{u"TestПрОвЕрКа"}.upperred_only_ascii<stringu>(), u"TESTПрОвЕрКа");
     EXPECT_EQ(ssu{u"TestПрОвЕрКа"}.lowered_only_ascii<stringu>(), u"testПрОвЕрКа");
-    EXPECT_EQ(ssu{u"TestПрОвЕрКа"}.uppered<stringu>(), u"TESTПРОВЕРКА");
+    EXPECT_EQ(ssu{u"TestПрОвЕрКа"}.upperred<stringu>(), u"TESTПРОВЕРКА");
     EXPECT_EQ(ssu{u"tesTПрОвЕрКа"}.lowered<stringu>(), u"testпроверка");
     EXPECT_EQ(ssu{u"tesTİiȺⱥȾⱦẞßΩФывAsd"}.lowered<stringu>(), u"testiiⱥⱥⱦⱦßßωфывasd");
-    EXPECT_EQ(ssu{u"testⱢɱⱮɽⱤWas"}.uppered<stringu>(), u"TESTⱢⱮⱮⱤⱤWAS");
+    EXPECT_EQ(ssu{u"testⱢɱⱮɽⱤWas"}.upperred<stringu>(), u"TESTⱢⱮⱮⱤⱤWAS");
 
-    EXPECT_EQ(ssw{L"TEST"}.uppered_only_ascii<stringw>(), L"TEST");
+    EXPECT_EQ(ssw{L"TEST"}.upperred_only_ascii<stringw>(), L"TEST");
     EXPECT_EQ(ssw{L"test"}.lowered_only_ascii<stringw>(), L"test");
-    EXPECT_EQ(ssw{L"Test"}.uppered_only_ascii<stringw>(), L"TEST");
+    EXPECT_EQ(ssw{L"Test"}.upperred_only_ascii<stringw>(), L"TEST");
     EXPECT_EQ(ssw{L"Test"}.lowered_only_ascii<stringw>(), L"test");
-    EXPECT_EQ(ssw{L"TestПрОвЕрКа"}.uppered_only_ascii<stringw>(), L"TESTПрОвЕрКа");
+    EXPECT_EQ(ssw{L"TestПрОвЕрКа"}.upperred_only_ascii<stringw>(), L"TESTПрОвЕрКа");
     EXPECT_EQ(ssw{L"TestПрОвЕрКа"}.lowered_only_ascii<stringw>(), L"testПрОвЕрКа");
-    EXPECT_EQ(ssw{L"TestПрОвЕрКа"}.uppered<stringw>(), L"TESTПРОВЕРКА");
+    EXPECT_EQ(ssw{L"TestПрОвЕрКа"}.upperred<stringw>(), L"TESTПРОВЕРКА");
     EXPECT_EQ(ssw{L"tesTПрОвЕрКа"}.lowered<stringw>(), L"testпроверка");
     EXPECT_EQ(ssw{L"tesTİiȺⱥȾⱦẞßΩФывAsd"}.lowered<stringw>(), L"testiiⱥⱥⱦⱦßßωфывasd");
-    EXPECT_EQ(ssw{L"testⱢɱⱮɽⱤWas"}.uppered<stringw>(), L"TESTⱢⱮⱮⱤⱤWAS");
+    EXPECT_EQ(ssw{L"testⱢɱⱮɽⱤWas"}.upperred<stringw>(), L"TESTⱢⱮⱮⱤⱤWAS");
 }
 
 TEST(SimStr, Replace) {
@@ -1773,6 +1773,15 @@ TEST(SimStr, ExprRepeat) {
     EXPECT_EQ(stringa{e_repeat("aa", 3)}, "aaaaaa");
     int t = 1;
     EXPECT_EQ(lstringa<40>{e_repeat("aa"_ss + t + "_", 3)}, "aa1_aa1_aa1_");
+}
+
+TEST(SimStr, Constexpr) {
+    constexpr ssa tt = " asd "_ss.trimmed();
+    static_assert(tt == "asd");
+    constexpr stringa aa{"asd"};
+    static_assert(aa == "asd");
+    static_assert(aa.length() == 3);
+    constexpr stringa bb = "";
 }
 
 } // namespace simstr::tests
