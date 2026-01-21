@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.3.1
+    VERSION 1.4.0
     DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -115,13 +115,17 @@ if(SIMSTR_BUILD_TESTS)
     FetchContent_Declare(
         googletest
         # Specify the commit you depend on and update it regularly.
-        URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
-        FIND_PACKAGE_ARGS NAMES GTest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+        FIND_PACKAGE_ARGS NAMES GTest 1.17.0
     )
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt FALSE CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
     add_subdirectory(tests)
+    if(TARGET gtest)
+        target_compile_features(gtest PUBLIC cxx_std_23)
+        target_compile_features(gtest_main PUBLIC cxx_std_23)
+    endif()
 endif()
 
 function(GBencmark)
@@ -130,7 +134,7 @@ function(GBencmark)
         googlebench
         # Specify the commit you depend on and update it regularly.
         URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
-        FIND_PACKAGE_ARGS NAMES benchmark
+        FIND_PACKAGE_ARGS NAMES benchmark 1.9.4
     )
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_LTO OFF)
@@ -140,7 +144,9 @@ function(GBencmark)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
     add_compile_definitions(BENCHMARK_STATIC_DEFINE)
     FetchContent_MakeAvailable(googlebench)
-    target_compile_features(benchmark PUBLIC cxx_std_20)
+    if(TARGET benchmark)
+        target_compile_features(benchmark PUBLIC cxx_std_23)
+    endif()
 
     if(EMSCRIPTEN)
         # Свежий Clang в Emscripten ругается на __COUNTER__

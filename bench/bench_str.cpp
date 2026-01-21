@@ -19,6 +19,318 @@ using namespace std::literals;
 
 void __(benchmark::State& state) { for (auto _: state) {} }
 
+void ConcatStdToStd(benchmark::State& state) {
+    std::string s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            std::string str = s1 + std::to_string(i) + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToStd(benchmark::State& state) {
+    std::string s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            std::string str = +s1 + i + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToSim(benchmark::State& state) {
+    stra s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = s1 + i + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+BENCHMARK(__)->Name("-----  Concatenate string + Number + \"Literal\" ---------")->Repetitions(1);
+BENCHMARK(ConcatStdToStd)    ->Name("Concat std::string and number by std to std::string");
+BENCHMARK(ConcatSimToStd)    ->Name("Concat std::string and number by StrExpr to std::string");
+BENCHMARK(ConcatSimToSim)    ->Name("Concat stringa and number by StrExpr to simstr::stringa");
+
+void ConcatStdToStdHex(benchmark::State& state) {
+    // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
+    std::string s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            // What is standard method to get hex number?
+            std::string str = s1 + std::format("0x{:x}", i) + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+void ConcatSimToStdHex(benchmark::State& state) {
+    // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
+    std::string s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            std::string str = +s1 + e_hex<HexFlags::Short>(i) + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToSimHex(benchmark::State& state) {
+    // stringa SSO buffer is 23, but we use a short string to compare under the same conditions
+    stra s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = s1 + e_hex<HexFlags::Short>(i) + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+BENCHMARK(__)->Name("-----  Concatenate string + Hex Number + \"Literal\" ---------")->Repetitions(1);
+BENCHMARK(ConcatStdToStdHex)    ->Name("Concat std::string and hex number by std to std::string");
+BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number by StrExpr to std::string");
+BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number by StrExpr to simstr::stringa");
+
+void ConcatStdToStdS(benchmark::State& state) {
+    std::string s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            std::string str = s1 + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToStdS(benchmark::State& state) {
+    std::string s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            std::string str = +s1 + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToSimS(benchmark::State& state) {
+    stra s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = s1 + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+BENCHMARK(__)->Name("-----  Concatenate string + \"Literal\" ---------")->Repetitions(1);
+BENCHMARK(ConcatStdToStdS)    ->Name("Concat std::string by std to std::string");
+BENCHMARK(ConcatSimToStdS)    ->Name("Concat std::string by StrExpr to std::string");
+BENCHMARK(ConcatSimToSimS)    ->Name("Concat stringa by StrExpr to stringa");
+
+size_t find_pos_str(std::string_view src, std::string_view name) {
+    // before C++26 we can not concatenate string and string_view...
+    return src.find("\n- "s + std::string{name} + " -\n");
+}
+
+size_t find_pos_exp(ssa src, ssa name) {
+    return src.find(std::string{"\n- " + name + " -\n"});
+}
+
+size_t find_pos_sim(ssa src, ssa name) {
+    return src.find(lstringa<200>{"\n- " + name + " -\n"});
+}
+
+//> size_t find_pos_str(std::string_view src, std::string_view name) {
+void FindConcatThreeStr(benchmark::State& state) {
+    std::string_view src = "sdfsdf\n- testtesttesttesttesttesttestte -\nsfrgdgfsg";
+    std::string_view fnd = "testtesttesttesttesttesttestte";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(src);
+        benchmark::DoNotOptimize(fnd);
+        size_t pos = find_pos_str(src, fnd);
+        benchmark::DoNotOptimize(pos);
+        #ifdef CHECK_RESULT
+        if (pos != 6) {
+            state.SkipWithError("fail");
+        }
+        #endif
+    }
+}
+
+//> size_t find_pos_exp(ssa src, ssa name) {
+void FindConcatThreeExp(benchmark::State& state) {
+    std::string_view src = "sdfsdf\n- testtesttesttesttesttesttestte -\nsfrgdgfsg";
+    std::string_view fnd = "testtesttesttesttesttesttestte";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(src);
+        benchmark::DoNotOptimize(fnd);
+        size_t pos = find_pos_exp(src, fnd);
+        benchmark::DoNotOptimize(pos);
+        #ifdef CHECK_RESULT
+        if (pos != 6) {
+            state.SkipWithError("fail");
+        }
+        #endif
+    }
+}
+
+//> size_t find_pos_sim(ssa src, ssa name) {
+void FindConcatThreeSim(benchmark::State& state) {
+    ssa src = "sdfsdf\n- testtesttesttesttesttesttestte -\nsfrgdgfsg";
+    ssa fnd = "testtesttesttesttesttesttestte";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(src);
+        benchmark::DoNotOptimize(fnd);
+        size_t pos = find_pos_sim(src, fnd);
+        benchmark::DoNotOptimize(pos);
+        #ifdef CHECK_RESULT
+        if (pos != 6) {
+            state.SkipWithError("fail");
+        }
+        #endif
+    }
+}
+
+BENCHMARK(__)->Name("-----  Find three concatenated string in string_view -----")->Repetitions(1);
+BENCHMARK(FindConcatThreeStr)->Name("Find concat three std::string");
+BENCHMARK(FindConcatThreeExp)->Name("Find concat three strexpr");
+BENCHMARK(FindConcatThreeSim)->Name("Find concat three simstr");
+
+
+std::string buildTypeNameStr(std::string_view type_name, size_t prec, size_t scale) {
+    std::string res{type_name};
+    if (prec) {
+        res += "(" + std::to_string(prec);
+        if (scale) {
+            res += "," + std::to_string(scale);
+        }
+        res += ")";
+    }
+    return res;
+}
+
+std::string buildTypeNameExp(ssa type_name, size_t prec, size_t scale) {
+    if (prec) {
+        return type_name + "(" + prec + e_if(scale, ","_ss + scale) + ")";
+    }
+    return type_name;
+}
+
+stringa buildTypeNameSim(ssa type_name, size_t prec, size_t scale) {
+    if (prec) {
+        return type_name + "(" + prec + e_if(scale, ","_ss + scale) + ")";
+    }
+    return type_name;
+}
+
+//> std::string buildTypeNameStr(std::string_view type_name, size_t prec, size_t scale) {
+void BuildTypeNameStr(benchmark::State& state) {
+    std::string_view type_name = "numeric";
+    size_t prec = state.range(0), scale = prec / 2;
+    for (auto _: state) {
+        benchmark::DoNotOptimize(type_name);
+        benchmark::DoNotOptimize(prec);
+        benchmark::DoNotOptimize(scale);
+        std::string res = buildTypeNameStr(type_name, prec, scale);
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+//> std::string buildTypeNameExp(ssa type_name, size_t prec, size_t scale) {
+void BuildTypeNameExp(benchmark::State& state) {
+    std::string_view type_name = "numeric";
+    size_t prec = state.range(0), scale = prec / 2;
+    for (auto _: state) {
+        benchmark::DoNotOptimize(type_name);
+        benchmark::DoNotOptimize(prec);
+        benchmark::DoNotOptimize(scale);
+        std::string res = buildTypeNameExp(type_name, prec, scale);
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+//> stringa buildTypeNameSim(ssa type_name, size_t prec, size_t scale) {
+void BuildTypeNameSim(benchmark::State& state) {
+    ssa type_name = "numeric";
+    size_t prec = state.range(0), scale = prec / 2;
+    for (auto _: state) {
+        benchmark::DoNotOptimize(type_name);
+        benchmark::DoNotOptimize(prec);
+        benchmark::DoNotOptimize(scale);
+        stringa res = buildTypeNameSim(type_name, prec, scale);
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+BENCHMARK(__)->Name("-----  Build Type Name ---------")->Repetitions(1);
+BENCHMARK(BuildTypeNameStr)   ->Name("BuildTypeNameStr 0")->Arg(0);
+BENCHMARK(BuildTypeNameExp)   ->Name("BuildTypeNameExp 0")->Arg(0);
+BENCHMARK(BuildTypeNameSim)   ->Name("BuildTypeNameSim 0")->Arg(0);
+BENCHMARK(BuildTypeNameStr)   ->Name("BuildTypeNameStr 10")->Arg(10);
+BENCHMARK(BuildTypeNameExp)   ->Name("BuildTypeNameExp 10")->Arg(10);
+BENCHMARK(BuildTypeNameSim)   ->Name("BuildTypeNameSim 10")->Arg(10);
+
+std::string make_str_str(std::string_view from, std::string_view pattern, std::string_view repl) {
+    auto str_replace = [](std::string_view from, std::string_view pattern, std::string_view repl) {
+        std::string result;
+        for (size_t offset = 0; ;) {
+            size_t pos = from.find(pattern, offset);
+            if (pos == std::string::npos) {
+                result += from.substr(offset);
+                break;
+            }
+            result += from.substr(offset, pos - offset);
+            result += repl;
+            offset = pos + pattern.length();
+        }
+        return result;
+    };
+    return "<" + str_replace(from, pattern, repl) + ">";
+}
+
+std::string make_str_exp(std::string_view from, std::string_view pattern, std::string_view repl) {
+    return "<" + e_repl(from, pattern, repl) + ">";
+}
+
+//> std::string make_str_str(std::string_view from, std::string_view pattern, std::string_view repl) {
+void ReplaceStr(benchmark::State& state) {
+    std::string_view from = "testitestitestitesti", what = "te", repl = "--+--";
+
+    for (auto _: state) {
+        benchmark::DoNotOptimize(from);
+        benchmark::DoNotOptimize(what);
+        benchmark::DoNotOptimize(repl);
+        std::string res = make_str_str(from, what, repl);
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+//> std::string make_str_exp(std::string_view from, std::string_view pattern, std::string_view repl) {
+void ReplaceExp(benchmark::State& state) {
+    std::string_view from = "testitestitestitesti", what = "te", repl = "--+--";
+
+    for (auto _: state) {
+        benchmark::DoNotOptimize(from);
+        benchmark::DoNotOptimize(what);
+        benchmark::DoNotOptimize(repl);
+        std::string res = make_str_exp(from, what, repl);
+        benchmark::DoNotOptimize(res);
+    }
+}
+
+BENCHMARK(__)->Name("-----  Replace string by copy -----")->Repetitions(1);
+BENCHMARK(ReplaceStr)->Name("Concat with replace str");
+BENCHMARK(ReplaceExp)->Name("Concat with replace exp");
+
 template<typename T>
 void CreateEmpty(benchmark::State& state) {
     for (auto _: state) {
@@ -1861,7 +2173,7 @@ void BuildFuncNameSimStr(benchmark::State& state) {
             stringa res = f.f.build_full_name();
             benchmark::DoNotOptimize(res);
             #ifdef CHECK_RESULT
-                if (res != stra{f.check}) {
+                if (res != ssa{f.check}) {
                     std::cout << res << "\n";
                     state.SkipWithError("not equal");
                     break;
@@ -1878,7 +2190,7 @@ void BuildFuncNameSimStr1(benchmark::State& state) {
             stringa res = f.f.build_full_name1();
             benchmark::DoNotOptimize(res);
             #ifdef CHECK_RESULT
-                if (res != stra{f.check}) {
+                if (res != ssa{f.check}) {
                     std::cout << res << "\n";
                     state.SkipWithError("not equal");
                     break;

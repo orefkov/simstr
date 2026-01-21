@@ -27,7 +27,7 @@ bool extract_cpu_info(ssa text, ssa& res) {
 struct result_info {
     stringa text_;
     stringa platform_;
-    ssa current_text_{text_};
+    ssa current_text_ = text_.to_str();
     ssa cpu_info_;
 
     result_info(stringa text, stringa platform) : text_(std::move(text)), platform_(std::move(platform)) {
@@ -94,9 +94,9 @@ results_vector get_results_infos() {
             ssa fileName = f;
             // В начале имени файла может идти число и дефис, для сортировки, уберём их
             // At the beginning of the file name there can be a number and a hyphen, for sorting, remove them
-            if (auto delimeter = fileName.find('-'); delimeter + 1 > 1) {
-                if (fileName(0, delimeter).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
-                    fileName.remove_prefix(delimeter + 1);
+            if (auto delimiter = fileName.find('-'); delimiter + 1 > 1) {
+                if (fileName(0, delimiter).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
+                    fileName.remove_prefix(delimiter + 1);
                 }
             }
             results.emplace_back(get_file_content(lstringa<128>{dirForResults + f}), fileName(0, -suffix.length()));
@@ -129,9 +129,19 @@ auto repl_html_symbols(ssa text) {
     return e_repl_const_symbols(text, '\"', "&quot;", '<', "&lt;", '\'', "&#39;", '&', "&amp;");
 }
 
-void write_benchset_header(out_t& out, const results_vector& results, ssa benchsetName, unsigned id) {
+void write_benchset_header(out_t& out, const results_vector& results, ssa benchsetName, unsigned benchSetId) {
+    size_t hash = fnv_hash(benchsetName.symbols(), benchsetName.length());
+    static std::unordered_map<size_t, int> ids;
+    auto [id, _] = ids.try_emplace(hash, 0);
+    if (id->second) {
+        std::cout << "Duplicate hash for " << benchsetName << "\n";
+    }
+    int ii = id->second++;
+
     size_t width = 40 / results.size();
-    out += "\n\n<div class=\"benchset\" id=\"bs"_ss + id + "\"><h4>" + repl_html_symbols(benchsetName) + "</h4>\n<table><thead><tr><th>Benchmark name</th><th width=\"5%\">Comment</th>";
+    out += "\n\n<div class=\"benchset\" id=\"bs"_ss + benchSetId + "\"><h4><a id=\"bs" + hash + ii + "\" href=\"#bs" +
+        hash + ii + "\">#</a>&nbsp;" + repl_html_symbols(benchsetName) +
+        "</h4>\n<table><thead><tr><th>Benchmark name</th><th width=\"5%\">Comment</th>";
     for (const auto& r : results) {
         out += "<th width=\""_ss + width + "%\">" + r.platform_ + "</th>";
     }
@@ -184,6 +194,9 @@ void write_one_result(out_t& out, ssa result, ssa line, auto& script_text, bool 
 }
 
 ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
+    if (benchName == "ReplaceStr") {
+        int t = 0;
+    }
     static hashStrMapA<stringa> textes;
 
     size_t delim = benchName.find_last('/');

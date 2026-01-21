@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.15)
 
 add_executable(benchStr bench_str.cpp bench.h)
 target_link_libraries(benchStr simstr::simstr benchmark::benchmark)
+target_compile_features(benchStr PUBLIC cxx_std_23)
 
 add_executable(process_result process_result.cpp)
 target_link_libraries(process_result simstr_simstr)

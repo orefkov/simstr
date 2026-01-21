@@ -1,8 +1,9 @@
 ﻿#include <simstr/sstring.h>
 #include <gtest/gtest.h>
 
-namespace simstr::tests {
 using namespace std::literals;
+
+namespace simstr::tests {
 
 class Tstringa: public stringa {
 public:
@@ -563,7 +564,7 @@ TEST(SimStr, ChangeCase) {
 TEST(SimStr, Replace) {
     EXPECT_EQ(ssa{"testing"}.replaced<stringa>("t", "--"), "--es--ing");
     EXPECT_EQ(ssa{"testing"}.replaced<stringa>("t", ""), "esing");
-    EXPECT_EQ(stringa{ssa{"testing"}.replace_init("t", "--")}, "--es--ing");
+    EXPECT_EQ(stringa{e_repl(ssa{"testing"}, "t", "--")}, "--es--ing");
 }
 
 TEST(SimStr, Trim) {
@@ -1279,6 +1280,39 @@ TEST(SimStr, LStrFormat) {
         text.format(L"{}", L"tested");
         EXPECT_EQ(text, L"tested");
     }
+#ifdef _WIN32
+    {
+        // char16_t в Windows совместим по размеру с wchar_t, поэтому для его форматирования можно использовать
+        // L"format_string", и передавать char16_t строковые объекты
+        // char16_t on Windows is compatible in size with wchar_t, so you can use L"format_string" to format it
+        // and pass char16_t string objects
+        lstringu<2> text;
+        text.format(L"{}{}", 'a', 'b');
+        EXPECT_EQ(text, u"ab");
+        text.format(L"{}{}", L"tested", text);
+        EXPECT_EQ(text, u"testedab");
+
+        lstringw<10> tew;
+        tew.format(L"-{}-", text);
+        EXPECT_EQ(tew, L"-testedab-");
+    }
+#else
+    {
+        // char32_t в Windows совместим по размеру с wchar_t, поэтому для его форматирования можно использовать
+        // L"format_string", и передавать char32_t строковые объекты
+        // char32_t on Windows is compatible in size with wchar_t, so you can use L"format_string" to format it
+        // and pass char32_t string objects
+        lstringuu<2> text;
+        text.format(L"{}{}", 'a', 'b');
+        EXPECT_EQ(text, U"ab");
+        text.format(L"{}{}", L"tested", text);
+        EXPECT_EQ(text, U"testedab");
+
+        lstringw<10> tew;
+        tew.format(L"-{}-", text);
+        EXPECT_EQ(tew, L"-testedab-");
+    }
+#endif
     {
         lstringa<40> text = "tested";
         text.format_from(4, "{}{}", 'a', 'b');
@@ -1704,6 +1738,10 @@ TEST(SimStr, StdStringExpr) {
         EXPECT_EQ(res, "test");
     }
     {
+        lstringa<20> res = +"test"s;
+        EXPECT_EQ(res, "test");
+    }
+    {
         lstringa<20> res = "test"s + eea;
         EXPECT_EQ(res, "test");
     }
@@ -1712,52 +1750,17 @@ TEST(SimStr, StdStringExpr) {
         EXPECT_EQ(res, "test");
     }
     {
+        lstringa<20> res = +"test"sv;
+        EXPECT_EQ(res, "test");
+    }
+    {
+        lstringu<20> res = +u"test"sv;
+        EXPECT_EQ(res, u"test");
+    }
+    {
         lstringa<20> res = "test"sv + eea;
         EXPECT_EQ(res, "test");
     }
-}
-
-static std::string checker_str = "str";
-static std::string_view checker_view;
-
-static std::string get_string_val();
-static std::string& get_string_ref(){return checker_str;}
-static const std::string get_string_cval();
-static const std::string& get_string_cref(){return checker_str;}
-
-template<typename K>
-requires requires{new simple_str<K>(std::string{""});}
-char check_lvalue_str();
-
-template<typename K>
-requires requires{new simple_str<K>(""s);}
-char check_lvalue_str();
-
-template<typename K>
-requires requires{new simple_str<K>(get_string_val());}
-char check_lvalue_str();
-
-template<typename K>
-requires requires{new simple_str<K>(get_string_cval());}
-char check_lvalue_str();
-
-template<typename K>
-requires requires{new simple_str<K>(checker_str);}
-int check_lvalue_str();
-
-template<typename K>
-requires requires{new simple_str<K>(std::string_view{""});}
-char check_lvalue_view();
-
-template<typename K>
-requires requires{new simple_str<K>(checker_view);}
-int check_lvalue_view();
-
-TEST(SimStr, InitFromLValueStdStrings) {
-    EXPECT_EQ(sizeof(check_lvalue_str<u8s>()), sizeof(int));
-    EXPECT_EQ(sizeof(check_lvalue_view<u8s>()), sizeof(int));
-    EXPECT_EQ(ssa(get_string_ref()), "str");
-    EXPECT_EQ(ssa(get_string_cref()), "str");
 }
 
 TEST(SimStr, HashStrMapAt) {
@@ -1773,6 +1776,7 @@ TEST(SimStr, ExprRepeat) {
     EXPECT_EQ(stringa{e_repeat("aa", 3)}, "aaaaaa");
     int t = 1;
     EXPECT_EQ(lstringa<40>{e_repeat("aa"_ss + t + "_", 3)}, "aa1_aa1_aa1_");
+    EXPECT_EQ(std::string{e_repeat("aa"_ss + t + "_", 3)}, "aa1_aa1_aa1_");
 }
 
 TEST(SimStr, Constexpr) {
@@ -1782,6 +1786,182 @@ TEST(SimStr, Constexpr) {
     static_assert(aa == "asd");
     static_assert(aa.length() == 3);
     constexpr stringa bb = "";
+    constexpr int k = "123"_ss.to_int<int>().value;
+    static_assert(k == 123);
+}
+
+TEST(SimStr, StrExpToStdString) {
+    std::basic_string<u8s, std::char_traits<u8s>, std::pmr::polymorphic_allocator<u8s>> test = "count = "_ss + 10 + " times";
+    EXPECT_EQ(test, "count = 10 times");
+
+    test = "aaa"_ss;
+    EXPECT_EQ(test, "aaa");
+    EXPECT_EQ("aaa"_ss.to_sv(), "aaa");
+
+    std::string auto_utf = e_utf<u8s>(u"Привет"_ss);
+    EXPECT_EQ(auto_utf, "Привет");
+    auto_utf = e_utf<u8s>(L"Досвидания"_ss);
+    EXPECT_EQ(auto_utf, "Досвидания");
+
+    std::string res = +"test "s + 10 + e_if(true, " times");
+    EXPECT_EQ(res, "test 10 times");
+
+    res = +"test "sv + 10 + e_if(true, " times");
+    EXPECT_EQ(res, "test 10 times");
+}
+std::string make_text(const std::string& text, int count, std::string_view what, std::string_view what_p = ""sv) {
+    return +text + " " + count + " " + e_choice(what_p.empty(), what + e_if(count > 1, "s"), e_choice(count > 1, +what_p, +what));
+}
+
+std::string make_answer(const std::string& text, int count, std::string_view what, std::string_view what_p = ""sv) {
+    return "Answer is: " + +text + " " + count + " " + e_choice(what_p.empty(), what + e_if(count > 1, "s"), e_choice(count > 1, +what_p, +what));
+}
+
+TEST(SimStr, StrPrintfU8) {
+    stringb tt = u8"asdf";
+    stringa tr = tt;
+    EXPECT_EQ(tr, "asdf");
+    tt = tr;
+    EXPECT_EQ(tt, u8"asdf");
+
+    lstringb<100> res;
+    res.printf(u8"asd %i", 10);
+    EXPECT_EQ(res, u8"asd 10");
+
+    std::u8string std_bstr = u8"def";
+    std::vector<ssa> ll = {"qwe", "rty"};
+
+    stringb bstring = eea + "abc" + u8"def" + 10 + e_spca<3>() + e_join(ll, "-");
+    EXPECT_EQ(bstring, u8"abcdef10   qwe-rty");
+
+    stringa check_choice = e_choice(true, eea + 10, u8"aaa");
+    EXPECT_EQ(check_choice, "10");
+
+    check_choice = e_choice(false, eea + 10, u8"aaa");
+    EXPECT_EQ(check_choice, "aaa");
+
+    check_choice = e_choice(true, "aaa", u8"aaa");
+    EXPECT_EQ(check_choice, "aaa");
+
+    check_choice = eea + e_if(true, u8"aaa");
+    EXPECT_EQ(check_choice, "aaa");
+
+    check_choice = eeb + e_if(true, "aaa");
+    EXPECT_EQ(check_choice, "aaa");
+    std::wstring wstr = L"test"sv +
+#if WIN32
+    u"test"_ss
+#else
+    U"test"_ss
+#endif
+    ;
+    EXPECT_EQ(wstr, L"testtest");
+
+    EXPECT_EQ(make_text("got"s, 10, "apple"sv), "got 10 apples");
+    EXPECT_EQ(make_answer("got"s, 10, "aloe"sv, "aloe"sv), "Answer is: got 10 aloe");
+}
+
+TEST(SimStr, ExprReal) {
+    stringa a = e_num<u8s>(1.1);
+    EXPECT_EQ(a, "1.1");
+
+    stringb b = e_num<ubs>(1.1);
+    EXPECT_EQ(b, u8"1.1");
+
+    stringuu uu = e_num<u32s>(1.1);
+    EXPECT_EQ(uu, U"1.1");
+
+    stringu u = e_num<u16s>(1.1);
+    EXPECT_EQ(u, u"1.1");
+
+    stringw w = e_num<uws>(1.1);
+    EXPECT_EQ(w, L"1.1");
+}
+
+TEST(SimStr, StrRepl) {
+    std::string r = e_repl("test"s, "t", "-t-");
+    EXPECT_EQ(r, "-t-es-t-");
+
+    r = e_repl("test"sv, "t", "-t-");
+    EXPECT_EQ(r, "-t-es-t-");
+
+    r = e_repl("test"sv, "t"s, "-t-");
+    EXPECT_EQ(r, "-t-es-t-");
+
+    r = e_repl("test"sv, "t", "-t-"sv);
+    EXPECT_EQ(r, "-t-es-t-");
+
+    r = e_repl("test"s, "t"sv, "-t-"s);
+    EXPECT_EQ(r, "-t-es-t-");
+
+    stringa a = e_repl("test"_ss, "t", "-t-");
+    EXPECT_EQ(a, "-t-es-t-");
+
+    a = e_repl("test"_ss, "t"_ss, "-t-");
+    EXPECT_EQ(a, "-t-es-t-");
+
+    a = e_repl("test"_ss, "t", "-t-"_ss);
+    EXPECT_EQ(a, "-t-es-t-");
+
+    a = e_repl("test"_ss, "t"_ss, "-t-"_ss);
+    EXPECT_EQ(a, "-t-es-t-");
+}
+
+TEST(SimStr, HexEpr) {
+    stringa hexa = expr_hex<u8s, unsigned, true, true, true>{0xabcd0102};
+    EXPECT_EQ(hexa, "0xABCD0102");
+
+    stringu hexu = expr_hex<u16s, unsigned, true, true, true>{0xabcd0102};
+    EXPECT_EQ(hexu, u"0xABCD0102");
+
+    stringuu hexuu = expr_hex<u32s, unsigned, true, true, true>{0xabcd0102};
+    EXPECT_EQ(hexuu, U"0xABCD0102");
+
+    stringb hexb = expr_hex<ubs, unsigned, true, true, true>{0xcd0102};
+    EXPECT_EQ(hexb, u8"0x00CD0102");
+
+    hexa = expr_hex<u8s, uint64_t, true, false, false>{0xabcd0102};
+    EXPECT_EQ(hexa, "00000000abcd0102");
+
+    hexa = expr_hex<u8s, uint32_t, false, false, false>{0};
+    EXPECT_EQ(hexa, "0");
+    hexa = expr_hex<u8s, uint32_t, false, false, true>{0};
+    EXPECT_EQ(hexa, "0x0");
+    hexa = expr_hex<u8s, uint32_t, true, false, true>{0};
+    EXPECT_EQ(hexa, "0x00000000");
+
+    std::string text = +"val = "sv + e_hex(10u);
+    EXPECT_EQ(text, "val = 0x0000000A");
+
+    stringu textu = u"val = 0X"_ss + e_hex<HexFlags::No0x | HexFlags::Short | HexFlags::Lcase>(0x12Au);
+    EXPECT_EQ(textu, u"val = 0X12a");
+
+    std::u32string textuu = +U"val = 0X"sv + e_hex<HexFlags::No0x | HexFlags::Short>(0x12Au);
+    EXPECT_EQ(textuu, U"val = 0X12A");
+
+    text = +"ptr = "sv + (const void*)0xdeadbeefcafe01;
+    EXPECT_EQ(text, "ptr = 0x00DEADBEEFCAFE01");
+
+    const char* ptr = (const char*)0xdeadbeefcafe01;
+    std::u16string utext = ptr + +u" freed"sv;
+    EXPECT_EQ(utext, u"0x00DEADBEEFCAFE01 freed");
+}
+
+TEST(SimStr, EFill) {
+    int k = 10;
+    stringa test = "<" + e_fill_left("t="_ss + k, 10, '_');
+    EXPECT_EQ(test, "<______t=10");
+    test = e_fill_right("t="_ss + k, 10, '_') + ">";
+    EXPECT_EQ(test, "t=10______>");
 }
 
 } // namespace simstr::tests
+
+TEST(SimStr, StrNoNamespace) {
+    std::string str = "test";
+    std::string test = +str + " = " + 10;
+    EXPECT_EQ(test, "test = 10");
+
+    std::u16string textu = +u"val = 0X"sv + simstr::e_hex<simstr::HexFlags::No0x | simstr::HexFlags::Short | simstr::HexFlags::Lcase>(0x12Au);
+    EXPECT_EQ(textu, u"val = 0X12a");
+}

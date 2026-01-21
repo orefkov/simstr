@@ -188,12 +188,15 @@ there was std::string_view. However, now the minimum standard version for the li
 First, I will talk about the library classes for the strings themselves, and then about how the string concatenation problem is optimally solved in it.
 
 Several general points:
-- All classes for working with strings are templated by the type of characters, but it is assumed that the characters can be char, char16_t,
-  char32_t, wchar_t.
+- All classes for working with strings are templated by the type of characters, but it is assumed that the characters can be `char`, `char8_t`, `char16_t`,
+  `char32_t`, `wchar_t`.
 - All strings have an explicit length.
 - The string owner classes store them with a trailing zero at the end, which is not included in the length of the string.
 - The string itself can contain zero characters, all algorithms work only through the length of the string, without paying attention to them.
+- The library considers different string types to be "compatible" if they have the same character size.
+  That is, `char` and `char8_t` are always identical, and also in Linux `wchar_t` and `char32_t` are identical, and in Windows `wchar_t` and `char16_t`.
 - The string owner classes can be initialized with strings of another character type, performing conversion between UTF-8, UTF-16, UTF-32.
+  Moreover, if the strings are of different but compatible types, they are simply copied without conversion.
 - Built-in tables for the first plane of Unicode are used to change the case of characters and compare strings case-insensitively
   (up to 0xFFFF). Strings are considered to be represented in UTF-8, UTF-16, UTF-32 encoding, respectively.
   However, string normalization is not done and situations where changing the case of a character leads to a change in their number are not handled.
@@ -214,6 +217,7 @@ Implements all string methods that do not modify the string.
 
 Aliases:
 - `ssa` for simple_str\<char\>
+- `ssb` for simple_str\<char8_t\>
 - `ssu` for simple_str\<char16_t\>
 - `ssw` for simple_str\<wchar_t>
 - `ssuu` for simple_str\<char32_t\>
@@ -232,6 +236,7 @@ This allows you to write functions with a single parameter type that accepts any
 
 Aliases:
 - `stra` for simple_str_nt\<char>
+- `strb` for simple_str_nt\<char8_t>
 - `stru` for simple_str_nt\<char16_t>
 - `strw` for simple_str_nt\<wchar_t>
 - `struu` for simple_str_nt\<char32_t>
@@ -258,6 +263,7 @@ Like `simple_str`, it implements all methods that do not modify the string.
 
 Aliases:
 - `stringa` for sstring\<char>
+- `stringb` for sstring\<char8_t>
 - `stringu` for sstring\<char16_t>
 - `stringw` for sstring\<wchar_t>
 - `stringuu` for sstring\<char32_t>
@@ -309,15 +315,16 @@ Usually we assume the approximate size of the strings we will be working with, a
 and work with it. At the same time, without fear of buffer overflow, since in this case the string will switch to a dynamic buffer.
 
 Aliases:
-- `lstringa<N=16>` for lsrting\<char, N, false>
-- `lstringu<N=16>` for lsrting\<char16_t, N, false>
-- `lstringw<N=16>` for lsrting\<wchar_t, N, false>
-- `lstringuu<N=16>` for lsrting\<char32_t, N, false>
-- `lstringsa<N=16>` for lsrting\<char, N, true>
-- `lstringsu<N=16>` for lsrting\<char16_t, N, true>
-- `lstringsw<N=16>` for lsrting\<wchar_t, N, true>
-- `lstringsuu<N=16>` for lsrting\<char32_t, N, true>
-
+- `lstringa<N=15>` for lsrting\<char, N, false>
+- `lstringb<N=15>` for lsrting\<char8_t, N, false>
+- `lstringu<N=15>` for lsrting\<char16_t, N, false>
+- `lstringw<N=15>` for lsrting\<wchar_t, N, false>
+- `lstringuu<N=15>` for lsrting\<char32_t, N, false>
+- `lstringsa<N=15>` for lsrting\<char, N, true>
+- `lstringsb<N=15>` for lsrting\<char8_t, N, true>
+- `lstringsu<N=15>` for lsrting\<char16_t, N, true>
+- `lstringsw<N=15>` for lsrting\<wchar_t, N, true>
+- `lstringsuu<N=15>` for lsrting\<char32_t, N, true>
 
 A small example of use with explanations:
 ```cpp
@@ -419,6 +426,12 @@ The `length` function returns the length of the string, and the `place` function
 Any owning string (simstr::sstring, simstr::lstring) can be initialized with a string expression — it requests its length,
 allocates space for storing characters, and passes this space to the string expression, calling its place function.
 
+In addition, all string expressions included in `simstr` can be converted to standard strings (`std::basic_string`)
+compatible character types, which allows you to use fast concatenation where replacing `std::string` is not yet possible.
+Compatible character types are those that match in size.
+To get a standard string before C++23, using `resize`, and then fill it using `data()`, starting with C++23
+the more optimal `resize_and_overwrite` is used.
+
 A template addition function is defined for string expressions:
 ```cpp
     template<StrExpr A, StrExprForType<typename A::symb_type> B>
@@ -449,6 +462,10 @@ string expression, you can reapply `operator +`, forming a chain of several stri
 and eventually "materialize" the last resulting object, which first calculates the size of the entire total memory for
 the final result, and then places the nested subexpressions into one buffer.
 
+The addition operation of string expressions allows you to concatenate string expressions of different but compatible types.
+That is, in one expression you can mix `""` and `u8""`, in Linux `L""` and `U""`, in Windows `L""` and `u""`
+character types. There are examples in `tests\test_str.cpp TEST(SimStr, StrPrintfU8)`.
+
 All string types in the library are themselves string expressions, that is, they can serve as terms in concatenations
 of string expressions.
 
@@ -459,6 +476,27 @@ Example:
 ```cpp
 	stringa text = header + " count=" + count + ", done";
 ```
+
+For standard strings (`std::basic_string` and `std::basic_string_view`) addition operators with strings have also been made
+expressions, so variables of these types also directly participate in concatenation operations.
+However, standard strings can only participate directly in string expressions when
+the other operand is also a string expression. If the other operand is not a string expression,
+use a unary `operator+` before standard strings to turn `std::basic_string` or `std::basic_string_view`
+to a string expression.
+
+Example:
+```cpp
+std::string make_text(const std::string& text, std::string_view what, int count) {
+    //     + turns text into a string expression, and then they are added together
+    return +text + " " + count + " " + what + e_if(count > 1, "s");
+    //                                 what participates directly as an operand with a string expression
+}
+std::string make_answer(const std::string& text, std::string_view what, int count) {
+    return "Answer is: " + +text + " " + count + " " + what + e_if(count > 1, "s");
+    //                     + turns text into a string expression, and it can be added to the previous string literal
+}
+```
+That is, the unary `+` is only needed somewhere at the beginning of the expression if the other operand is not a string expression.
 
 There are several types of string expressions "out of the box" for performing various operations on strings:
 
