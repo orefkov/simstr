@@ -1540,23 +1540,20 @@ constexpr expr_num<K, T> e_num(T t) {
 template<typename K>
 struct expr_real : expr_to_std_string<expr_real<K>> {
     using symb_type = K;
-    mutable std::conditional_t<is_one_of_std_char_v<K>, K, u8s> buf[40];
+    mutable u8s buf[40];
     mutable size_t l;
     double v;
     constexpr expr_real(double d) : v(d) {}
     constexpr expr_real(float d) : v(d) {}
 
     size_t length() const noexcept {
-        if constexpr (sizeof(buf[0]) == 1) {
-            l = std::snprintf(to_one_of_std_char(buf), std::size(buf), "%.16g", v);
-        } else {
-            l = std::swprintf(to_one_of_std_char(buf), std::size(buf), L"%.16g", v);
-        }
+        auto [ptr, ec] = std::to_chars(buf, buf + std::size(buf), v);
+        l = ec != std::errc{} ? 0 : ptr - buf;
         return l;
     }
     K* place(K* ptr) const noexcept {
         if constexpr (sizeof(K) == sizeof(buf[0])) {
-            ch_traits<K>::copy(ptr, buf, l);
+            ch_traits<K>::copy(ptr, (K*)buf, l);
         } else {
             for (size_t i = 0; i < l; i++) {
                 ptr[i] = buf[i];
@@ -1579,8 +1576,8 @@ struct expr_real : expr_to_std_string<expr_real<K>> {
  */
 template<StrExpr A, typename R>
     requires(std::is_same_v<R, double> || std::is_same_v<R, float>)
-inline constexpr auto operator+(const A& a, R s) {
-    return strexprjoin_c<A, expr_real<typename A::symb_type>>{a, s};
+inline constexpr strexprjoin_c<A, expr_real<typename A::symb_type>> operator+(const A& a, R s) {
+    return {a, s};
 }
 
 /*!
@@ -1596,8 +1593,8 @@ inline constexpr auto operator+(const A& a, R s) {
  */
 template<StrExpr A, typename R>
     requires(std::is_same_v<R, double> || std::is_same_v<R, float>)
-inline constexpr auto operator+(R s, const A& a) {
-    return strexprjoin_c<A, expr_real<typename A::symb_type>, false>{a, s};
+inline constexpr strexprjoin_c<A, expr_real<typename A::symb_type>, false> operator+(R s, const A& a) {
+    return {a, s};
 }
 
 /*!
@@ -1612,8 +1609,8 @@ inline constexpr auto operator+(R s, const A& a) {
  * using `sprintf("%.16g")`. Can be used when you need to concatenate a number and a string literal.
  */
 template<typename K> requires is_one_of_char_v<K>
-inline constexpr auto e_num(double t) {
-    return expr_real<K>{t};
+inline constexpr expr_real<K> e_num(double t) {
+    return {t};
 }
 
 template<typename K, bool Ucase>
@@ -1703,7 +1700,7 @@ enum HexFlags : unsigned {
  */
 template<unsigned Flags = 0, FromIntNumber T> requires std::is_unsigned_v<T>
 constexpr auto e_hex(T v) {
-    return expr_hex_src<T, Flags & HexFlags::Short ? false : true, Flags & HexFlags::Lcase ? false : true, Flags & HexFlags::No0x ? false : true>{v};
+    return expr_hex_src<T, (Flags & HexFlags::Short) == 0, (Flags & HexFlags::Lcase) == 0, (Flags & HexFlags::No0x) == 0>{v};
 }
 
 /*!
