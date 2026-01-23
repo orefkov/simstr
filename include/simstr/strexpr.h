@@ -5109,6 +5109,192 @@ protected:
     }
 };
 
+/*!
+ * @ru @brief Небольшое пространство для методов работы со стандартными строками.
+ * @en @brief Small namespace for standard string methods.
+ */
+namespace str {
+
+/*!
+ * @ru @brief Изменить часть стандартной строки на заданное строковое выражение.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param from - начальная позиция замены.
+ * @param count - количество символов, подлежащих замене.
+ * @param expr - строковое выражение для замены.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, при необходимости увеличивает размер строки,
+ *  и материализует строковое выражение на нужное место, без использования промежуточных буферов.
+ *  При увеличении размера строки - до C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief Replace a portion of a standard string with the given string expression.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param from - starting position of replacement.
+ * @param count - number of characters to replace.
+ * @param expr - string expression to replace.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the passed string.
+ * @details The method gets the length of the string expression, increases the string size if necessary,
+ *  and materializes the string expression at the desired location, without using intermediate buffers.
+ *  When increasing the string size, resize is used before C++23; resize_and_overwrite is used starting with C++23.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& change(std::basic_string<K, std::char_traits<K>, A>& str, size_t from, size_t count, const E& expr) {
+    size_t expr_length = expr.length();
+    if (!expr_length) {
+        str.erase(from, count);
+        return str;
+    }
+    size_t str_length = str.length();
+    if (from > str_length) {
+        from = str_length;
+    }
+    if (from + count > str_length) {
+        count = str_length - from;
+    }
+    size_t new_length = str_length - count + expr_length;
+    size_t tail_length = str_length - count - from;
+
+    if (new_length <= str_length) {
+        K* data = str.data();
+        expr.place((typename E::symb_type*)data + from);
+        if (expr_length < count) {
+            if (tail_length) {
+                std::char_traits<K>::move(data + from + expr_length, data + from + count, tail_length);
+            }
+            str.resize(new_length);
+        }
+    } else {
+        auto fill = [&](K* data, size_t) -> size_t {
+            if (tail_length) {
+                std::char_traits<K>::move(data + from + expr_length, data + from + count, tail_length);
+            }
+            expr.place((typename E::symb_type*)data + from);
+            return new_length;
+        };
+        if constexpr (requires{str.resize_and_overwrite(new_length, fill);}) {
+            str.resize_and_overwrite(new_length, fill);
+        } else if constexpr (requires{str._Resize_and_overwrite(new_length, fill);}) {
+            str._Resize_and_overwrite(new_length, fill);
+        } else {
+            str.resize(new_length);
+            fill(str.data(), 0);
+        }
+    }
+    return str;
+}
+/*!
+ * @ru @brief Добавить к стандартной строке строковое выражение.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param expr - строковое выражение для вставки.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, увеличивает размер строки,
+ *  и материализует строковое выражение за концом строки, без использования промежуточных буферов.
+ *  До C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief Append a string expression to a standard string.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the passed string.
+ * @details The method gets the length of the string expression, increases the size of the string,
+ *  and materializes the string expression beyond the end of the string, without using intermediate buffers.
+ *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, simstr::StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& append(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
+    return change(str, str.length(), 0, expr);
+}
+
+/*!
+ * @ru @brief Вставить строковое выражение в начало стандартной строки.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param expr - строковое выражение для вставки.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, увеличивает размер строки, сдвигает её содержимое
+ *  и материализует строковое выражение в её начало, без использования промежуточных буферов.
+ *  До C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief Insert a string expression at the beginning of a standard string.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the passed string.
+ * @details The method gets the length of the string expression, increases the size of the string, shifts its contents
+ *  and materializes the string expression at the beginning of the string, without using intermediate buffers.
+ *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, simstr::StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& prepend(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
+    return change(str, 0, 0, expr);
+}
+
+/*!
+ * @ru @brief Вставить строковое выражение в указанную позицию стандартной строки.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param from - позиция вставки.
+ * @param expr - строковое выражение для вставки.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, увеличивает размер строки, сдвигает её содержимое
+ *  и материализует строковое выражение на нужное место, без использования промежуточных буферов.
+ *  До C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief Insert a string expression at the specified position in a standard string.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param from - insertion position.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - a reference to the passed string.
+ * @details The method gets the length of the string expression, increases the size of the string, shifts its contents
+ * and materializes the string expression to the desired location, without using intermediate buffers.
+ * Before C++23, resize was used; since C++23, resize_and_overwrite was used.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, simstr::StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& insert(std::basic_string<K, std::char_traits<K>, A>& str, size_t from, const E& expr) {
+    return change(str, from, 0, expr);
+}
+
+} // namespace str
+
 } // namespace simstr
 
 namespace std {
@@ -5134,6 +5320,72 @@ namespace std {
 template<simstr::StdStrSource T>
 simstr::expr_stdstr<typename T::value_type, T> operator+(const T& str) {
     return {str};
+}
+
+/*!
+ * @brief Оператор для добавления строкового выражения к стандартной строке.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param expr - строковое выражение для добавления.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, увеличивает размер строки,
+ *  и материализует строковое выражение за концом строки, без использования промежуточных буферов.
+ *  До C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief An operator for appending a string expression to a standard string.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the passed string.
+ * @details The method gets the length of the string expression, increases the size of the string,
+ *  and materializes the string expression beyond the end of the string, without using intermediate buffers.
+ *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, simstr::StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& operator |=(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
+    return simstr::str::change(str, str.length(), 0, expr);
+}
+
+/*!
+ * @ru @brief Оператор для вставки строкового выражения в начало стандартной строки.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param expr - строковое выражение для вставки.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод получает у строкового выражения его длину, увеличивает размер строки, сдвигает её содержимое
+ *  и материализует строковое выражение в её начало, без использования промежуточных буферов.
+ *  До C++23 используется resize, начиная с C++23 - resize_and_overwrite.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief An operator for inserting a string expression at the beginning of a standard string.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the passed string.
+ * @details The method gets the length of the string expression, increases the size of the string, shifts its contents
+ *  and materializes the string expression at the beginning of the string, without using intermediate buffers.
+ *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, simstr::StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& operator ^=(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
+    return simstr::str::change(str, 0, 0, expr);
 }
 
 } // namespace std

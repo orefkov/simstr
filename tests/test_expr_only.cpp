@@ -236,4 +236,27 @@ TEST(StrExpr, StdToSimplestr) {
     EXPECT_EQ(fnd, 2);
 }
 
+TEST(StrExpr, StrChange) {
+    {
+        std::string str = "test";
+        EXPECT_EQ(str::change(str, 1, 2, "new val"_ss + 10), "tnew val10t");
+    }
+    {
+        std::string str = "test";
+        EXPECT_EQ(str::change(str, 0, 0, "new val"_ss + 10), "new val10test");
+    }
+    {
+        std::string str = "test";
+        EXPECT_EQ(str::change(str, 100, 100, u8"new val"_ss + 10), "testnew val10");
+    }
+    {
+        std::string str = "test";
+        EXPECT_EQ(str |= u8"new val"_ss + 10, "testnew val10");
+    }
+    {
+        std::string str = "test";
+        EXPECT_EQ(str ^= u8"new val"_ss + 10, "new val10test");
+    }
+}
+
 } // namespace simstr::tests
