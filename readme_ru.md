@@ -289,7 +289,27 @@ int split_and_calc_total_sim(ssa numbers, ssa delimiter) {
 можно просто включить файлы в свой проект. Для сборки также требуется [simdutf](https://github.com/simdutf/simdutf) (при использовании CMake
 скачивается автоматически).
 
-Библиотека включена в [vcpkg](https://vcpkg.io), подключается как `orefkov-simstr`.
+### Подключение через FetchContent
+```
+function(add_simstr)
+    set(SIMSTR_BUILD_TESTS OFF)
+    set(SIMSTR_BENCHMARKS OFF)
+    FetchContent_Declare(
+        simstr
+        GIT_REPOSITORY https://github.com/orefkov/simstr.git
+        GIT_SHALLOW TRUE
+        GIT_TAG tags/rel1.4.0 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.4.0
+    )
+    FetchContent_MakeAvailable(simstr)
+endfunction()
+
+add_simstr()
+
+target_link_libraries(<your target> PUBLIC simstr::simstr)
+```
+
+Библиотека также включена в [vcpkg](https://vcpkg.io), подключается как `orefkov-simstr`.
 
 Для работы `simstr` требуется компилятор стандарта не ниже С++20 - используются концепты и std::format.
 Работа проверялась под Windows на MSVC-19 и Clang-19, под Linux - на GCC-13 и Clang-21.

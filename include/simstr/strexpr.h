@@ -1402,10 +1402,8 @@ concept ToIntNumber = FromIntNumber<T> || is_one_of_type<T, int8_t>::value;
 template<typename K, bool I, typename T>
 struct need_sign { // NOLINT
     bool negate;
-    need_sign(T& t) : negate(t < 0) {
-        if (negate && t != std::numeric_limits<T>::min())
-            t = -t;
-    }
+    std::make_unsigned_t<T> val;
+    need_sign(T t) : negate(t < 0), val(t < 0 ? std::make_unsigned_t<T>{} - t : t) {}
     void after(K*& ptr) {
         if (negate)
             *--ptr = '-';
@@ -1414,7 +1412,8 @@ struct need_sign { // NOLINT
 
 template<typename K, typename T>
 struct need_sign<K, false, T> {
-    need_sign(T&) {}
+    T val;
+    need_sign(T t) : val(t){}
     void after(K*&) {}
 };
 
@@ -1427,35 +1426,22 @@ constexpr size_t fromInt(K* bufEnd, T val) {
         "6061626364656667686970717273747576777879"
         "8081828384858687888990919293949596979899";
     if (val) {
-        need_sign<K, std::is_signed_v<T>, T> sign(val);
+        need_sign<K, std::is_signed_v<T>, T> store(val);
         K* itr = bufEnd;
-        // Когда у нас минимальное отрицательное число, оно не меняется и остается меньше нуля
-        // When we have a minimum negative number, it does not change and remains less than zero
-        if constexpr (std::is_signed_v<T>) {
-            if (val < 0) {
-                // Возьмем две последние цифры
-                // Take the last two digits
-                const char* ptr = twoDigit - (val % 100) * 2;
-                *--itr = static_cast<K>(ptr[1]);
-                *--itr = static_cast<K>(ptr[0]);
-                val /= 100;
-                val = -val;
-            }
-        }
-        while (val >= 100) {
-            const char* ptr = twoDigit + (val % 100) * 2;
+        while (store.val >= 100) {
+            const char* ptr = twoDigit + (store.val % 100) * 2;
             *--itr = static_cast<K>(ptr[1]);
             *--itr = static_cast<K>(ptr[0]);
-            val /= 100;
+            store.val /= 100;
         }
-        if (val < 10) {
-            *--itr = static_cast<K>('0' + val);
+        if (store.val < 10) {
+            *--itr = static_cast<K>('0' + store.val);
         } else {
-            const char* ptr = twoDigit + val * 2;
+            const char* ptr = twoDigit + store.val * 2;
             *--itr = static_cast<K>(ptr[1]);
             *--itr = static_cast<K>(ptr[0]);
         }
-        sign.after(itr);
+        store.after(itr);
         return size_t(bufEnd - itr);
     }
     bufEnd[-1] = '0';

@@ -288,7 +288,27 @@ You can connect as a CMake project via `add_subdirectory` (the `simstr` library)
 you can simply include the files in your project. Building also requires [simdutf](https://github.com/simdutf/simdutf) (when using CMake
 it is downloaded automatically).
 
-The library is included in [vcpkg](https://vcpkg.io), connected as `orefkov-simstr`.
+### Using FetchContent
+```
+function(add_simstr)
+    set(SIMSTR_BUILD_TESTS OFF)
+    set(SIMSTR_BENCHMARKS OFF)
+    FetchContent_Declare(
+        simstr
+        GIT_REPOSITORY https://github.com/orefkov/simstr.git
+        GIT_SHALLOW TRUE
+        GIT_TAG tags/rel1.4.0 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.4.0
+    )
+    FetchContent_MakeAvailable(simstr)
+endfunction()
+
+add_simstr()
+
+target_link_libraries(<your target> PUBLIC simstr::simstr)
+```
+
+The library is also included in [vcpkg](https://vcpkg.io), connected as `orefkov-simstr`.
 
 `simstr` requires a compiler of at least the C++20 standard - concepts and std::format are used.
 The work was tested under Windows on MSVC-19 and Clang-19, under Linux - on GCC-13 and Clang-21.
