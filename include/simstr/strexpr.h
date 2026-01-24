@@ -191,6 +191,11 @@ struct const_lit<const T(&)[N]> {
     constexpr static size_t Count = N;
 };
 
+template<typename T>
+concept is_const_lit_v = requires {
+    typename const_lit<T>::symb_type;
+};
+
 // Тут ещё дополнительно ограничиваем тип литерала
 // Here we further restrict the type of the literal
 template<typename K, typename T> struct const_lit_for;
@@ -1604,48 +1609,59 @@ constexpr K hex_symbols[16] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K
     K('7'), K('8'), K('9'), K(Ucase ? 'A' : 'a'), K(Ucase ? 'B' : 'b'), K(Ucase ? 'C' : 'c'),
     K(Ucase ? 'D' : 'd'), K(Ucase ? 'E' : 'e'), K(Ucase ? 'F' : 'f')};
 
-template<typename K, typename Val, bool All, bool Ucase, bool Ox>
-requires std::is_unsigned_v<Val>
+template<typename K, FromIntNumber Val, bool All, bool Ucase, bool Ox>
 struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
     using symb_type = K;
-    mutable Val v_;
+    mutable need_sign<K, std::is_signed_v<Val>, Val> v_;
     mutable K buf_[sizeof(Val) * 2];
 
     explicit constexpr expr_hex(Val v) : v_(v){}
 
     constexpr size_t length() const noexcept {
-        K* ptr = buf_ + sizeof(Val) * 2;
-        Val value = v_;
+        K *ptr = buf_ + std::size(buf_);
         size_t l = 0;
         for (;;) {
-            *--ptr = hex_symbols<K, Ucase>[value & 0xF];
-            value >>= 4;
+            *--ptr = hex_symbols<K, Ucase>[v_.val & 0xF];
+            v_.val >>= 4;
             l++;
-            if (value) {
-                *--ptr = hex_symbols<K, Ucase>[value & 0xF];
-                value >>= 4;
+            if (v_.val) {
+                *--ptr = hex_symbols<K, Ucase>[v_.val & 0xF];
+                v_.val >>= 4;
                 l++;
             }
-            if (!value) {
+            if (!v_.val) {
                 if constexpr (All) {
                     if (size_t need = sizeof(Val) * 2 - l) {
                         ch_traits<K>::assign(buf_, need, K('0'));
-                        l = sizeof(Val) * 2;
                     }
+                    l = sizeof(Val) * 2;
                 }
                 break;
             }
         }
-        v_ = (Val)l;
+        v_.val = l;
+        if constexpr (std::is_signed_v<Val>) {
+            return l + (Ox ? 2 : 0) + (v_.negate ? 1 : 0);
+        }
         return l + (Ox ? 2 : 0);
     }
     constexpr K* place(K* ptr) const noexcept {
+        if constexpr (std::is_signed_v<Val>) {
+            if (v_.negate) {
+                *ptr++ = K('-');
+            }
+        }
         if constexpr (Ox) {
             *ptr++ = K('0');
             *ptr++ = K('x');
         }
-        ch_traits<K>::copy(ptr, buf_ + sizeof(Val) * 2 - v_, v_);
-        return ptr + v_;
+        if constexpr (All) {
+            ch_traits<K>::copy(ptr, buf_, sizeof(Val) * 2);
+            return ptr + sizeof(Val) * 2;
+        } else {
+            ch_traits<K>::copy(ptr, buf_ + std::size(buf_) - v_.val, v_.val);
+            return ptr + v_.val;
+        }
     }
 };
 
@@ -1684,7 +1700,7 @@ enum HexFlags : unsigned {
  *    EXPECT_EQ(textu, u"val = 0X12a");
  * ```
  */
-template<unsigned Flags = 0, FromIntNumber T> requires std::is_unsigned_v<T>
+template<unsigned Flags = 0, FromIntNumber T>
 constexpr auto e_hex(T v) {
     return expr_hex_src<T, (Flags & HexFlags::Short) == 0, (Flags & HexFlags::Lcase) == 0, (Flags & HexFlags::No0x) == 0>{v};
 }
@@ -4476,15 +4492,17 @@ constexpr auto e_repl(A&& w, T&& p, X&& r) {
  *      stringa result = "<header>" + expr_replaced<u8s>{source, pattern, repl} + "</header>";
  * ```
  */
-template<typename K>
+template<typename K, typename E = int>
 struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
     using symb_type = K;
     using my_type = expr_replaced<K>;
     str_src<K> what;
     const str_src<K> pattern;
-    const str_src<K> repl;
+    mutable K* replStart;
+    mutable size_t replLen;
     mutable find_all_container<FIND_CACHE_SIZE> matches_;
     mutable size_t last_;
+    const E& expr;
     /*!
      * @ru @brief Конструктор.
      * @param w - исходная строка.
@@ -4495,18 +4513,20 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
      * @param p - the searched substring.
      * @param r - replacement string.
      */
-    constexpr expr_replaced(str_src<K> w, str_src<K> p, str_src<K> r) : what(w), pattern(p), repl(r) {}
+    constexpr expr_replaced(str_src<K> w, str_src<K> p, const K* r, size_t rl, const E& e) : what(w), pattern(p), replStart(const_cast<K*>(r)), replLen(rl), expr(e) {}
 
     constexpr size_t length() const {
-        size_t l = what.length(), plen = pattern.length(), rlen = repl.length();
-
-        if (!plen || plen == rlen) {
+        size_t l = what.length(), plen = pattern.length();
+        if constexpr (!std::is_same_v<E, int>) {
+            replLen = expr.length();
+        }
+        if (!plen || plen == replLen) {
             return l;
         }
         what.find_all_to(matches_, pattern.symbols(), plen, 0, FIND_CACHE_SIZE);
         if (matches_.added_) {
             last_ = matches_.positions_[matches_.added_ - 1] + plen;
-            l += int(rlen - plen) * matches_.added_;
+            l += int(replLen - plen) * matches_.added_;
 
             if (matches_.added_ == FIND_CACHE_SIZE) {
                 for (;;) {
@@ -4515,7 +4535,7 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
                         break;
                     }
                     last_ = next + plen;
-                    l += rlen - plen;
+                    l += replLen - plen;
                 }
             }
         }
@@ -4525,8 +4545,8 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
         return l;
     }
     constexpr K* place(K* ptr) const noexcept {
-        size_t plen = pattern.length(), rlen = repl.length();
-        if (plen == rlen) {
+        size_t plen = pattern.length();
+        if (plen == replLen) {
             const K* from = what.symbols();
             for (size_t start = 0; start < what.length();) {
                 size_t next = what.find(pattern, start);
@@ -4536,8 +4556,17 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
                 size_t delta = next - start;
                 ch_traits<K>::copy(ptr,  from + start, delta);
                 ptr += delta;
-                ch_traits<K>::copy(ptr, repl.symbols(), rlen);
-                ptr += rlen;
+                if constexpr (std::is_same_v<E, int>) {
+                    ch_traits<K>::copy(ptr, replStart, replLen);
+                } else {
+                    if (!replStart) {
+                        replStart = ptr;
+                        expr.place(replStart);
+                    } else {
+                        ch_traits<K>::copy(ptr, replStart, replLen);
+                    }
+                }
+                ptr += replLen;
                 start = next + plen;
             }
             return ptr;
@@ -4552,8 +4581,17 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
         for (size_t start = 0, offset = matches_.positions_[0], idx = 1; ;) {
             ch_traits<K>::copy(ptr, from + start, offset - start);
             ptr += offset - start;
-            ch_traits<K>::copy(ptr, repl.symbols(), rlen);
-            ptr += rlen;
+            if constexpr (std::is_same_v<E, int>) {
+                ch_traits<K>::copy(ptr, replStart, replLen);
+            } else {
+                if (!replStart) {
+                    replStart = ptr;
+                    expr.place(replStart);
+                } else {
+                    ch_traits<K>::copy(ptr, replStart, replLen);
+                }
+            }
+            ptr += replLen;
             start = offset + plen;
             if (start >= last_) {
                 size_t tail = what.length() - last_;
@@ -4573,18 +4611,20 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
  * @ru @brief Получить строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
  * @tparam K - тип символа, выводится из первого аргумента.
  * @param w - начальная строка.
- * @param p - строковый литерал, искомая подстрока.
- * @param r - строковый объект, может быть рантайм.
+ * @param p - строковый объект, искомая подстрока, может быть рантайм.
+ * @param r - строковый объект, на что заменять, может быть рантайм.
  * @en @brief Get a string expression that generates a string with all occurrences of a given substring replaced.
  * @tparam K - the type of the symbol, inferred from the first argument.
  * @param w - starting string.
- * @param p - string literal, searched substring.
- * @param r - string object, maybe runtime.
+ * @param p - string object, searched substring, maybe runtime.
+ * @param r - string object, replace substring, maybe runtime.
  */
-template<StrSource A, typename K = src_str_t<A>, typename T, size_t N = const_lit_for<K, T>::Count, StrSource X>
-    requires std::is_same_v<K, src_str_t<X>>
+template<StrSource A, typename K = src_str_t<A>, typename T, typename X>
+    requires (std::is_constructible_v<str_src<K>, T> && std::is_constructible_v<str_src<K>, X> && (!is_const_lit_v<T> || !is_const_lit_v<X>))
 constexpr auto e_repl(A&& w, T&& p, X&& r) {
-    return expr_replaced<K>{get_str_src_from(std::forward<A>(w)), p, get_str_src_from(std::forward<X>(r))};
+    str_src<K> pattern{std::forward<T>(p)};
+    str_src<K> repl{std::forward<X>(r)};
+    return expr_replaced<K, int>{get_str_src_from(std::forward<A>(w)), pattern, repl.str, repl.len, 0};
 }
 
 /*!
@@ -4592,37 +4632,19 @@ constexpr auto e_repl(A&& w, T&& p, X&& r) {
  * @ru @brief Получить строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
  * @tparam K - тип символа, выводится из первого аргумента.
  * @param w - начальная строка.
- * @param p - строковый объект, может быть рантайм.
- * @param r - строковый литерал, на что заменять.
+ * @param p - строковый объект, искомая подстрока, может быть рантайм.
+ * @param expr - строковое выражение, на что заменять.
  * @en @brief Get a string expression that generates a string with all occurrences of a given substring replaced.
  * @tparam K - the type of the symbol, inferred from the first argument.
  * @param w - starting string.
- * @param p - string object, maybe runtime.
- * @param r - string literal, what to replace with.
+ * @param p - string object, searched substring, maybe runtime.
+ * @param expr - string expression, what to replace with.
  */
-template<StrSource A, typename K = src_str_t<A>, StrSource T, typename X, size_t L = const_lit_for<K, X>::Count>
-    requires std::is_same_v<K, src_str_t<T>>
-constexpr auto e_repl(A&& w, T&& p, X&& r) {
-    return expr_replaced<K>{get_str_src_from(std::forward<A>(w)), get_str_src_from(std::forward<T>(p)), r};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Получить строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
- * @tparam K - тип символа, выводится из первого аргумента.
- * @param w - начальная строка.
- * @param p - строковый объект, может быть рантайм.
- * @param r - строковый объект, может быть рантайм.
- * @en @brief Get a string expression that generates a string with all occurrences of a given substring replaced.
- * @tparam K - the type of the symbol, inferred from the first argument.
- * @param w - starting string.
- * @param p - string object, maybe runtime.
- * @param r - string object, maybe runtime.
- */
-template<StrSource A, typename K = src_str_t<A>, StrSource T, StrSource X>
-    requires (std::is_same_v<K, src_str_t<T>> && std::is_same_v<K, src_str_t<X>>)
-constexpr auto e_repl(A&& w, T&& p, X&& r) {
-    return expr_replaced<K>{get_str_src_from(std::forward<A>(w)), get_str_src_from(std::forward<T>(p)), get_str_src_from(std::forward<X>(r))};
+template<StrSource A, typename K = src_str_t<A>, typename T, StrExprForType<K> E>
+    requires std::is_constructible_v<str_src<K>, T>
+constexpr auto e_repl(A&& w, T&& p, const E& expr) {
+    str_src<K> pattern{std::forward<T>(p)};
+    return expr_replaced<K, E>{get_str_src_from(std::forward<A>(w)), pattern, nullptr, 0, expr};
 }
 
 template<bool UseVectorForReplace>
@@ -5206,7 +5228,7 @@ std::basic_string<K, std::char_traits<K>, A>& change(std::basic_string<K, std::c
  * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
  *
  */
-template<typename K, typename A, simstr::StrExprForType<K> E>
+template<typename K, typename A, StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& append(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
     return change(str, str.length(), 0, expr);
 }
@@ -5239,7 +5261,7 @@ std::basic_string<K, std::char_traits<K>, A>& append(std::basic_string<K, std::c
  * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
  *
  */
-template<typename K, typename A, simstr::StrExprForType<K> E>
+template<typename K, typename A, StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& prepend(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
     return change(str, 0, 0, expr);
 }
@@ -5274,9 +5296,273 @@ std::basic_string<K, std::char_traits<K>, A>& prepend(std::basic_string<K, std::
  * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
  *
  */
-template<typename K, typename A, simstr::StrExprForType<K> E>
+template<typename K, typename A, StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& insert(std::basic_string<K, std::char_traits<K>, A>& str, size_t from, const E& expr) {
     return change(str, from, 0, expr);
+}
+
+namespace details {
+
+template<typename K, typename A, typename E>
+struct replace_grow_helper {
+    using my_type = std::basic_string<K, std::char_traits<K>, A>;
+
+    replace_grow_helper(my_type& src, str_src<K> p, const K* r, size_t rl, size_t mc, size_t d, const E& e)
+        : str(src), source(src), pattern(p), repl(const_cast<K*>(r)), replLen(rl), maxCount(mc), delta(d), expr(e) {}
+    my_type& str;
+
+    const str_src<K> source;
+    const str_src<K> pattern;
+    K* repl;
+    const size_t replLen;
+
+    size_t maxCount;
+    const size_t delta;
+    size_t all_delta{};
+    const E& expr;
+
+    K* reserve_for_copy{};
+    size_t end_of_piece{};
+    size_t total_length{};
+
+    std::optional<my_type> dst;
+
+    void replace(size_t offset) {
+        size_t found[16] = {offset};
+        maxCount--;
+
+        offset += pattern.len;
+        all_delta += delta;
+        size_t idx = 1;
+        for (; idx < std::size(found) && maxCount > 0; idx++, maxCount--) {
+            found[idx] = source.find(pattern, offset);
+            if (found[idx] == npos) {
+                break;
+            }
+            offset = found[idx] + pattern.len;
+            all_delta += delta;
+        }
+        if (idx == std::size(found) && maxCount > 0 && (offset = source.find(pattern, offset)) != str::npos) {
+            replace(offset); // здесь произойдут замены в оставшемся хвосте | replacements will be made here in the remaining tail
+        }
+        // Теперь делаем свои замены
+        // Now we make our replacements
+        if (!reserve_for_copy) {
+            // Только начинаем
+            // Just getting started
+            end_of_piece = source.length();
+            total_length = end_of_piece + all_delta;
+            my_type* dst_str{};
+            if (total_length <= str.capacity()) {
+                // Строка поместится в старое место | The line will be placed in the old location.
+                dst_str = &str;
+            } else {
+                // Будем создавать в другом буфере | We will create in another buffer.
+                dst_str = &dst.emplace();
+            }
+            auto fill = [this](K* p, size_t) -> size_t {
+                reserve_for_copy = p;
+                return total_length;
+            };
+            if constexpr (requires{dst_str->_Resize_and_overwrite(total_length, fill);}) {
+                dst_str->_Resize_and_overwrite(total_length, fill);
+            } else if constexpr (requires{dst_str->resize_and_overwrite(total_length, fill);}) {
+                dst_str->resize_and_overwrite(total_length, fill);
+            } else {
+                dst_str->resize(total_length);
+                reserve_for_copy = dst_str->data();
+            }
+        }
+        K* dst_start = reserve_for_copy;
+        const K* src_start = str.c_str();
+        while(idx-- > 0) {
+            size_t pos = found[idx] + pattern.len;
+            size_t lenOfPiece = end_of_piece - pos;
+            ch_traits<K>::move(dst_start + pos + all_delta, src_start + pos, lenOfPiece);
+            if constexpr (std::is_same_v<E, int>) {
+                ch_traits<K>::copy(dst_start + pos + all_delta - replLen, repl, replLen);
+            } else {
+                if (!repl) {
+                    repl = dst_start + pos + all_delta - replLen;
+                    expr.place(repl);
+                } else {
+                    ch_traits<K>::copy(dst_start + pos + all_delta - replLen, repl, replLen);
+                }
+            }
+            all_delta -= delta;
+            end_of_piece = found[idx];
+        }
+        if (!all_delta && reserve_for_copy != src_start) {
+            ch_traits<K>::copy(dst_start, src_start, found[0]);
+            str = std::move(*dst);
+        }
+    }
+};
+
+} // namespace details
+
+/*!
+ * @ru @brief Функция поиска подстрок в стандартной строке и замены найденных вхождений на значение строкового выражения.
+ * @tparam K - тип символов строки.
+ * @tparam A - тип аллокатора строки.
+ * @tparam E - тип строкового выражения.
+ * @tparam T - тип подстроки поиска.
+ * @param str - строка, в которой заменяем вхождения подстрок.
+ * @param pattern - искомая подстрока (любой тип, конвертирующийся в simple_str).
+ * @param repl - строковое выражение для замены.
+ * @param offset - начальное смещение для поиска.
+ * @param max_count - максимальное количество замен.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на модифицируемую строку.
+ * @details Части строкового выражения не должны ссылаться на саму модифицируемую строку.
+ *  Если искомая подстрока не найдена, то строковое выражение даже не вычисляется.
+ *  Затем при осуществлении замены строковое выражение вычисляется только один раз в место первой замены,
+ *  а в следующие места замен просто копируется символы из первого места. Это позволяет экономить память
+ *  и время, если вам надо сделать замену на какую-либо "сборную" строку.
+ * @en @brief A function for searching for substrings in a standard string and replacing the found occurrences with a string expression.
+ * @tparam K - the string character type.
+ * @tparam A - the string allocator type.
+ * @tparam E - the string expression type.
+ * @tparam T - the search substring type.
+ * @param str - the string in which to replace substring occurrences.
+ * @param pattern - the search substring (any type convertible to simple_str).
+ * @param repl - the string expression to replace.
+ * @param offset - the starting offset for the search.
+ * @param max_count - the maximum number of replacements.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - a reference to the string being modified.
+ * @details Parts of the string expression must not reference the string being modified itself.
+ * If the search substring is not found, the string expression is not even evaluated.
+ * Then, when performing a replacement, the string expression is evaluated only once at the first replacement location,
+ * and characters from the first location are simply copied to subsequent replacement locations. This saves memory
+ * and time if you need to replace with some kind of "composite" string.
+ */
+template<typename K, typename A, StrExprForType<K> E, typename T>
+requires (std::is_constructible_v<str_src<K>, T>)
+std::basic_string<K, std::char_traits<K>, A>& replace(std::basic_string<K, std::char_traits<K>, A>& str, T&& pattern, const E& repl, size_t offset = 0, size_t max_count = -1) {
+    if (!max_count) {
+        return str;
+    }
+    str_src<K> src = str;
+    str_src<K> spattern{std::forward<T>(pattern)};
+    offset = src.find(pattern, offset);
+    if (offset == npos) {
+        return str;
+    }
+    size_t replLen = repl.length();
+    K* replStart{};
+    if (spattern.len == replLen) {
+        // Заменяем inplace на подстроку такой же длины
+        // Replace inplace with a substring of the same length
+        K* ptr = str.data();
+        replStart = ptr + offset;
+        repl.place(replStart);
+
+        while (--max_count) {
+            offset = src.find(spattern, offset + replLen);
+            if (offset == npos)
+                break;
+            ch_traits<K>::copy(ptr + offset, replStart, replLen);
+        }
+    } else if (spattern.len > replLen) {
+        // Заменяем на более короткий кусок, длина текста уменьшится, идём слева направо
+        // Replace with a shorter piece, the length of the text will decrease, go from left to right
+        K* ptr = str.data();
+        replStart = ptr + offset;
+        repl.place(replStart);
+        size_t posWrite = offset + replLen;
+        offset += spattern.len;
+
+        while (--max_count) {
+            size_t idx = src.find(spattern, offset);
+            if (idx == npos)
+                break;
+            size_t lenOfPiece = idx - offset;
+            ch_traits<K>::move(ptr + posWrite, ptr + offset, lenOfPiece);
+            posWrite += lenOfPiece;
+            ch_traits<K>::copy(ptr + posWrite, replStart, replLen);
+            posWrite += replLen;
+            offset = idx + spattern.len;
+        }
+        size_t tailLen = src.len - offset;
+        ch_traits<K>::move(ptr + posWrite, ptr + offset, tailLen);
+        str.resize(posWrite + tailLen);
+    } else {
+        details::replace_grow_helper<K, A, E>(str, spattern, nullptr, replLen, max_count, replLen - spattern.len, repl).replace(offset);
+    }
+    return str;
+}
+
+/*!
+ * @ru @brief Функция поиска подстрок в стандартной строке и замены найденных вхождений на другую подстроку.
+ * @tparam K - тип символов строки.
+ * @tparam A - тип аллокатора строки.
+ * @param str - строка, в которой заменяем вхождения подстрок.
+ * @param pattern - искомая подстрока (любой тип, конвертирующийся в simple_str).
+ * @param repl - строка для замены (любой тип, конвертирующийся в simple_str).
+ * @param offset - начальное смещение для поиска.
+ * @param max_count - максимальное количество замен.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на модифицируемую строку.
+ * @en @brief Function for searching for substrings in a standard string and replacing found occurrences with another substring.
+ * @tparam K - the character type of the string.
+ * @tparam A - the type of the string allocator.
+ * @param str - the string in which we replace occurrences of substrings.
+ * @param pattern - the searched substring (any type that converts to simple_str).
+ * @param repl - replacement string (any type convertible to simple_str).
+ * @param offset - the starting offset for the search.
+ * @param max_count - maximum number of replacements.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - reference to the modified string.
+ */
+template<typename K, typename A>
+std::basic_string<K, std::char_traits<K>, A>& replace(std::basic_string<K, std::char_traits<K>, A>& str, str_src<K> pattern, str_src<K> repl, size_t offset = 0, size_t max_count = -1) {
+    if (!max_count) {
+        return str;
+    }
+    str_src<K> src = str;
+    offset = src.find(pattern, offset);
+    if (offset == npos) {
+        return str;
+    }
+    if (pattern.len == repl.len) {
+        // Заменяем inplace на подстроку такой же длины
+        // Replace inplace with a substring of the same length
+        K* ptr = str.data();
+        while (max_count--) {
+            ch_traits<K>::copy(ptr + offset, repl.str, repl.len);
+            offset = src.find(pattern, offset + repl.len);
+            if (offset == npos)
+                break;
+        }
+    } else if (pattern.len > repl.len) {
+        // Заменяем на более короткий кусок, длина текста уменьшится, идём слева направо
+        // Replace with a shorter piece, the length of the text will decrease, go from left to right
+        K* ptr = str.data();
+        ch_traits<K>::copy(ptr + offset, repl.str, repl.len);
+        size_t posWrite = offset + repl.len;
+        offset += pattern.len;
+
+        while (--max_count) {
+            size_t idx = src.find(pattern, offset);
+            if (idx == npos)
+                break;
+            size_t lenOfPiece = idx - offset;
+            ch_traits<K>::move(ptr + posWrite, ptr + offset, lenOfPiece);
+            posWrite += lenOfPiece;
+            ch_traits<K>::copy(ptr + posWrite, repl.str, repl.len);
+            posWrite += repl.len;
+            offset = idx + pattern.len;
+        }
+        size_t tailLen = src.len - offset;
+        ch_traits<K>::move(ptr + posWrite, ptr + offset, tailLen);
+        str.resize(posWrite + tailLen);
+    } else {
+        details::replace_grow_helper<K, A, int>(str, pattern, repl.str, repl.len, max_count, repl.len - pattern.len, 0).replace(offset);
+    }
+    return str;
+}
+
+template<typename K, typename A, typename T, typename M>
+requires (std::is_constructible_v<str_src<K>, T> && std::is_constructible_v<str_src<K>, M>)
+std::basic_string<K, std::char_traits<K>, A>& replace(std::basic_string<K, std::char_traits<K>, A>& str, T&& pattern, M&& repl, size_t offset = 0, size_t max_count = -1) {
+    return replace(str, str_src<K>{std::forward<T>(pattern)}, str_src<K>{std::forward<M>(repl)}, offset, max_count);
 }
 
 } // namespace str

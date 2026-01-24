@@ -2039,7 +2039,7 @@ public:
             // Заменяем inplace на подстроку такой же длины
             // Replace inplace with a substring of the same length
             K* ptr = str();
-            for (size_t i = 0; i < maxCount; i++) {
+            while (maxCount--) {
                 traits::copy(ptr + offset, repl.symbols(), replLength);
                 offset = d().find(pattern, offset + replLength);// replLength == patternLength
                 if (offset == str::npos)
@@ -2051,10 +2051,9 @@ public:
             K* ptr = str();
             traits::copy(ptr + offset, repl.symbols(), replLength);
             size_t posWrite = offset + replLength;
-            maxCount--;
             offset += patternLength;
 
-            for (size_t i = 0; i < maxCount; i++) {
+            while (--maxCount) {
                 size_t idx = d().find(pattern, offset);
                 if (idx == str::npos)
                     break;
@@ -2083,25 +2082,21 @@ public:
                 size_t total_length{};
 
                 void replace(size_t offset) {
-                    size_t finded[16] = {source.find(pattern, offset)};
-                    if (finded[0] == str::npos) {
-                        return;
-                    }
+                    size_t found[16] = {offset};
                     maxCount--;
-                    offset = finded[0] + pattern.length();
+                    offset += pattern.length();
                     all_delta += delta;
                     size_t idx = 1;
-                    for (size_t end = std::min(maxCount, std::size(finded)); idx < end; idx++, maxCount--) {
-                        finded[idx] = source.find(pattern, offset);
-                        if (finded[idx] == str::npos) {
+                    for (; idx < std::size(found) && maxCount > 0; idx++, maxCount--) {
+                        found[idx] = source.find(pattern, offset);
+                        if (found[idx] == str::npos) {
                             break;
                         }
-                        offset = finded[idx] + pattern.length();
+                        offset = found[idx] + pattern.length();
                         all_delta += delta;
                     }
-                    bool needMore = maxCount > 0 && idx == std::size(finded) && offset < source.length() - pattern.length();
-                    if (needMore) {
-                        replace(offset); // здесь произведутся замены в оставшемся хвосте | replacements will be made here in the remaining tail
+                    if (idx == std::size(found) && maxCount > 0 && (offset = source.find(pattern, offset)) != str::npos) {
+                        replace(offset); // здесь произойдут замены в оставшемся хвосте | replacements will be made here in the remaining tail
                     }
                     // Теперь делаем свои замены
                     // Now we make our replacements
@@ -2115,15 +2110,15 @@ public:
                     K* dst_start = reserve_for_copy;
                     const K* src_start = source.symbols();
                     while(idx-- > 0) {
-                        size_t pos = finded[idx] + pattern.length();
+                        size_t pos = found[idx] + pattern.length();
                         size_t lenOfPiece = end_of_piece - pos;
                         ch_traits<K>::move(dst_start + pos + all_delta, src_start + pos, lenOfPiece);
                         ch_traits<K>::copy(dst_start + pos + all_delta - repl.length(), repl.symbols(), repl.length());
                         all_delta -= delta;
-                        end_of_piece = finded[idx];
+                        end_of_piece = found[idx];
                     }
                     if (!all_delta && reserve_for_copy != src_start) {
-                        ch_traits<K>::copy(dst_start, src_start, finded[0]);
+                        ch_traits<K>::copy(dst_start, src_start, found[0]);
                     }
                 }
             } helper(d(), pattern, repl, maxCount, repl.length() - pattern.length());

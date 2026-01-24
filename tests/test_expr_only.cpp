@@ -259,4 +259,31 @@ TEST(StrExpr, StrChange) {
     }
 }
 
+TEST(StrExpr, StrReplace) {
+    {
+        std::string src = "-aaaaaaaaaaaaaaaa--";
+        EXPECT_EQ(str::replace(src, "a", "aa"), "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa--");
+        EXPECT_EQ(str::replace(src, "aa", "b"), "-bbbbbbbbbbbbbbbb--");
+        EXPECT_EQ(str::replace(src, "b", ""_ss), "---");
+    }
+    {
+        std::string src = "-aaaaaaaaaaaaaaaaaa--";
+        EXPECT_EQ(str::replace(src, "a", "aa"), "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa--");
+    }
+    {
+        std::string src = "-aaaaaaaaaaaaaaaa--";
+        EXPECT_EQ(str::replace(src, "a", "a"_ss + "a"), "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa--");
+        EXPECT_EQ(str::replace(src, "aa", eea + "b"), "-bbbbbbbbbbbbbbbb--");
+        EXPECT_EQ(str::replace(src, "b", eea), "---");
+    }
+    {
+        std::u16string src = u"-aaaaaaaaaaaaaaaa--";
+        EXPECT_EQ(str::replace(src, u"a", u"vv", 5, 3), u"-aaaavvvvvvaaaaaaaaa--");
+    }
+    {
+        std::u16string src = u"-aaaaaaaaaaaaaaaa--";
+        EXPECT_EQ(str::replace(src, u"a", u"vv"_ss + 10, 5, 3), u"-aaaavv10vv10vv10aaaaaaaaa--");
+    }
+}
+
 } // namespace simstr::tests

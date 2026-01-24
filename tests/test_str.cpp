@@ -1072,6 +1072,16 @@ TEST(SimStr, ExprNum) {
 
 TEST(SimStr, LStrSelfReplace) {
     {
+        lstringa<40> test = "-aaaaaaaaaaaaaaaa--";
+        test.replace("a", "aa");
+        EXPECT_EQ(test, "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa--");
+    }
+    {
+        lstringa<40> test = "-aaaaaaaaaaaaaaaaaa--";
+        test.replace("a", "aa");
+        EXPECT_EQ(test, "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa--");
+    }
+    {
         lstringa<40> test = "test string";
         ssa before = test;
         test.replace("aa", "asd");
@@ -1905,6 +1915,9 @@ TEST(SimStr, StrRepl) {
 
     a = e_repl("test"_ss, "t"_ss, "-t-"_ss);
     EXPECT_EQ(a, "-t-es-t-");
+
+    a = e_repl("test"_ss, "t", "a"_ss + "1" + 10);
+    EXPECT_EQ(a, "a110esa110");
 }
 
 TEST(SimStr, HexEpr) {
@@ -1919,6 +1932,12 @@ TEST(SimStr, HexEpr) {
 
     stringb hexb = expr_hex<ubs, unsigned, true, true, true>{0xcd0102};
     EXPECT_EQ(hexb, u8"0x00CD0102");
+
+    hexb = expr_hex<ubs, int, true, true, true>{0xcd0102};
+    EXPECT_EQ(hexb, u8"0x00CD0102");
+
+    hexb = expr_hex<ubs, int, true, true, true>{-0xcd0102};
+    EXPECT_EQ(hexb, u8"-0x00CD0102");
 
     hexa = expr_hex<u8s, uint64_t, true, false, false>{0xabcd0102};
     EXPECT_EQ(hexa, "00000000abcd0102");
