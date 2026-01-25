@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.4.0
+ * ver. 1.5.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -3282,7 +3282,7 @@ public:
             return {};
         }
         double d{};
-        if (std::from_chars(ptr, ptr + len, d).ec == std::errc{}) {
+        if (std::from_chars((const u8s*)ptr, (const u8s*)ptr + len, d).ec == std::errc{}) {
             return d;
         }
         return {};
@@ -4477,32 +4477,20 @@ constexpr auto e_repl(A&& w, T&& p, X&& r) {
 
 /*!
  * @ingroup StrExprs
- * @ru @brief Строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки.
+ * @ru @brief Строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки на другую строку.
  * @tparam K - тип строки.
- * @details `e_repl` позволяет заменять только с использование строковых литералов.
- *  В случае, когда искомая подстрока или строка замены не известны при компиляции, и задаются в runtime,
- *  следует использовать этот тип, например:
- * @en @brief A string expression that generates a string replacing all occurrences of the given substring.
+ * @en @brief A string expression that generates a string replacing all occurrences of the given substring to another string.
  * @tparam K - string type.
- * @details `e_repl` only allows replacement using string literals.
- * In the case when the required substring or replacement string is not known at compilation, and is set at runtime,
- * this type should be used, for example:
- * @~
- * ```cpp
- *      stringa result = "<header>" + expr_replaced<u8s>{source, pattern, repl} + "</header>";
- * ```
  */
-template<typename K, typename E = int>
+template<typename K>
 struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
     using symb_type = K;
     using my_type = expr_replaced<K>;
     str_src<K> what;
     const str_src<K> pattern;
-    mutable K* replStart;
-    mutable size_t replLen;
+    const str_src<K> repl;
     mutable find_all_container<FIND_CACHE_SIZE> matches_;
     mutable size_t last_;
-    const E& expr;
     /*!
      * @ru @brief Конструктор.
      * @param w - исходная строка.
@@ -4513,20 +4501,17 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
      * @param p - the searched substring.
      * @param r - replacement string.
      */
-    constexpr expr_replaced(str_src<K> w, str_src<K> p, const K* r, size_t rl, const E& e) : what(w), pattern(p), replStart(const_cast<K*>(r)), replLen(rl), expr(e) {}
+    constexpr expr_replaced(str_src<K> w, str_src<K> p, str_src<K> r) : what(w), pattern(p), repl(r) {}
 
     constexpr size_t length() const {
-        size_t l = what.length(), plen = pattern.length();
-        if constexpr (!std::is_same_v<E, int>) {
-            replLen = expr.length();
-        }
-        if (!plen || plen == replLen) {
+        size_t l = what.length(), plen = pattern.length(), rlen = repl.length();
+        if (!plen || plen == rlen) {
             return l;
         }
         what.find_all_to(matches_, pattern.symbols(), plen, 0, FIND_CACHE_SIZE);
         if (matches_.added_) {
             last_ = matches_.positions_[matches_.added_ - 1] + plen;
-            l += int(replLen - plen) * matches_.added_;
+            l += int(rlen - plen) * matches_.added_;
 
             if (matches_.added_ == FIND_CACHE_SIZE) {
                 for (;;) {
@@ -4535,7 +4520,7 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
                         break;
                     }
                     last_ = next + plen;
-                    l += replLen - plen;
+                    l += rlen - plen;
                 }
             }
         }
@@ -4545,8 +4530,8 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
         return l;
     }
     constexpr K* place(K* ptr) const noexcept {
-        size_t plen = pattern.length();
-        if (plen == replLen) {
+        size_t plen = pattern.length(), rlen = repl.length();
+        if (plen == rlen) {
             const K* from = what.symbols();
             for (size_t start = 0; start < what.length();) {
                 size_t next = what.find(pattern, start);
@@ -4556,17 +4541,8 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
                 size_t delta = next - start;
                 ch_traits<K>::copy(ptr,  from + start, delta);
                 ptr += delta;
-                if constexpr (std::is_same_v<E, int>) {
-                    ch_traits<K>::copy(ptr, replStart, replLen);
-                } else {
-                    if (!replStart) {
-                        replStart = ptr;
-                        expr.place(replStart);
-                    } else {
-                        ch_traits<K>::copy(ptr, replStart, replLen);
-                    }
-                }
-                ptr += replLen;
+                ch_traits<K>::copy(ptr, repl.symbols(), rlen);
+                ptr += rlen;
                 start = next + plen;
             }
             return ptr;
@@ -4581,21 +4557,12 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
         for (size_t start = 0, offset = matches_.positions_[0], idx = 1; ;) {
             ch_traits<K>::copy(ptr, from + start, offset - start);
             ptr += offset - start;
-            if constexpr (std::is_same_v<E, int>) {
-                ch_traits<K>::copy(ptr, replStart, replLen);
-            } else {
-                if (!replStart) {
-                    replStart = ptr;
-                    expr.place(replStart);
-                } else {
-                    ch_traits<K>::copy(ptr, replStart, replLen);
-                }
-            }
-            ptr += replLen;
+            ch_traits<K>::copy(ptr, repl.symbols(), rlen);
+            ptr += rlen;
             start = offset + plen;
             if (start >= last_) {
-                size_t tail = what.length() - last_;
-                ch_traits<K>::copy(ptr, from + last_, tail);
+                size_t tail = what.length() - start;
+                ch_traits<K>::copy(ptr, from + start, tail);
                 ptr += tail;
                 break;
             } else {
@@ -4603,6 +4570,130 @@ struct expr_replaced : expr_to_std_string<expr_replaced<K>> {
             }
         }
         return ptr;
+    }
+};
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Строковое выражение, генерирующее строку с заменой всех вхождений заданной подстроки на строковое выражение.
+ * @tparam K - тип строки.
+ * @details Если искомая подстрока не найдена, то строковое выражение даже не вычисляется.
+ *  Затем при осуществлении замены строковое выражение вычисляется только один раз в место первой замены,
+ *  а в следующие места замен просто копируется символы из первого места. Это позволяет экономить память
+ *  и время, если вам надо сделать замену на какую-либо "сборную" строку.
+ * @en @brief A string expression that generates a string replacing all occurrences of the given substring to string expression.
+ * @tparam K - string type.
+ * @details If the search substring is not found, the string expression is not even evaluated.
+ * Then, when performing a replacement, the string expression is evaluated only once at the first replacement location,
+ * and characters from the first location are simply copied to subsequent replacement locations. This saves memory
+ * and time if you need to replace with some kind of "composite" string.
+ */
+template<typename K, StrExprForType<K> E>
+struct expr_replaced_e : expr_to_std_string<expr_replaced_e<K, E>> {
+    using symb_type = K;
+    using my_type = expr_replaced<K>;
+    str_src<K> what;
+    const str_src<K> pattern;
+    mutable size_t replLen;
+    mutable find_all_container<FIND_CACHE_SIZE> matches_;
+    mutable size_t last_;
+    const E& expr;
+    /*!
+     * @ru @brief Конструктор.
+     * @param w - исходная строка.
+     * @param p - искомая подстрока.
+     * @param e - строковое выражение для замены.
+     * @en @brief Constructor.
+     * @param w - source string.
+     * @param p - the searched substring.
+     * @param e - string expression to replace.
+     */
+    constexpr expr_replaced_e(str_src<K> w, str_src<K> p, const E& e) : what(w), pattern(p), expr(e) {}
+
+    constexpr size_t length() const {
+        size_t l = what.length(), plen = pattern.length();
+        if (!plen) {
+            return l;
+        }
+        matches_.positions_[0] = what.find(pattern);
+        if (matches_.positions_[0] == -1) {
+            // Не нашли вхождений, нечего менять
+            return l;
+        }
+        matches_.added_ = 1;
+        // Вхождение есть, надо теперь получить длину замены
+        replLen = expr.length();
+        if (replLen == plen) {
+            // Замена той же длины, общая длина не изменится
+            return l;
+        }
+        what.find_all_to(matches_, pattern.symbols(), plen, matches_.positions_[0] + plen, FIND_CACHE_SIZE - 1);
+
+        last_ = matches_.positions_[matches_.added_ - 1] + plen;
+        l += int(replLen - plen) * matches_.added_;
+
+        if (matches_.added_ == FIND_CACHE_SIZE) {
+            for (;;) {
+                size_t next = what.find(pattern.symbols(), plen, last_);
+                if (next == str::npos) {
+                    break;
+                }
+                last_ = next + plen;
+                l += replLen - plen;
+            }
+        }
+        if (!l) {
+            matches_.added_ = -1;
+        }
+        return l;
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        if (matches_.added_ == 0) {
+            // не было найдено вхождений
+            return what.place(ptr);
+        } else if (matches_.added_ == -1) {
+            // Строка стала пустой
+            return ptr;
+        }
+        size_t plen = pattern.length();
+        const K* from = what.symbols();
+        ch_traits<K>::copy(ptr, from, matches_.positions_[0]);
+        ptr += matches_.positions_[0];
+        const K* repl = ptr;
+        expr.place((typename E::symb_type*)ptr);
+        ptr += replLen;
+        size_t start = matches_.positions_[0] + plen;
+
+        if (plen == replLen) {
+            for (;;) {
+                size_t next = what.find(pattern, start);
+                if (next == str::npos) {
+                    break;
+                }
+                size_t delta = next - start;
+                ch_traits<K>::copy(ptr, from + start, delta);
+                ptr += delta;
+                ch_traits<K>::copy(ptr, repl, replLen);
+                ptr += replLen;
+                start = next + plen;
+            }
+        } else {
+            for (size_t idx = 1;;) {
+                if (start >= last_) {
+                    break;
+                }
+                size_t next = idx < FIND_CACHE_SIZE ? matches_.positions_[idx++] : what.find(pattern, start);
+                size_t delta = next - start;
+                ch_traits<K>::copy(ptr, from + start, delta);
+                ptr += delta;
+                ch_traits<K>::copy(ptr, repl, replLen);
+                ptr += replLen;
+                start = next + plen;
+            }
+        }
+        size_t tail = what.length() - start;
+        ch_traits<K>::copy(ptr, from + start, tail);
+        return ptr + tail;
     }
 };
 
@@ -4624,7 +4715,7 @@ template<StrSource A, typename K = src_str_t<A>, typename T, typename X>
 constexpr auto e_repl(A&& w, T&& p, X&& r) {
     str_src<K> pattern{std::forward<T>(p)};
     str_src<K> repl{std::forward<X>(r)};
-    return expr_replaced<K, int>{get_str_src_from(std::forward<A>(w)), pattern, repl.str, repl.len, 0};
+    return expr_replaced<K>{get_str_src_from(std::forward<A>(w)), pattern, repl};
 }
 
 /*!
@@ -4644,7 +4735,7 @@ template<StrSource A, typename K = src_str_t<A>, typename T, StrExprForType<K> E
     requires std::is_constructible_v<str_src<K>, T>
 constexpr auto e_repl(A&& w, T&& p, const E& expr) {
     str_src<K> pattern{std::forward<T>(p)};
-    return expr_replaced<K, E>{get_str_src_from(std::forward<A>(w)), pattern, nullptr, 0, expr};
+    return expr_replaced_e<K, E>{get_str_src_from(std::forward<A>(w)), pattern, expr};
 }
 
 template<bool UseVectorForReplace>

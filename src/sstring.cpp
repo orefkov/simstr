@@ -1,7 +1,9 @@
 ﻿/*
+ * ver. 1.5.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.0
  * Реализация строковых функций
+ * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
+ * Implementation of string functions
  */
 #include "simstr/simple_unicode.h"
 #include "simstr/sstring.h"
@@ -1466,6 +1468,5 @@ SIMSTR_API std::optional<double> impl_to_double(const K* start, const K* end) {
 template SIMSTR_API std::optional<double> impl_to_double<u8s>(const u8s* start, const u8s* end);
 template SIMSTR_API std::optional<double> impl_to_double<u16s>(const u16s* start, const u16s* end);
 template SIMSTR_API std::optional<double> impl_to_double<u32s>(const u32s* start, const u32s* end);
-template SIMSTR_API std::optional<double> impl_to_double<uws>(const uws* start, const uws* end);
 
 } // namespace simstr

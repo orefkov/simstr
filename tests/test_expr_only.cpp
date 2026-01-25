@@ -1,4 +1,12 @@
-﻿#include "../include/simstr/strexpr.h"
+﻿/*
+ * ver. 1.5.0
+ * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
+ * Тесты simstr
+ * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
+ * Test of simstr
+ */
+
+#include "../include/simstr/strexpr.h"
 #include <gtest/gtest.h>
 #include <list>
 
@@ -283,6 +291,14 @@ TEST(StrExpr, StrReplace) {
     {
         std::u16string src = u"-aaaaaaaaaaaaaaaa--";
         EXPECT_EQ(str::replace(src, u"a", u"vv"_ss + 10, 5, 3), u"-aaaavv10vv10vv10aaaaaaaaa--");
+    }
+    {
+        std::u32string a = U"<" + e_repl(U"test"sv, U"t", U"a" + e_repl(U"test"s, U"es", U"se")) + U">";
+        EXPECT_EQ(a, U"<atsetesatset>");
+    }
+    {
+        std::string a = u8"<" + e_repl("test"sv, "t", u8"a" + e_repl("test"s, "es", "se")) + ">";
+        EXPECT_EQ(a, "<atsetesatset>");
     }
 }
 

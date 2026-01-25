@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.4.0.
+Version 1.5.0.
 
 <span class="obfuscator"><a href="readme_ru.md">On Russian | По-русски</a></span>
 
@@ -47,7 +47,7 @@ If you actively used `std::string_view` and understood its advantages and disadv
 then the `simstr` approach will also be clear to you.
 
 ## Main features of the library
-When using only `#include "simstr\strexpr.h"`:
+When using only `#include "simstr/strexpr.h"`:
 - Support for working with strings `char`, `char8_t`, `char16_t`, `char32_t`, `wchar_t`.
 - Powerful and extensible *"String Expressions"* system.
   Allows you to efficiently implement the conversion and addition (concatenation) of strings, string literals, numbers (and possibly other objects),
@@ -65,6 +65,11 @@ When using only `#include "simstr\strexpr.h"`:
   - Merging (join) containers of strings into a single string, with specifying delimiters and options - "skip empty", "delimiter after last".
   - Splitting strings into parts by a specified delimiter. Splitting is possible immediately into a container with strings, or by calling a functor for
     each substring, or by iterating using the `Splitter` iterator.
+- Functions for modifying standard strings with string expressions:
+  - str::append, str::prepend, str::insert, str::change - modify str::string with string expressions,
+    for example, `str::append(text, "count = "_ss + count + " times")`.
+  - str::replace - replaces occurrences of the searched substring with the replacement string or string expression.
+    If the substring is not found, the string expression is not even evaluated.
 - Parsing integers with the possibility of "fine" tuning at compile time - you can set options for checking overflow,
   skipping whitespace characters, a specific base or auto-selection by prefixes `0x`, `0`, `0b`, `0o`,
   admissibility of the `+` sign. Parsing is implemented for all types of strings and characters.
@@ -277,9 +282,9 @@ When connecting only `strexpr.h` - the types `simple_str<K>` and `simple_str_nt<
 - [Description of the "Expression Templates" technique used](https://habr.com/ru/articles/936468/) (On Russian)
 
 ## Usage
-The library can be used partially, just by taking the file `"include\simstr\strexpr.h"` and including it in your sources
+The library can be used partially, just by taking the file `"include/simstr/strexpr.h"` and including it in your sources
 ```cpp
-#include "include\simstr\strexpr.h"
+#include "include/simstr/strexpr.h"
 ```
 This will only connect string expressions and simplified implementations of `simple_str` and `simple_str_nt`, without UTF and Unicode functions.
 
@@ -297,8 +302,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.4.0 # Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 1.4.0
+        GIT_TAG tags/rel1.5.0 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.5.0
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.4.0
+    VERSION 1.5.0
     DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -116,7 +116,7 @@ if(SIMSTR_BUILD_TESTS)
         googletest
         # Specify the commit you depend on and update it regularly.
         URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
-        FIND_PACKAGE_ARGS NAMES GTest 1.17.0
+        FIND_PACKAGE_ARGS NAMES "GTest 1.17.0"
     )
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt FALSE CACHE BOOL "" FORCE)
@@ -134,7 +134,7 @@ function(GBencmark)
         googlebench
         # Specify the commit you depend on and update it regularly.
         URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
-        FIND_PACKAGE_ARGS NAMES benchmark 1.9.4
+        FIND_PACKAGE_ARGS NAMES "benchmark 1.9.4"
     )
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_LTO OFF)

@@ -1,9 +1,9 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.4.0
+ * ver. 1.5.0
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.4.0
+* ver. 1.5.0
 * Classes for working with strings
  */
 
@@ -314,7 +314,13 @@ public:
             return {};
         }
         #endif
-        return impl_to_double(ptr, ptr + len);
+        if constexpr (sizeof(K) == 1) {
+            return impl_to_double((const char*)ptr, (const char*)ptr + len);
+        } else if constexpr (sizeof(K) == 2) {
+            return impl_to_double((const char16_t*)ptr, (const char16_t*)ptr + len);
+        } else {
+            return impl_to_double((const char32_t*)ptr, (const char32_t*)ptr + len);
+        }
     }
     /*!
      * @ru @brief Преобразовать строку в double.

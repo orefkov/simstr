@@ -1,4 +1,12 @@
-﻿#include <simstr/sstring.h>
+﻿/*
+ * ver. 1.5.0
+ * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
+ * Тесты simstr
+ * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
+ * Test of simstr
+ */
+
+#include <simstr/sstring.h>
 #include <gtest/gtest.h>
 
 using namespace std::literals;
@@ -1918,6 +1926,27 @@ TEST(SimStr, StrRepl) {
 
     a = e_repl("test"_ss, "t", "a"_ss + "1" + 10);
     EXPECT_EQ(a, "a110esa110");
+
+    a = e_repl("test"_ss, "x", "a"_ss + "1" + 10);
+    EXPECT_EQ(a, "test");
+
+    a = e_repl("test"_ss, "t", eea + "a");
+    EXPECT_EQ(a, "aesa");
+
+    a = e_repl("tesd"_ss, "t", eea + "a");
+    EXPECT_EQ(a, "aesd");
+
+    a = e_repl("tttt"_ss, "t", eea);
+    EXPECT_EQ(a, "");
+
+    a = e_repl("-tttttttttttttttttt-"_ss, "t", eea + "a");
+    EXPECT_EQ(a, "-aaaaaaaaaaaaaaaaaa-");
+
+    a = e_repl("-tttttttttttttttttt-"_ss, "t", eea + "aa");
+    EXPECT_EQ(a, "-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-");
+
+    a = "<" + e_repl("test"sv, "t", "a" + e_repl("test"s, "es", "se")) + ">";
+    EXPECT_EQ(a, "<atsetesatset>");
 }
 
 TEST(SimStr, HexEpr) {

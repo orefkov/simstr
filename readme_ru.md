@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.4.0.
+Версия 1.5.0.
 
 <span class="obfuscator"><a href="readme.md">On English | По-английски</a></span>
 
@@ -48,7 +48,7 @@
 то подход `simstr` вам также будет понятен.
 
 ## Основные возможности библиотеки
-При использовании только `#include "simstr\strexpr.h"`:
+При использовании только `#include "simstr/strexpr.h"`:
 - Поддержка работы со строками `char`, `char8_t`, `char16_t`, `char32_t`, `wchar_t`.
 - Мощная и расширяемая система *"Строковых выражений"*.
   Позволяет эффективно реализовать преобразование и сложение (конкатенацию) строк, строковых литералов, чисел (и возможно других объектов),
@@ -66,6 +66,11 @@
   - Слияние (join) контейнеров строк в единую строку, с заданием разделителей и опций - "пропускать пустые", "разделитель после последней".
   - Разбиение (split) строк на части по заданному разделителю. Разбиение возможно сразу в контейнер со строками, либо вызовом функтора для
     каждой подстроки, либо путем итерации с помощью итератора `Splitter`.
+- Функции модификации стандартных строк строковыми выражениями:
+  - str::append, str::prepend, str::insert, str::change - меняют str::string строковыми выражениями,
+    например `str::append(text, "count = "_ss + count)`.
+  - str::replace - заменяет вхождения искомой подстроки на строку замены или строковое выражение.
+    Если подстрока не найдена, строковое выражение даже не вычисляется.
 - Парсинг целых чисел с возможностью "тонкой" настройки при компиляции - можно задавать опции проверки переполнения,
   пропуск пробельных символов, конкретное основание счисления либо автовыбор по префиксам `0x`, `0`, `0b`, `0o`,
   допустимость знака `+`. Парсинг реализован для всех видов строк и символов.
@@ -278,9 +283,9 @@ int split_and_calc_total_sim(ssa numbers, ssa delimiter) {
 - [Описание применяемой техники "Expression Templates"](https://habr.com/ru/articles/936468/)
 
 ## Использование
-Библиотеку можно использовать частично, просто взяв файл `"include\simstr\strexpr.h"` и включив в свои исходники
+Библиотеку можно использовать частично, просто взяв файл `"include/simstr/strexpr.h"` и включив в свои исходники
 ```cpp
-#include "include\simstr\strexpr.h"
+#include "include/simstr/strexpr.h"
 ```
 Это подключит только строковые выражения и упрощённые реализации `simple_str` и `simple_str_nt`, без функций работы с UTF и Unicode.
 
@@ -298,8 +303,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.4.0 # Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 1.4.0
+        GIT_TAG tags/rel1.5.0 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.5.0
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()
