@@ -52,10 +52,22 @@ void ConcatSimToSim(benchmark::State& state) {
     }
 }
 
+void ConcatSimToSimConcat(benchmark::State& state) {
+    stra s1 = "start ";
+    for (auto _: state) {
+        for (int i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = e_concat("", s1, i, " end");
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 BENCHMARK(__)->Name("-----  Concatenate string + Number + \"Literal\" ---------")->Repetitions(1);
-BENCHMARK(ConcatStdToStd)    ->Name("Concat std::string and number by std to std::string");
-BENCHMARK(ConcatSimToStd)    ->Name("Concat std::string and number by StrExpr to std::string");
-BENCHMARK(ConcatSimToSim)    ->Name("Concat stringa and number by StrExpr to simstr::stringa");
+BENCHMARK(ConcatStdToStd)       ->Name("Concat std::string and number by std to std::string");
+BENCHMARK(ConcatSimToStd)       ->Name("Concat std::string and number by StrExpr to std::string");
+BENCHMARK(ConcatSimToSim)       ->Name("Concat stringa and number by StrExpr to simstr::stringa");
+BENCHMARK(ConcatSimToSimConcat) ->Name("Concat stringa and number by e_concat to simstr::stringa");
 
 void ConcatStdToStdHex(benchmark::State& state) {
     // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
@@ -64,7 +76,7 @@ void ConcatStdToStdHex(benchmark::State& state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
             // What is standard method to get hex number?
-            std::string str = s1 + std::format("0x{:x}", i) + " end";
+            std::string str = std::format("{}0x{:x} end", s1, i);
             benchmark::DoNotOptimize(str);
         }
     }
@@ -93,10 +105,36 @@ void ConcatSimToSimHex(benchmark::State& state) {
     }
 }
 
+void ConcatSimToSimHexC(benchmark::State& state) {
+    // stringa SSO buffer is 23, but we use a short string to compare under the same conditions
+    stra s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = e_concat("", s1, e_hex<HexFlags::Short>(i), " end");
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void ConcatSimToSimHexS(benchmark::State& state) {
+    // stringa SSO buffer is 23, but we use a short string to compare under the same conditions
+    stra s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = e_subst(S_FRM("{}{} end"), s1, e_hex<HexFlags::Short>(i));
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 BENCHMARK(__)->Name("-----  Concatenate string + Hex Number + \"Literal\" ---------")->Repetitions(1);
 BENCHMARK(ConcatStdToStdHex)    ->Name("Concat std::string and hex number by std to std::string");
 BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number by StrExpr to std::string");
 BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number by StrExpr to simstr::stringa");
+BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number by e_concat to simstr::stringa");
+BENCHMARK(ConcatSimToSimHexS)   ->Name("Concat stringa and hex number by e_subst to simstr::stringa");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";
@@ -204,7 +242,6 @@ BENCHMARK(__)->Name("-----  Find three concatenated string in string_view -----"
 BENCHMARK(FindConcatThreeStr)->Name("Find concat three std::string");
 BENCHMARK(FindConcatThreeExp)->Name("Find concat three strexpr");
 BENCHMARK(FindConcatThreeSim)->Name("Find concat three simstr");
-
 
 std::string buildTypeNameStr(std::string_view type_name, size_t prec, size_t scale) {
     std::string res{type_name};

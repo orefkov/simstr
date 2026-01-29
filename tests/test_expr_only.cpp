@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.5.0
+ * ver. 1.6.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -60,6 +60,15 @@ TEST(StrExpr, Spaces) {
 
     std::u16string testu = u"abc" + e_c(10, u'_') + u"cde";
     EXPECT_EQ(testu, u"abc__________cde");
+}
+
+TEST(StrExpr, PlusString) {
+    std::string t = "aa"_ss + "bb"s;
+    EXPECT_EQ(t, "aabb");
+    const std::string add = "bb";
+    std::string r = add + "aa"_ss;
+    EXPECT_EQ(r, "bbaa");
+
 }
 
 TEST(StrExpr, Repeat) {
@@ -142,7 +151,7 @@ TEST(StrExpr, Join) {
 TEST(StrExpr, Replace) {
     std::string testa = e_repl("test"_ss, "t"sv, "-|-"s) + 10;
     EXPECT_EQ(testa, "-|-es-|-10");
-    testa = e_repl("aaaaaaaaaaaaaaaa"_ss, "a", "bb");
+    testa = e_repl("aaaaaaaaaaaaaaaa", "a", "bb");
     EXPECT_EQ(testa, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
 
     testa = e_repl("aaaaaaaaaaaaaaaa"_ss, "a", "") + "-";
@@ -300,6 +309,29 @@ TEST(StrExpr, StrReplace) {
         std::string a = u8"<" + e_repl("test"sv, "t", u8"a" + e_repl("test"s, "es", "se")) + ">";
         EXPECT_EQ(a, "<atsetesatset>");
     }
+}
+
+TEST(StrExpr, Concat) {
+    std::string tt;
+    std::string c = e_concat(eea + "," + " ", u8"bb", tt, 1, e_if(true, "--"), e_hex<HexFlags::Short>(16), 1.2);
+    EXPECT_EQ(c, "bb, , 1, --, 0x10, 1.2");
+
+    std::string_view text = "testes";
+    int count = 10;
+    std::string t = e_concat("", text, " = ", count, " times.");
+    EXPECT_EQ(t, "testes = 10 times.");
+}
+
+TEST(StrExpr, Subst) {
+    const auto ttt = "test"_ss;
+    int ii = 3;
+    std::string t = e_subst(S_FRM("Test {{--}} {}=, {}"), ttt, ii);
+    EXPECT_EQ(t, "Test {--} test=, 3");
+    t = e_subst(S_FRM("Test {2}={1}, {2}, {1}"), "test", 2);
+    EXPECT_EQ(t, "Test 2=test, 2, test");
+
+    std::u16string u16t = e_subst(S_FRM(u"Test {}={}, {}"), u"test", 2, u"test"sv);
+    EXPECT_EQ(u16t, u"Test test=2, test");
 }
 
 } // namespace simstr::tests

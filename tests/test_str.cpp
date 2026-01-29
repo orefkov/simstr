@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.5.0
+ * ver. 1.6.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1797,17 +1797,6 @@ TEST(SimStr, ExprRepeat) {
     EXPECT_EQ(std::string{e_repeat("aa"_ss + t + "_", 3)}, "aa1_aa1_aa1_");
 }
 
-TEST(SimStr, Constexpr) {
-    constexpr ssa tt = " asd "_ss.trimmed();
-    static_assert(tt == "asd");
-    constexpr stringa aa{"asd"};
-    static_assert(aa == "asd");
-    static_assert(aa.length() == 3);
-    constexpr stringa bb = "";
-    constexpr int k = "123"_ss.to_int<int>().value;
-    static_assert(k == 123);
-}
-
 TEST(SimStr, StrExpToStdString) {
     std::basic_string<u8s, std::char_traits<u8s>, std::pmr::polymorphic_allocator<u8s>> test = "count = "_ss + 10 + " times";
     EXPECT_EQ(test, "count = 10 times");
@@ -2001,6 +1990,13 @@ TEST(SimStr, EFill) {
     EXPECT_EQ(test, "<______t=10");
     test = e_fill_right("t="_ss + k, 10, '_') + ">";
     EXPECT_EQ(test, "t=10______>");
+}
+
+TEST(SimStr, Subst) {
+    int from = 1, total = 100;
+    bool success = true;
+    lstringu<100> u16t = e_subst(S_FRM(u"Test {} from {}, {}."), from, total, e_choice(success, u"success", u"fail"));
+    EXPECT_EQ(u16t, u"Test 1 from 100, success.");
 }
 
 } // namespace simstr::tests

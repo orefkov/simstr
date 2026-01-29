@@ -3,7 +3,7 @@
 #
 
 add_executable(test_str test_str.cpp)
-add_executable(test_expr_only test_expr_only.cpp)
+add_executable(test_expr_only test_expr_only.cpp test_tostrexpr.cpp)
 
 target_link_libraries(test_str simstr::simstr GTest::gtest_main)
 target_link_libraries(test_expr_only GTest::gtest_main)

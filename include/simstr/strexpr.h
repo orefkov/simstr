@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.5.0
+ * ver. 1.6.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -89,10 +89,10 @@ template<typename T>
 struct is_one_of_type<T, void> : std::false_type {};
 
 template<typename K>
-constexpr bool is_one_of_char_v = is_one_of_type<K, u8s, ubs, wchar_t, u16s, u32s>::value;
+concept is_one_of_char_v = is_one_of_type<K, u8s, ubs, wchar_t, u16s, u32s>::value;
 
 template<typename K>
-constexpr bool is_one_of_std_char_v = is_one_of_type<K, u8s, ubs, wchar_t, wchar_type>::value;
+concept is_one_of_std_char_v = is_one_of_type<K, u8s, ubs, wchar_t, wchar_type>::value;
 
 template<typename From>
 requires (is_one_of_std_char_v<From>)
@@ -133,7 +133,7 @@ auto to_one_of_std_char(const From* from) {
  * This is for the ability to mix string expressions of compatible types.
  */
 template<typename K1, typename K2>
-constexpr bool is_equal_str_type_v = is_one_of_char_v<K1> && is_one_of_char_v<K2> && sizeof(K1) == sizeof(K2);
+concept is_equal_str_type_v = sizeof(K1) == sizeof(K2) && is_one_of_char_v<K1> && is_one_of_char_v<K2>;
 
 /*
 Вспомогательные шаблоны для определения строковых литералов.
@@ -239,6 +239,19 @@ public:
     }
 };
 
+template<typename A>
+concept StrTypeCommon = requires(const A& a) {
+    typename std::remove_cvref_t<A>::symb_type;
+    { a.is_empty() } -> std::same_as<bool>;
+    { a.length() } -> std::convertible_to<size_t>;
+    { a.symbols() };
+};
+
+template<typename A>
+concept HasSymbType = requires {
+    typename std::remove_cvref_t<A>::symb_type;
+};
+
 /*!
  * @ru @brief Базовая концепция строкового объекта.
  * @tparam A - проверяемый тип
@@ -261,11 +274,64 @@ public:
  * - `typename symb_type`: sets the character type of the string
  */
 template<typename A, typename K>
-concept StrType = requires(const A& a) {
-    { a.is_empty() } -> std::same_as<bool>;
-    { a.length() } -> std::convertible_to<size_t>;
+concept StrType = StrTypeCommon<A> && requires(const A& a) {
     { a.symbols() } -> std::same_as<const K*>;
 } && std::is_same_v<typename std::remove_cvref_t<A>::symb_type, K>;
+
+template<typename T> struct is_std_string_source : std::false_type{};
+
+template<typename K, typename A>
+struct is_std_string_source<std::basic_string<K, std::char_traits<K>, A>> : std::true_type{};
+
+template<typename K>
+struct is_std_string_source<std::basic_string_view<K, std::char_traits<K>>> : std::true_type{};
+
+template<typename T>
+concept is_std_string_source_v = is_std_string_source<T>::value;
+
+template<typename T>
+concept StdStrSource = is_std_string_source_v<std::remove_cvref_t<T>>;
+
+template<typename T, typename K>
+concept StdStrSourceForType = StdStrSource<T> && is_equal_str_type_v<K, typename T::value_type>;
+
+template<typename T>
+concept StrSource = StdStrSource<T> || is_const_lit_v<T> || StrTypeCommon<T>;
+
+template<typename T> struct is_std_string : std::false_type{};
+
+template<typename K, typename A>
+struct is_std_string<std::basic_string<K, std::char_traits<K>, A>> : std::true_type{};
+
+template<typename T>
+concept is_std_string_v = is_std_string<T>::value;
+template<typename T, typename K>
+concept StdStringForType = is_std_string_v<T> && is_equal_str_type_v<K, typename T::value_type>;
+
+template<typename T>
+struct symb_type_from_src {
+    using type = void;
+
+};
+
+template<typename K, size_t N>
+struct symb_type_from_src<const K(&)[N]> {
+    using type = K;
+};
+
+template<StdStrSource T>
+struct symb_type_from_src<T> {
+    using type = typename std::remove_cvref_t<T>::value_type;
+};
+
+template<HasSymbType T>
+struct symb_type_from_src<T> {
+    using type = typename std::remove_cvref_t<T>::symb_type;
+};
+
+template<typename T>
+using symb_type_from_src_t = symb_type_from_src<T>::type;
+
 
 /*!
  * @ru @defgroup StrExprs Строковые выражения
@@ -328,6 +394,8 @@ concept StrType = requires(const A& a) {
  *  В одно выражение могут объединятся строковые выражения для символов разных, но совместимых типов.
  *  То есть можно сочетать `char` и `char8_t`, под Linux `wchar_t` и `char32_t`, под Windows `wchar_t` и `char16_t`.
  *
+ *  Помните: строковое выражение - это не строка, это только "инструкция", как собрать строку.
+ *
  * @en @defgroup StrExprs String Expressions
  * @brief Description of String Expressions
  * @details All owning string types can be initialized using "string expressions"
@@ -387,6 +455,8 @@ concept StrType = requires(const A& a) {
  *
  * String expressions for characters of different but compatible types can be combined into one expression.
  * That is, you can combine `char` and `char8_t`, and under Linux `wchar_t` and `char32_t`, under Windows `wchar_t` and `char16_t`.
+ *
+ * Remember: a string expression is not a string, it is only an "instruction" on how to assemble the string.
  */
 
 /*!
@@ -398,9 +468,9 @@ concept StrType = requires(const A& a) {
  */
 template<typename A>
 concept StrExpr = requires(const A& a) {
-    typename A::symb_type;
+    typename std::remove_cvref_t<A>::symb_type;
     { a.length() } -> std::convertible_to<size_t>;
-    { a.place(std::declval<typename A::symb_type*>()) } -> std::same_as<typename A::symb_type*>;
+    { a.place(std::declval<typename std::remove_cvref_t<A>::symb_type*>()) } -> std::same_as<typename std::remove_cvref_t<A>::symb_type*>;
 };
 
 /*!
@@ -415,7 +485,94 @@ concept StrExpr = requires(const A& a) {
  * @details Used to set restrictions on a string expression by character type.
  */
 template<typename A, typename K>
-concept StrExprForType = StrExpr<A> && is_equal_str_type_v<K, typename A::symb_type>;
+concept StrExprForType = StrExpr<A> && is_equal_str_type_v<K, typename std::remove_cvref_t<A>::symb_type>;
+
+//template<typename A, typename K>
+//concept StdString = StrExpr<A> && is_equal_str_type_v<K, typename std::remove_cvref_t<A>::value_type>;
+
+template<typename K, typename T>
+struct convert_to_strexpr;
+
+template<typename A, typename K>
+concept strexpr_from = requires(const A& a) {
+    {convert_to_strexpr<K, std::remove_cvref_t<A>>::convert(a)} -> StrExprForType<K>;
+};
+
+template<typename A, typename K>
+concept strexpr_std = requires(const A& a) {
+    {convert_to_strexpr<K, std::remove_cvref_t<A>>::convert(a)} -> StdStringForType<K>;
+};
+
+template<typename A, typename K>
+concept strexpr_for = StrExprForType<typename convert_to_strexpr<K, std::remove_cvref_t<A>>::type, K>;
+
+template<typename A, typename K>
+concept to_strexpr_type = StrExprForType<typename std::remove_cvref_t<A>::strexpr, K>;
+
+template<typename A, typename K>
+concept to_strexpr_meth = requires(const A& a) {
+    {a.template to_strexpr<K>()} -> StrExprForType<K>;
+};
+
+template<typename A, typename K>
+concept to_strexpr_std = requires(const A& a) {
+    {a.template to_strexpr<K>()} -> StdStringForType<K>;
+};
+
+template<typename A, typename K>
+concept convertible_to_strexpr = strexpr_for<A, K> || strexpr_from<A, K> || strexpr_std<A, K> || to_strexpr_type<A, K> || to_strexpr_meth<A, K> || to_strexpr_std<A, K>;
+
+template<typename K, strexpr_from<K> T>
+constexpr auto to_strexpr(T&& t) {
+    return convert_to_strexpr<K, std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<typename K, strexpr_for<K> T>
+constexpr typename convert_to_strexpr<K, std::remove_cvref_t<T>>::type to_strexpr(T&& t) {
+    return {std::forward<T>(t)};
+}
+
+template<typename K, to_strexpr_type<K> T>
+constexpr typename std::remove_cvref_t<T>::strexpr to_strexpr(T&& t) {
+    return {std::forward<T>(t)};
+}
+
+template<typename K, to_strexpr_meth<K> T>
+constexpr auto to_strexpr(T&& t) {
+    return t.template to_strexpr<K>();
+}
+
+template<typename K, StdStrSource T> requires is_equal_str_type_v<K, typename T::value_type>
+struct expr_stdstr_c {
+    using symb_type = K;
+    T t_;
+
+    expr_stdstr_c(T t) : t_(std::move(t)){}
+
+    constexpr size_t length() const noexcept {
+        return t_.length();
+    }
+    constexpr symb_type* place(symb_type* p) const noexcept {
+        size_t s = t_.size();
+        std::char_traits<K>::copy(p, (const K*)t_.data(), s);
+        return p + s;
+    }
+};
+
+template<typename K, strexpr_std<K> T>
+constexpr auto to_strexpr(T&& t) {
+    using type = decltype(convert_to_strexpr<K, std::remove_cvref_t<T>>::convert(std::forward<T>(t)));
+    return expr_stdstr_c<K, type>{convert_to_strexpr<K, std::remove_cvref_t<T>>::convert(std::forward<T>(t))};
+}
+
+template<typename K, to_strexpr_std<K> T>
+constexpr auto to_strexpr(T&& t) {
+    using type = decltype(t.template to_strexpr<K>());
+    return expr_stdstr_c<K, type>{t.template to_strexpr<K>()};
+}
+
+template<typename K, typename T>
+using convert_to_strexpr_t = decltype(to_strexpr<K>(std::declval<T>()));
 
 /*
 * Шаблонные классы для создания строковых выражений из нескольких источников.
@@ -568,6 +725,44 @@ struct strexprjoin_c : expr_to_std_string<strexprjoin_c<A, B, last>>{
         }
     }
 };
+
+/*!
+ * @ru @brief Оператор сложения строкового выражения и типов, для которых есть преобразование в строковое выражение.
+ * @tparam A - тип строкового выражения.
+ * @tparam B - тип слагаемого.
+ * @param a - строковое выражение.
+ * @param b - слагаемое.
+ * @return constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, true>
+ * @en @brief Addition operator for string expressions and types for which there is a conversion to string expressions.
+ * @tparam A - the type of the string expression.
+ * @tparam B - the type of the addend.
+ * @param a - the string expression.
+ * @param b - the addend.
+ * @return constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, true>
+ */
+template<StrExpr A, convertible_to_strexpr<typename A::symb_type> B>
+inline constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, true> operator+(const A& a, B&& b) {
+    return {a, to_strexpr<typename A::symb_type>(std::forward<B>(b))};
+}
+
+/*!
+ * @ru @brief Оператор сложения типов, для которых есть преобразование в строковое выражение и строкового выражения.
+ * @tparam A - тип строкового выражения.
+ * @tparam B - тип слагаемого.
+ * @param b - слагаемое.
+ * @param a - строковое выражение.
+ * @return constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, true>
+ * @en @brief Addition operator for types for which there is a conversion to string expressions and string expressions.
+ * @tparam A - the type of the string expression.
+ * @tparam B - the type of the addend.
+ * @param b - the addend.
+ * @param a - the string expression.
+ * @return constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, false>
+ */
+template<StrExpr A, convertible_to_strexpr<typename A::symb_type> B>
+inline constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>, false> operator+(B&& b, const A& a) {
+    return {a, to_strexpr<typename A::symb_type>(std::forward<B>(b))};
+}
 
 /*!
  * @ingroup StrExprs
@@ -1330,26 +1525,12 @@ constexpr auto e_if(bool c, T&& str) {
     return expr_choice_two_lit<K, N - 1, K, 0>{str, empty, c};
 }
 
-template<typename T> struct is_std_string_source : std::false_type{};
-
-template<typename K, typename A>
-struct is_std_string_source<std::basic_string<K, std::char_traits<K>, A>> : std::true_type{};
-
-template<typename K>
-struct is_std_string_source<std::basic_string_view<K, std::char_traits<K>>> : std::true_type{};
-
-template<typename T>
-constexpr bool is_std_string_source_v = is_std_string_source<T>::value;
-
-template<typename T>
-concept StdStrSource = is_std_string_source_v<std::remove_cvref_t<T>>;
-
 /*!
  * @ingroup StrExprs
  * @ru @brief Тип для использования std::basic_string и std::basic_string_view как источников в строковых выражениях.
  * @tparam K - тип символа.
  * @tparam T - тип источника.
- * @en @brief A type for using std::string and std::string_view as sources in string expressions.
+ * @en @brief A type for using std::basic_string and std::basic_string_view as sources in string expressions.
  * @tparam K is a symbol.
  * @tparam T - source type.
  */
@@ -1371,24 +1552,19 @@ struct expr_stdstr {
 };
 
 /*!
- * @ingroup StrExprs
- * @ru @brief Оператор сложения для строкового выражения и стандартных строк совместимого типа.
- * @en @brief The addition operator for string expression and standard strings of compatible type.
+ * @ru @brief Специализация шаблона для преобразования целых чисел в строковое выражение, позволяет использовать их в
+ * операциях конкатенации со строковыми выражениями.
+ * @tparam K - тип символов строкового выражения.
+ * @tparam T - тип числа.
+ * @en @brief A template specialization for converting integers to string expressions, allowing their use in
+ * concatenation operations with string expressions.
+ * @tparam K - the character type of the string expression.
+ * @tparam T - the number type.
  */
-template<StdStrSource T, StrExprForType<typename T::value_type> A>
-constexpr strexprjoin_c<A, expr_stdstr<typename T::value_type, T>, true> operator+(const A& a, const T& s) {
-    return {a, s};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Оператор сложения для стандартных строк и строкового выражения совместимого типа.
- * @en @brief The addition operator for standard strings and string expressions of compatible type.
- */
-template<StdStrSource T, StrExprForType<typename T::value_type> A>
-constexpr strexprjoin_c<A, expr_stdstr<typename T::value_type, T>, false> operator+(const T& s, const A& a) {
-    return {a, s};
-}
+template<typename K, StdStrSource T>
+struct convert_to_strexpr<K, T> {
+    using type = expr_stdstr<K, T>;
+};
 
 namespace str {
 constexpr const size_t npos = static_cast<size_t>(-1); //NOLINT
@@ -1408,8 +1584,8 @@ template<typename K, bool I, typename T>
 struct need_sign { // NOLINT
     bool negate;
     std::make_unsigned_t<T> val;
-    need_sign(T t) : negate(t < 0), val(t < 0 ? std::make_unsigned_t<T>{} - t : t) {}
-    void after(K*& ptr) {
+    constexpr need_sign(T t) : negate(t < 0), val(t < 0 ? std::make_unsigned_t<T>{} - t : t) {}
+    constexpr void after(K*& ptr) {
         if (negate)
             *--ptr = '-';
     }
@@ -1418,8 +1594,8 @@ struct need_sign { // NOLINT
 template<typename K, typename T>
 struct need_sign<K, false, T> {
     T val;
-    need_sign(T t) : val(t){}
-    void after(K*&) {}
+    constexpr need_sign(T t) : val(t){}
+    constexpr void after(K*&) {}
 };
 
 template<typename K, typename T>
@@ -1465,11 +1641,11 @@ struct expr_num : expr_to_std_string<expr_num<K, T>> {
     constexpr expr_num(T t) : value(t) {}
     constexpr expr_num(expr_num<K, T>&& t) : value(t.value) {}
 
-    size_t length() const noexcept {
+    constexpr size_t length() const noexcept {
         value = (T)fromInt(buf + bufSize, value);
         return (size_t)value;
     }
-    K* place(K* ptr) const noexcept {
+    constexpr K* place(K* ptr) const noexcept {
         size_t len = (size_t)value;
         ch_traits<K>::copy(ptr, buf + bufSize - len, len);
         return ptr + len;
@@ -1477,36 +1653,19 @@ struct expr_num : expr_to_std_string<expr_num<K, T>> {
 };
 
 /*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для строкового выражения и целого числа.
- * @param a - строковое выражение.
- * @param s - число.
- * @details Число конвертируется в десятичное строковое представление.
- * @en @brief Concatenation operator for string expression and integer.
- * @param a is a string expression.
- * @param s - number.
- * @details The number is converted to a decimal string representation.
+ * @ru @brief Специализация шаблона для преобразования целых чисел в строковое выражение, позволяет использовать их в
+ * операциях конкатенации со строковыми выражениями.
+ * @tparam K - тип символов строкового выражения.
+ * @tparam T - тип числа.
+ * @en @brief A template specialization for converting integers to string expressions, allowing their use in
+ * concatenation operations with string expressions.
+ * @tparam K - the character type of the string expression.
+ * @tparam T - the number type.
  */
-template<StrExpr A, FromIntNumber T>
-constexpr strexprjoin_c<A, expr_num<typename A::symb_type, T>> operator + (const A& a, T s) {
-    return {a, s};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для целого числа и строкового выражения.
- * @param s - число.
- * @param a - строковое выражение.
- * @details Число конвертируется в десятичное строковое представление.
- * @en @brief Concatenation operator for integer and string expression.
- * @param s - number.
- * @param a is a string expression.
- * @details The number is converted to a decimal string representation.
- */
-template<StrExpr A, FromIntNumber T>
-constexpr strexprjoin_c<A, expr_num<typename A::symb_type, T>, false> operator + (T s, const A& a) {
-    return {a, s};
-}
+template<typename K, FromIntNumber T>
+struct convert_to_strexpr<K, T> {
+    using type = expr_num<K, T>;
+};
 
 /*!
  * @ingroup StrExprs
@@ -1555,38 +1714,19 @@ struct expr_real : expr_to_std_string<expr_real<K>> {
 };
 
 /*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для строкового выражения и вещественного числа (`float`, `double`).
- * @param a - строковое выражение.
- * @param s - число.
- * @details Число конвертируется в строковое представление через sprintf("%.16g").
- * @en @brief Concatenation operator for string expression and real number (`float`, `double`).
- * @param a is a string expression.
- * @param s - number.
- * @details The number is converted to a string representation via sprintf("%.16g").
+ * @ru @brief Специализация шаблона для преобразования целых чисел в строковое выражение, позволяет использовать их в
+ * операциях конкатенации со строковыми выражениями.
+ * @tparam K - тип символов строкового выражения.
+ * @tparam T - тип числа.
+ * @en @brief A template specialization for converting integers to string expressions, allowing their use in
+ * concatenation operations with string expressions.
+ * @tparam K - the character type of the string expression.
+ * @tparam T - the number type.
  */
-template<StrExpr A, typename R>
-    requires(std::is_same_v<R, double> || std::is_same_v<R, float>)
-inline constexpr strexprjoin_c<A, expr_real<typename A::symb_type>> operator+(const A& a, R s) {
-    return {a, s};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для вещественного числа (`float`, `double`) и строкового выражения.
- * @param s - число.
- * @param a - строковое выражение.
- * @details Число конвертируется в строковое представление через `sprintf("%.16g")`.
- * @en @brief Concatenation operator for float (`float`, `double`) and string expression.
- * @param s - number.
- * @param a is a string expression.
- * @details The number is converted to a string representation via `sprintf("%.16g")`.
- */
-template<StrExpr A, typename R>
-    requires(std::is_same_v<R, double> || std::is_same_v<R, float>)
-inline constexpr strexprjoin_c<A, expr_real<typename A::symb_type>, false> operator+(R s, const A& a) {
-    return {a, s};
-}
+template<typename K, std::floating_point T>
+struct convert_to_strexpr<K, T> {
+    using type = expr_real<K>;
+};
 
 /*!
  * @ingroup StrExprs
@@ -1604,6 +1744,12 @@ inline constexpr expr_real<K> e_num(double t) {
     return {t};
 }
 
+template<FromIntNumber Val, bool All, bool Ucase, bool Ox>
+struct expr_hex_src {
+    explicit constexpr expr_hex_src(Val v) : v_(v){}
+    Val v_;
+};
+
 template<typename K, bool Ucase>
 constexpr K hex_symbols[16] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K('6'),
     K('7'), K('8'), K('9'), K(Ucase ? 'A' : 'a'), K(Ucase ? 'B' : 'b'), K(Ucase ? 'C' : 'c'),
@@ -1616,6 +1762,7 @@ struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
     mutable K buf_[sizeof(Val) * 2];
 
     explicit constexpr expr_hex(Val v) : v_(v){}
+    constexpr expr_hex(const expr_hex_src<Val, All, Ucase, Ox>& v) : v_(v.v_){}
 
     constexpr size_t length() const noexcept {
         K *ptr = buf_ + std::size(buf_);
@@ -1665,13 +1812,6 @@ struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
     }
 };
 
-template<typename Val, bool All, bool Ucase, bool Ox>
-requires std::is_unsigned_v<Val>
-struct expr_hex_src {
-    explicit constexpr expr_hex_src(Val v) : v_(v){}
-    Val v_;
-};
-
 /*!
  * @ingroup StrExprs
  * @ru @brief Флаги для функции e_hex.
@@ -1706,60 +1846,35 @@ constexpr auto e_hex(T v) {
 }
 
 /*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для строкового выражения и 16ричного представления числа из e_hex().
- * @param a - строковое выражение.
- * @param b - e_hex(число).
- * @en @brief Concatenation operator for a string expression and a hexadecimal representation of a number from e_hex().
- * @param a is a string expression.
- * @param b is e_hex(number).
+ * @ru @brief Специализация шаблона для преобразования e_hex в строковое выражение, позволяет использовать их в
+ * операциях конкатенации со строковыми выражениями.
+ * @tparam K - тип символов строкового выражения.
+ * @en @brief A template specialization for converting e_hex to string expressions, allowing their use in
+ * concatenation operations with string expressions.
+ * @tparam K - the character type of the string expression.
  */
-template<StrExpr A, typename Val, bool All, bool Ucase, bool Ox>
-constexpr strexprjoin_c<A, expr_hex<typename A::symb_type, Val, All, Ucase, Ox>, true> operator+(const A& a, const expr_hex_src<Val, All, Ucase, Ox>& b) {
-    return {a, expr_hex<typename A::symb_type, Val, All, Ucase, Ox>{b.v_}};
-}
+template<typename K, typename Val, bool All, bool Ucase, bool Ox>
+struct convert_to_strexpr<K, expr_hex_src<Val, All, Ucase, Ox>> {
+    using type = expr_hex<K, Val, All, Ucase, Ox>;
+};
+
+template<typename K>
+struct expr_pointer : expr_hex<K, uintptr_t, true, true, true> {
+    constexpr expr_pointer(const void* ptr) : expr_hex<K, uintptr_t, true, true, true>((uintptr_t)ptr){}
+};
 
 /*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для 16ричного представления числа из e_hex() и строкового выражения.
- * @param a - e_hex(число).
- * @param b - строковое выражение.
- * @en @brief Concatenation operator for the hexadecimal representation of a number from e_hex() and a string expression.
- * @param a - e_hex(number).
- * @param b is a string expression.
+ * @ru @brief Специализация шаблона для преобразования указателей в строковое выражение, позволяет использовать их в
+ * операциях конкатенации со строковыми выражениями.
+ * @tparam K - тип символов строкового выражения.
+ * @en @brief A template specialization for converting pointers to string expressions, allowing their use in
+ * concatenation operations with string expressions.
+ * @tparam K - the character type of the string expression.
  */
-template<StrExpr A, typename Val, bool All, bool Ucase, bool Ox>
-constexpr strexprjoin_c<A, expr_hex<typename A::symb_type, Val, All, Ucase, Ox>, false> operator+(const expr_hex_src<Val, All, Ucase, Ox>& b, const A& a) {
-    return {a, expr_hex<typename A::symb_type, Val, All, Ucase, Ox>{b.v_}};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для строкового выражения и указателя, представляет его как 0xDEADBEEF.
- * @param a - строковое выражение.
- * @param b - указатель.
- * @en @brief Concatenation operator for a string expression and a pointer, representing it as 0xDEADBEEF.
- * @param a is a string expression.
- * @param b is a pointer.
- */
-template<StrExpr A>
-constexpr strexprjoin_c<A, expr_hex<typename A::symb_type, uintptr_t, true, true, true>, true> operator+(const A& a, const void* b) {
-    return {a, (uintptr_t)b};
-}
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Оператор конкатенации для указателя и строкового выражения, представляет его как 0xDEADBEEF.
- * @param a - указатель.
- * @param b - строковое выражение.
- * @en @brief Concatenation operator for a pointer and a string expression, representing it as 0xDEADBEEF.
- * @param a - pointer.
- * @param b is a string expression.
- */
-template<StrExpr A>
-constexpr strexprjoin_c<A, expr_hex<typename A::symb_type, uintptr_t, true, true, true>, false> operator+(const void* b, const A& a) {
-    return {a, (uintptr_t)b};
-}
+template<typename K, typename T>
+struct convert_to_strexpr<K, const T*> {
+    using type = expr_pointer<K>;
+};
 
 template<typename K, StrExprForType<K> A, bool Left>
 struct expr_fill : expr_to_std_string<expr_fill<K, A, Left>>{
@@ -2032,7 +2147,7 @@ struct convert_result {
 };
 
 struct int_convert { // NOLINT
-    inline static const uint8_t NUMBERS[] = {
+    inline static constexpr uint8_t NUMBERS[] = {
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,   1,   2,   3,
         4,   5,   6,   7,   8,   9,   255, 255, 255, 255, 255, 255, 255, 10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,
@@ -3094,7 +3209,7 @@ public:
      * @return size_t - position of the found occurrence, or -1 if not found.
      */
     constexpr size_t find_first_of(str_piece pattern, size_t offset = 0) const noexcept {
-        return std::string_view{_str(), _len()}.find_first_of(std::string_view{pattern.str, pattern.len}, offset);
+        return std::basic_string_view<K>{_str(), _len()}.find_first_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
     }
     /*!
      * @ru @brief Найти первое вхождение символа из заданного набора символов.
@@ -3108,8 +3223,8 @@ public:
      */
     constexpr std::pair<size_t, size_t> find_first_of_idx(str_piece pattern, size_t offset = 0) const noexcept {
         const K* text = _str();
-        size_t fnd = std::string_view{text, _len()}.find_first_of(std::string_view{pattern.str, pattern.len}, offset);
-        return {fnd, fnd == std::string::npos ? fnd : pattern.find(text[fnd]) };
+        size_t fnd = std::basic_string_view<K>{text, _len()}.find_first_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
+        return {fnd, fnd == std::basic_string<K>::npos ? fnd : pattern.find(text[fnd]) };
     }
     /*!
      * @ru @brief Найти первое вхождение символа не из заданного набора символов.
@@ -3122,7 +3237,7 @@ public:
      * @return size_t - position of the found occurrence, or -1 if not found.
      */
     constexpr size_t find_first_not_of(str_piece pattern, size_t offset = 0) const noexcept {
-        return std::string_view{_str(), _len()}.find_first_not_of(std::string_view{pattern.str, pattern.len}, offset);
+        return std::basic_string_view<K>{_str(), _len()}.find_first_not_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
     }
     /*!
      * @ru @brief Найти последнее вхождение символа из заданного набора символов.
@@ -3135,7 +3250,7 @@ public:
      * @return size_t - position of the found occurrence, or -1 if not found.
      */
     constexpr size_t find_last_of(str_piece pattern, size_t offset = str::npos) const noexcept {
-        return std::string_view{_str(), _len()}.find_last_of(std::string_view{pattern.str, pattern.len}, offset);
+        return std::basic_string_view<K>{_str(), _len()}.find_last_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
     }
     /*!
      * @ru @brief Найти последнее вхождение символа из заданного набора символов.
@@ -3149,8 +3264,8 @@ public:
      */
     constexpr std::pair<size_t, size_t> find_last_of_idx(str_piece pattern, size_t offset = str::npos) const noexcept {
         const K* text = _str();
-        size_t fnd = std::string_view{text, _len()}.find_last_of(std::string_view{pattern.str, pattern.len}, offset);
-        return {fnd, fnd == std::string::npos ? fnd : pattern.find(text[fnd]) };
+        size_t fnd = std::basic_string_view<K>{text, _len()}.find_last_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
+        return {fnd, fnd == std::basic_string<K>::npos ? fnd : pattern.find(text[fnd]) };
     }
     /*!
      * @ru @brief Найти последнее вхождение символа не из заданного набора символов.
@@ -3163,7 +3278,7 @@ public:
      * @return size_t - position of the found occurrence, or -1 if not found.
      */
     constexpr size_t find_last_not_of(str_piece pattern, size_t offset = str::npos) const noexcept {
-        return std::string_view{_str(), _len()}.find_last_not_of(std::string_view{pattern.str, pattern.len}, offset);
+        return std::basic_string_view<K>{_str(), _len()}.find_last_not_of(std::basic_string_view<K>{pattern.str, pattern.len}, offset);
     }
     /*!
      * @ru @brief Получить подстроку. Работает аналогично operator(), только результат выдает того же типа, к которому применён метод.
@@ -3542,6 +3657,14 @@ public:
     constexpr bool is_ascii() const noexcept {
         if (_is_empty())
             return true;
+        if (std::is_constant_evaluated()) {
+            for (size_t idx = 0; idx < _len(); idx++) {
+                if (uns_type(_str()[idx]) > 127) {
+                    return false;
+                }
+            }
+            return true;
+        }
         const int sl = ascii_mask<K>::WIDTH;
         const size_t mask = ascii_mask<K>::VALUE;
         size_t len = _len();
@@ -4159,6 +4282,22 @@ using strw = str_src_nt<wchar_t>;
 using stru = str_src_nt<u16s>;
 using struu = str_src_nt<u32s>;
 
+template<typename K>
+consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<ubs> sb, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {
+    if constexpr (std::is_same_v<K, u8s>)
+        return s8;
+    if constexpr (std::is_same_v<K, ubs>)
+        return sb;
+    if constexpr (std::is_same_v<K, uws>)
+        return sw;
+    if constexpr (std::is_same_v<K, u16s>)
+        return s16;
+    if constexpr (std::is_same_v<K, u32s>)
+        return s32;
+}
+
+#define uni_string(K, p) select_str<K>(p, u8##p, L##p, u##p, U##p)
+
 inline namespace literals {
 
 /*!
@@ -4330,49 +4469,6 @@ constexpr inline auto trimOp(str_src<K> pattern) {
     return trim_operator<S, K, 0, withSpaces>{pattern};
 }
 
-template<typename T>
-concept StrSource = StdStrSource<T> || requires {
-    typename std::remove_cvref_t<T>::symb_type;
-};
-
-template<typename T>
-struct to_src_str_base {
-    using symb_type = typename T::symb_type;
-    static str_src<symb_type> get(const T& s) {
-        return {s.symbols(), s.length()};
-    }
-};
-
-struct to_src_str_base_none {};
-
-template<typename T>
-struct to_src_str : std::conditional_t<StrSource<T>, to_src_str_base<T>, to_src_str_base_none> {
-};
-
-template<typename K, typename T, typename A>
-struct to_src_str<std::basic_string<K, T, A>> {
-    using symb_type = K;
-    static str_src<K> get(const std::basic_string<K, T, A>& s) {
-        return {s.data(), s.length()};
-    }
-};
-
-template<typename K, typename T>
-struct to_src_str<std::basic_string_view<K, T>> {
-    using symb_type = K;
-    static str_src<K> get(const std::basic_string_view<K, T>& s) {
-        return {s.data(), s.length()};
-    }
-};
-
-template<typename T>
-using src_str_t = to_src_str<std::remove_cvref_t<T>>::symb_type;
-
-template<typename T>
-auto get_str_src_from(T&& t) {
-    return to_src_str<std::remove_cvref_t<T>>::get(std::forward<T>(t));
-}
-
 static constexpr size_t FIND_CACHE_SIZE = 16;
 
 template<typename K, size_t N, size_t L>
@@ -4469,10 +4565,10 @@ struct expr_replaces : expr_to_std_string<expr_replaces<K, N, L>> {
  * @param p - string literal, searched substring.
  * @param r - string literal, what to replace with.
  */
-template<StrSource A, typename K = src_str_t<A>, typename T, size_t N = const_lit_for<K, T>::Count, typename X, size_t L = const_lit_for<K, X>::Count>
+template<StrSource A, typename K = symb_type_from_src_t<A>, typename T, size_t N = const_lit_for<K, T>::Count, typename X, size_t L = const_lit_for<K, X>::Count>
     requires(N > 1)
 constexpr auto e_repl(A&& w, T&& p, X&& r) {
-    return expr_replaces<K, N - 1, L - 1>{get_str_src_from(std::forward<A>(w)), p, r};
+    return expr_replaces<K, N - 1, L - 1>{std::forward<A>(w), p, r};
 }
 
 /*!
@@ -4710,12 +4806,12 @@ struct expr_replaced_e : expr_to_std_string<expr_replaced_e<K, E>> {
  * @param p - string object, searched substring, maybe runtime.
  * @param r - string object, replace substring, maybe runtime.
  */
-template<StrSource A, typename K = src_str_t<A>, typename T, typename X>
+template<StrSource A, typename K = symb_type_from_src_t<A>, typename T, typename X>
     requires (std::is_constructible_v<str_src<K>, T> && std::is_constructible_v<str_src<K>, X> && (!is_const_lit_v<T> || !is_const_lit_v<X>))
 constexpr auto e_repl(A&& w, T&& p, X&& r) {
     str_src<K> pattern{std::forward<T>(p)};
     str_src<K> repl{std::forward<X>(r)};
-    return expr_replaced<K>{get_str_src_from(std::forward<A>(w)), pattern, repl};
+    return expr_replaced<K>{std::forward<A>(w), pattern, repl};
 }
 
 /*!
@@ -4731,11 +4827,11 @@ constexpr auto e_repl(A&& w, T&& p, X&& r) {
  * @param p - string object, searched substring, maybe runtime.
  * @param expr - string expression, what to replace with.
  */
-template<StrSource A, typename K = src_str_t<A>, typename T, StrExprForType<K> E>
+template<StrSource A, typename K = symb_type_from_src_t<A>, typename T, StrExprForType<K> E>
     requires std::is_constructible_v<str_src<K>, T>
 constexpr auto e_repl(A&& w, T&& p, const E& expr) {
     str_src<K> pattern{std::forward<T>(p)};
-    return expr_replaced_e<K, E>{get_str_src_from(std::forward<A>(w)), pattern, expr};
+    return expr_replaced_e<K, E>{std::forward<A>(w), pattern, expr};
 }
 
 template<bool UseVectorForReplace>
@@ -4880,7 +4976,6 @@ protected:
     bool is_in_mask2(uu8s s) const {
         return (bit_mask_[32 + (s >> 3)] & (1 <<(s & 7))) != 0;
     }
-
     bool is_in_pattern(K s, size_t& idx) const {
         if constexpr (N >= BIT_SEARCH_TRESHHOLD) {
             if constexpr (sizeof(K) == 1) {
@@ -4963,10 +5058,10 @@ protected:
  *  out += "<div>" + repl_html_symbols(content) + "</div>";
  *  ```
  */
-template<bool UseVector = false, StrSource A, typename K = src_str_t<A>, typename ... Repl>
+template<bool UseVector = false, StrSource A, typename K = symb_type_from_src_t<A>, typename ... Repl>
     requires (sizeof...(Repl) % 2 == 0)
 auto e_repl_const_symbols(A&& src, Repl&& ... other) {
-    return expr_replace_const_symbols<K, sizeof...(Repl) / 2, UseVector>(get_str_src_from(std::forward<A>(src)), std::forward<Repl>(other)...);
+    return expr_replace_const_symbols<K, sizeof...(Repl) / 2, UseVector>(std::forward<A>(src), std::forward<Repl>(other)...);
 }
 
 /*!
@@ -5207,6 +5302,392 @@ protected:
         return {-1, -1};
     }
 };
+
+template<typename K, StrExprForType<K> T>
+struct force_copy {
+    const T& t_;
+    force_copy(const T& t) : t_(t){}
+};
+
+template<typename K, typename T>
+struct symb_type_from_src<force_copy<K, T>> {
+    using type = K;
+};
+
+
+template<StrExpr T>
+force_copy(T&&) -> force_copy<typename T::symb_type, T>;
+
+template<typename K, typename T>
+constexpr auto to_subst(T&& t) {
+    return to_strexpr<K>(std::forward<T>(t));
+}
+
+template<typename K, typename T, size_t N>
+constexpr auto to_subst(const T(&t)[N]) {
+    return expr_literal<T, N - 1>{t};
+}
+
+template<typename K, StrExprForType<K> T>
+constexpr decltype(auto) to_subst(T&& t) {
+    return std::forward<T>(t);
+}
+
+template<typename K, typename T>
+constexpr T to_subst(const force_copy<K, T>& t) {
+    return t.t_;
+}
+
+template<typename K, typename T>
+constexpr T to_subst(force_copy<K, T>&& t) {
+    return t.t_;
+}
+
+template<typename K, typename T>
+constexpr T to_subst(force_copy<K, T>& t) {
+    return t.t_;
+}
+
+template<typename K, typename T>
+using to_str_exp_t = decltype(to_subst<K>(std::declval<T>()));
+
+/*!
+ * @ru @brief Строковое выражение для объединения более чем одного строкового выражения, с указанием разделителя.
+ *  Создаётся при вызове функции `e_concat`.
+ * @tparam K - тип символов.
+ * @tparam G - тип разделителя.
+ * @tparam Args... - типы строковых выражений.
+ * @en @brief A string expression for concatenating more than one string expression, specifying a separator.
+ *  Created when calling the `e_concat` function.
+ * @tparam K - character type.
+ * @tparam G - separator type.
+ * @tparam Args... - string expression types. */
+template<typename K, typename G, typename Arg, typename...Args>
+struct expr_concat : expr_to_std_string<expr_concat<K, G, Arg, Args...>> {
+    using symb_type = K;
+    using store_t = std::tuple<Args...>;
+    G glue_;
+    Arg arg_;
+    store_t args_;
+    mutable size_t glue_len_;
+
+    constexpr expr_concat(G&& glue, Arg&& arg, Args&&...args) : glue_(std::forward<G>(glue)), arg_(std::forward<Arg>(arg)), args_(std::forward<Args>(args)...) {}
+
+    constexpr size_t length() const noexcept {
+        return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
+            glue_len_ = glue_.length();
+            size_t l = arg_.length() + glue_len_ * sizeof...(Args);
+            ((l += std::get<Indexes>(args_).length()),...);
+            return l;
+        }(std::make_index_sequence<sizeof...(Args)>());
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        return [this]<size_t...Indexes>(K* ptr, std::index_sequence<Indexes...>) {
+            ptr = (K*)arg_.place((typename std::remove_cvref_t<Arg>::symb_type*)ptr);
+            const K* glueStart = ptr;
+            ptr = glue_.place(ptr);
+            (
+                (
+                    ptr = (K*)std::get<Indexes>(args_).place((typename std::remove_cvref_t<std::tuple_element_t<Indexes, store_t>>::symb_type*)ptr),
+                    glue_len_ > 0 && Indexes < sizeof...(Args) - 1 ? (ch_traits<K>::copy(ptr, glueStart, glue_len_), ptr += glue_len_) : nullptr
+                ),
+            ...);
+            return ptr;
+        }(ptr, std::make_index_sequence<sizeof...(Args)>());
+    }
+};
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Создание строкового выражения, объединяющего указанные строковые выражения, с использованием
+ * заданного разделителя.
+ * @tparam T - тип разделителя, выводится из аргумента.
+ * @tparam K - тип символов, выводится из типа разделителя.
+ * @tparam Args... - склеиваемые аргументы.
+ * @param glue - "клей", используемый при соединении аргументов, вставляется между ними.
+ * @param args... - объединяемые аргументы, не менее двух.
+ * @details "Склеивает" переданные аргументы, вставляя между ними заданный "клей".
+ * Соединителем и аргументами могут быть строковые литералы, строковые выражения, стандартные строки.
+ * Аргументами также могут быть любые типы, для которых есть преобразование в строковое выражение.
+ * (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+ * Для аргументов, которые сами являются строковыми выражениями, `e_concat` сохраняет только ссылку на них.
+ * Обычно это не является проблемой, если ссылка не на временный объект, или строковое выражение материализуется
+ * сейчас же, до ';'. Если же вам необходимо вернуть `e_concat` как строковое выражение из функции,
+ * можно заставить его сохранить аргументы строковые выражения по копии, обернув их в `force_copy{}`.
+ * См. пример в tests/test_tostrexpr.cpp, Method4.
+ * @en @brief Create a string expression concatenating the specified string expressions using the specified delimiter.
+ * @tparam T - delimiter type, deduced from the argument.
+ * @tparam K - character type, deduced from the separator type.
+ * @tparam Args... - arguments to be merged.
+ * @param glue - the "glue" used when connecting arguments is inserted between them.
+ * @param args... - the arguments to be combined, at least two.
+ * @details "Glues" the passed arguments, inserting the specified "glue" between them.
+ * The connector and arguments can be string literals, string expressions, standard strings.
+ * Arguments can also be any type for which there is a conversion to a string expression.
+ * (see @ref ConvertToStrExpr "Converting types to string expressions").
+ * For arguments that are themselves string expressions, `e_concat` stores only a reference to them.
+ * This is usually not a problem if the reference is not to a temporary object, or the string expression is materialized
+ * now, before ';'. If you need to return `e_concat` as a string expression from a function,
+ * you can force it to preserve string expression arguments over a copy by wrapping them in `force_copy{}`.
+* See tests/test_tostrexpr.cpp, Method4 for an example.
+ * @ru Пример: @en Example @~
+ * ```cpp
+ *  std::string t = e_concat("", text, " = ", count, " times.");
+ *  ....
+ *  std::string t = "msg=" + e_concat(", ", text1, text3, text3, count1, count2);
+ * ```
+ */
+template<typename T, typename K = symb_type_from_src_t<T>, typename ... Args> requires (sizeof...(Args) > 1)
+constexpr expr_concat<K, to_str_exp_t<K, T>, to_str_exp_t<K, Args>...> e_concat(T&& glue, Args&&...args) {
+    return { to_subst<K>(std::forward<T>(glue)), to_subst<K>(std::forward<Args>(args))...};
+}
+
+namespace details {
+
+template<typename K, typename Pt, typename...Args>
+struct subst_params {
+    struct parse_subst_string_error {
+        parse_subst_string_error(const char*){}
+    };
+
+    struct portion {
+        unsigned start: 16;
+        unsigned len: 15;
+        unsigned is_param: 1;
+
+        portion() = default;
+
+        constexpr void set_param(unsigned param) {
+            if (param >= (1 << 16)) {
+                throw parse_subst_string_error{"the parameter id is too large"};
+            }
+            start = param;
+            is_param = 1;
+        }
+        constexpr void set_part(unsigned from, unsigned l) {
+            if (from >= (1 << 16) || len >= (1 << 15)) {
+                throw parse_subst_string_error{"the string part is too large"};
+            }
+            start = from;
+            len = l;
+            is_param = 0;
+        }
+    };
+
+    inline static constexpr size_t NParams = sizeof...(Args);
+    inline static constexpr size_t PtLen = const_lit<Pt>::Count;
+
+    Pt source_;
+    unsigned all_len_{};
+    unsigned actual_{};
+    // The pattern string can be divided into a maximum of this number of portions.
+    // "a{}a{}a{}a" - Two portions of one symbol from the edges, and two portions for every three symbols
+    portion portions_[2 + PtLen / 3 * 2]{};
+
+    consteval subst_params(Pt&& pattern) : source_(pattern) {
+        const K* first = pattern;
+        const K* last = first + PtLen - 1;
+        char used_args[NParams] = {0};
+
+        auto find = [](const K* from, const K* last, K s) {
+            while (from != last) {
+                if (*from == s) {
+                    break;
+                }
+                from++;
+            }
+            return from;
+        };
+        size_t idx_in_data = 0, idx_in_params = 0;
+
+        while (first != last) {
+            bool cont = false;
+            const K* open_pos = first;
+            if (*first != '{') {
+                open_pos = find(first, last, '{');
+
+                for (;;) {
+                    const K* close_pos = find(first, open_pos, '}');
+                    if (close_pos == open_pos) {
+                        if (open_pos < last && open_pos[1] == '{') {
+                            unsigned len = open_pos - first + 1;
+                            portions_[idx_in_data++].set_part(first - pattern, len);
+                            all_len_ += len;
+                            first = open_pos + 2;
+                            cont = true;
+                        } else if (unsigned len = open_pos - first) {
+                            portions_[idx_in_data++].set_part(first - pattern, len);
+                            all_len_ += len;
+                        }
+                        break;
+                    }
+                    ++close_pos;
+                    if (close_pos == open_pos || *close_pos != '}') {
+                        throw parse_subst_string_error{"unescaped }"};
+                    }
+                    unsigned len = close_pos - first;
+                    portions_[idx_in_data++].set_part(first - pattern, len);
+                    all_len_ += len;
+                    first = ++close_pos;
+                }
+                if (open_pos == last) {
+                    break;
+                }
+            }
+            if (cont) {
+                continue;
+            }
+
+            if (++open_pos == last) {
+                throw parse_subst_string_error{"unescaped {"};
+            }
+            if (*open_pos == '}') {
+                if (idx_in_params == -1) {
+                    throw parse_subst_string_error{"already used param ids"};
+                }
+                used_args[idx_in_params]++;
+                portions_[idx_in_data++].set_param(idx_in_params++);
+                first = open_pos + 1;
+            } else if (*open_pos == '{') {
+                portions_[idx_in_data++].set_part(open_pos - pattern, 1);
+                all_len_++;
+                first = open_pos + 1;
+            } else {
+                if (idx_in_params != 0 && idx_in_params != -1) {
+                    throw parse_subst_string_error{"already used non id params"};
+                }
+                idx_in_params = -1;
+                const K* end = find(open_pos, last, '}');
+                if (end == last) {
+                    throw parse_subst_string_error{"not found }"};
+                }
+                auto [p, err, _] = str_src<K>(open_pos, end - open_pos).template to_int<unsigned, true, 10, false, false>();
+                if (err != IntConvertResult::Success || p < 1 || p > NParams) {
+                    throw parse_subst_string_error{"bad param id"};
+                }
+                used_args[--p]++;
+                portions_[idx_in_data++].set_param(p);
+                first = end + 1;
+            }
+        }
+        for (auto c : used_args) {
+            if (!c) {
+                throw parse_subst_string_error{"unused param"};
+            }
+        }
+        actual_ = idx_in_data;
+    }
+};
+
+} // namespace details
+
+template<typename K, typename Pt, typename ... Args>
+struct expr_subst : expr_to_std_string<expr_subst<K, Pt, Args...>> {
+    inline static constexpr size_t Nparams = sizeof...(Args);
+    using symb_type = K;
+    using store_t = std::tuple<to_str_exp_t<K, Args>...>;
+
+    const details::subst_params<K, Pt, Args...>& subst_;
+    store_t args_;
+
+    constexpr expr_subst(const details::subst_params<K, Pt, Args...>& subst, Args&&...args)
+        : subst_(subst)
+        , args_(to_subst<K>(std::forward<Args>(args))...){}
+
+    constexpr size_t length() const noexcept {
+        return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
+            size_t idx = 0;
+            size_t expr_length_[Nparams] = {};
+            ((expr_length_[idx++] = std::get<Indexes>(args_).length()),...);
+            size_t l = subst_.all_len_;
+            for (idx = 0; idx < subst_.actual_; idx++) {
+                if (subst_.portions_[idx].is_param) {
+                    l += expr_length_[subst_.portions_[idx].start];
+                }
+            }
+            return l;
+        }(std::make_index_sequence<sizeof...(Args)>());
+    }
+    template<size_t Idx>
+    constexpr K* place_idx(K* ptr, size_t idx) const noexcept {
+        if (idx == Idx) {
+            return (K*)std::get<Idx>(args_).place((typename std::remove_cvref_t<std::tuple_element_t<Idx, store_t>>::symb_type*)ptr);
+        }
+        if constexpr (Idx < Nparams - 1) {
+            return place_idx<Idx + 1>(ptr, idx);
+        }
+        return ptr;
+    }
+
+    constexpr K* place(K* ptr) const noexcept {
+        for (size_t idx = 0; idx < subst_.actual_; idx++) {
+            if (subst_.portions_[idx].is_param) {
+                ptr = place_idx<0>(ptr, subst_.portions_[idx].start);
+            } else {
+                ch_traits<K>::copy(ptr, subst_.source_ + subst_.portions_[idx].start, subst_.portions_[idx].len);
+                ptr += subst_.portions_[idx].len;
+            }
+        }
+        return ptr;
+    }
+};
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строковом литерале - образце значения переданных строковых выражений.
+ * @tparam T - тип строки-образца, выводится из аргумента.
+ * @tparam Args... - типы переданных аргументов.
+ * @param str_pattern - Строка-образец, строковый литерал, служит для вывода типа символов выражения и получения длины образца во время компиляции.
+ * @param pattern - распарсенная во время компиляции информация составе строки-шаблона, содержит длины текстовых порций и места вставки параметров.
+ * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
+ * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
+ * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
+ *  значения переданных аргументов. Строка-образец задается строковым литералом, константной времени компиляции.
+ *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
+ *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
+ *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
+ *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
+ *  Все переданные параметры должны участвовать в подстановках. Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
+ *  Строка-образец обрабатывается во время компиляции, и для неё сразу создаётся массив с информацией о вставках - какие части строки копировать
+ *  в результат, в какие места вставлять переданные значения. Из-за невозможности вывести компилятором тип для объекта с этой информацией напрямую из
+ *  строкового литерала, его приходится указывать дважды - первый раз как параметр для вывода типа, второй - как параметр для конструктора
+ *  типа, выведенного из первого параметра. Для упрощения задания образца используется макрос `S_FRM("образец{}")`, который просто повторяет параметр
+ *  два раза.
+ *  Функция не является заменой `std::format`, не работает с образцом, задаваемым в рантайм, и не поддерживает каких-либо параметров форматирования
+ * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
+ *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+ * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified places in a string literal.
+ * @tparam T - type of the pattern string, inferred from the argument.
+ * @tparam Args... - types of arguments passed.
+ * @param str_pattern - The pattern string, a string literal, is used to infer the character type of an expression and obtain the length of the pattern at compile time.
+ * @param pattern - information parsed during compilation in the template string, containing the lengths of text chunks and places to insert parameters.
+ * @param args... - arguments that will be inserted into the specified places in the sample. Also, as in `e_concat`, there can be string literals,
+ * string expressions, standard strings, as well as any types for which there is a conversion to a string expression.
+ * @details The function creates a string expression, which, when materialized, generates text from the sample, substituting it in placeholders
+ * values ​​of the passed arguments. The pattern string is specified by a string literal, a compile-time constant.
+ * Insertion locations are indicated by either `{}` or `{number}`.
+ * In case without spectacle number, the parameters are submitted to the order of order. In case of the index number, the parameters are submitted in accordance with
+ * with the specified serial number. The numbering of parameters starts from 1. You cannot mix parameters without a number and with a number - only used
+ * one of the options for all substitutions. In the case of specifying numbers, one parameter can participate in several substitutions.
+ * All passed parameters must participate in substitutions. To insert curly braces themselves, they must be doubled - `{{`, `}}`.
+ * The sample string is processed during compilation, and an array is immediately created for it with information about insertions - which parts of the string to copy
+ * in the result, where to insert the passed values. Because the compiler cannot deduced the type for an object with this information directly from
+ * a string literal, it has to be specified twice - the first time as a parameter for type deducing, the second time as a parameter for the constructor
+ * the type deduced from the first parameter. To simplify specifying a sample, use the macro `S_FRM("sample{}")`, which simply repeats the parameter twice.
+ * The function is not a replacement for `std::format`, does not work with the sample specified at runtime, and does not support any formatting options
+ * for substituted values. All passed arguments must be able to convert themselves to string expressions
+ * (see @ref ConvertToStrExpr "Converting types to string expressions").
+ * @ru Пример: @en Example: @~
+ * ```cpp
+ *  lstringu<100> u16t = e_subst(S_FRM(u"Test {} from {}, {}."), from, total, success ? u"success"_ss : u"fail"_ss);
+ * ```
+ */
+template<typename T, typename...Args> requires (sizeof...(Args) > 0)
+constexpr auto e_subst(T&& str_pattern, const details::subst_params<typename const_lit<T>::symb_type, std::type_identity_t<T>, std::type_identity_t<Args>...>& pattern, Args&&...args) {
+    return expr_subst<typename const_lit<T>::symb_type, T, Args...>{pattern, std::forward<Args>(args)...};
+}
+
+#define S_FRM(s) s, s
 
 /*!
  * @ru @brief Небольшое пространство для методов работы со стандартными строками.
@@ -5464,27 +5945,26 @@ struct replace_grow_helper {
                 reserve_for_copy = dst_str->data();
             }
         }
-        K* dst_start = reserve_for_copy;
         const K* src_start = str.c_str();
         while(idx-- > 0) {
             size_t pos = found[idx] + pattern.len;
             size_t lenOfPiece = end_of_piece - pos;
-            ch_traits<K>::move(dst_start + pos + all_delta, src_start + pos, lenOfPiece);
+            ch_traits<K>::move(reserve_for_copy + pos + all_delta, src_start + pos, lenOfPiece);
             if constexpr (std::is_same_v<E, int>) {
-                ch_traits<K>::copy(dst_start + pos + all_delta - replLen, repl, replLen);
+                ch_traits<K>::copy(reserve_for_copy + pos + all_delta - replLen, repl, replLen);
             } else {
                 if (!repl) {
-                    repl = dst_start + pos + all_delta - replLen;
+                    repl = reserve_for_copy + pos + all_delta - replLen;
                     expr.place(repl);
                 } else {
-                    ch_traits<K>::copy(dst_start + pos + all_delta - replLen, repl, replLen);
+                    ch_traits<K>::copy(reserve_for_copy + pos + all_delta - replLen, repl, replLen);
                 }
             }
             all_delta -= delta;
             end_of_piece = found[idx];
         }
         if (!all_delta && reserve_for_copy != src_start) {
-            ch_traits<K>::copy(dst_start, src_start, found[0]);
+            ch_traits<K>::copy(reserve_for_copy, src_start, found[0]);
             str = std::move(*dst);
         }
     }

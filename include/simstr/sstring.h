@@ -1,9 +1,9 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.5.0
+ * ver. 1.6.0
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.5.0
+* ver. 1.6.0
 * Classes for working with strings
  */
 
@@ -48,7 +48,6 @@ const bool isWindowsOs = // NOLINT
 
 #define IN_FULL_SIMSTR
 #include "strexpr.h"
-#undef simple_str
 
 #include <format>
 #include <unordered_map>
@@ -3374,9 +3373,6 @@ protected:
                 const K* sstr_;
             };
             size_t bigLen_; // Длина не локальной строки | Non-local string length
-            uns_type pad_[LocalCount - (sizeof(const K*) + sizeof(size_t)) / sizeof(K)];
-            uns_type blocalRemain_ : sizeof(uns_type) * CHAR_BIT - 2;
-            uns_type btype_ : 2;
         };
     };
 
@@ -3385,7 +3381,7 @@ protected:
         localRemain_ = LocalCount;
         buf_[0] = 0;
     }
-    K* init(size_t s) {
+    constexpr K* init(size_t s) {
         if (s > LocalCount) {
             type_ = Shared;
             localRemain_ = 0;
@@ -3472,7 +3468,7 @@ public:
      */
     template<typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    sstring(s_str other, Args&&... args) : base_storable(std::forward<Args>(args)...), buf_{0} {
+    sstring(s_str other, Args&&... args) : base_storable(std::forward<Args>(args)...) {
         base_storable::init_from_str_other(other);
     }
     /*!
@@ -3550,7 +3546,7 @@ public:
     static const sstring<K> empty_str;
     /// @ru Деструктор строки. @en String destructor.
     constexpr ~sstring() {
-        if (btype_ == Shared) {
+        if (type_ == Shared) {
             SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
         }
     }
@@ -3635,13 +3631,11 @@ public:
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
-    constexpr sstring(T&& s, Args&&... args) : base_storable(std::forward<Args>(args)...)
-        , btype_(Constant)
-        , blocalRemain_(0)
-        , cstr_(s)
-        , bigLen_(N - 1)
-        , pad_{}
-    {
+    sstring(T&& s, Args&&... args) : base_storable(std::forward<Args>(args)...) {
+        type_ = Constant;
+        localRemain_ = 0;
+        cstr_ = s;
+        bigLen_ = N - 1;
     }
 
     constexpr void swap(my_type&& other) noexcept {
@@ -3738,11 +3732,11 @@ public:
     }
     /// @ru Указатель на символы строки. @en Pointer to characters in the string.
     constexpr const K* symbols() const noexcept {
-        return btype_ == Local ? buf_ : cstr_;
+        return type_ == Local ? buf_ : cstr_;
     }
     /// @ru Длина строки. @en Line length.
     constexpr size_t length() const noexcept {
-        return btype_ == Local ? LocalCount - blocalRemain_ : bigLen_;
+        return type_ == Local ? LocalCount - localRemain_ : bigLen_;
     }
     /// @ru Пустая ли строка. @en Is the string empty?
     constexpr bool is_empty() const noexcept {
@@ -3802,9 +3796,11 @@ template<typename K, Allocatorable Allocator>
 inline const sstring<K> sstring<K, Allocator>::empty_str{};
 
 template<typename K>
-consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {
+consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<ubs> sb, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {
     if constexpr (std::is_same_v<K, u8s>)
         return s8;
+    if constexpr (std::is_same_v<K, ubs>)
+        return sb;
     if constexpr (std::is_same_v<K, uws>)
         return sw;
     if constexpr (std::is_same_v<K, u16s>)
@@ -3813,7 +3809,7 @@ consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<uws> 
         return s32;
 }
 
-#define uni_string(K, p) select_str<K>(p, L##p, u##p, U##p)
+#define uni_string(K, p) select_str<K>(p, u8##p, L##p, u##p, U##p)
 
 template<typename K, typename H>
 struct StoreType {
