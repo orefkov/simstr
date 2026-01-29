@@ -192,6 +192,8 @@ printer_list = {
     "lstring": [lstring_printer, lstring_printer_init],
     "simple_str": [ssa_printer],
     "simple_str_nt": [ssa_printer],
+    "str_src": [ssa_printer],
+    "str_src_nt": [ssa_printer],
 }
 
 for name, func in printer_list.items():

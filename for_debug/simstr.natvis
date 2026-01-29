@@ -1,7 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Файл с описанием визуализации simstr строк для Visual Studio -->
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="simstr::str_src&lt;*&gt;">
+    <DisplayString Condition="0xCCCCCCCC==(unsigned)str">[unknown]</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1">l={len}, {str,[len]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2">l={len}, {str,[len]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4">l={len}, {str,[len]nas32}</DisplayString>
+    <DisplayString>[unknown]</DisplayString>
+  </Type>
+  <Type Name="simstr::str_src_nt&lt;*&gt;">
+    <DisplayString Condition="0xCCCCCCCC==(unsigned)str">[unknown]</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1">l={len}, {str,[len]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2">l={len}, {str,[len]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4">l={len}, {str,[len]nas32}</DisplayString>
+    <DisplayString>[unknown]</DisplayString>
+  </Type>
   <Type Name="simstr::simple_str&lt;*&gt;">
+    <DisplayString Condition="0xCCCCCCCC==(unsigned)str">[unknown]</DisplayString>
+    <DisplayString Condition="sizeof($T1)==1">l={len}, {str,[len]nas8}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==2">l={len}, {str,[len]nasu}</DisplayString>
+    <DisplayString Condition="sizeof($T1)==4">l={len}, {str,[len]nas32}</DisplayString>
+    <DisplayString>[unknown]</DisplayString>
+  </Type>
+  <Type Name="simstr::simple_str_nt&lt;*&gt;">
     <DisplayString Condition="0xCCCCCCCC==(unsigned)str">[unknown]</DisplayString>
     <DisplayString Condition="sizeof($T1)==1">l={len}, {str,[len]nas8}</DisplayString>
     <DisplayString Condition="sizeof($T1)==2">l={len}, {str,[len]nasu}</DisplayString>

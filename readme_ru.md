@@ -1,14 +1,18 @@
 # simstr - библиотека строковых объектов и функций
-<h2>Ускорь работу со строками в 2-10 раз!</h2>
+<span class="obfuscator"><a href="readme.md">On English | По-английски</a></span>
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
 Версия 1.6.0.
 
-<span class="obfuscator"><a href="readme.md">On English | По-английски</a></span>
+<h2>Ускорь работу со строками в 2-10 раз!</h2>
+
 
 В этой библиотеке содержится современная реализация нескольких видов строковых объектов и различных алгоритмов для работы со строками.
+## Сгенерированная документация
+[Находится здесь](https://orefkov.github.io/simstr/docs_ru/)
 
+## Краткое описание
 Цель библиотеки - сделать работу со строками в С++ такой же простой и лёгкой, как во множестве других языков, особенно
 скриптовых, но при этом сохранив оптимальность и производительность на уровне С и C++, и даже улучшив их.
 
@@ -94,6 +98,22 @@
 - Реализован `hash map` для ключей строкового типа, на базе `std::unordered_map`, с возможностью более эффективного хранения и
   сравнения ключей по сравнению с ключами `std::string`. Поддерживается возможность регистро-независимого сравнения ключей (Ascii или
   минимальный Unicode (см. предыдущий пункт)).
+
+## Бенчмарки
+Бенчмарки производятся с использованием фреймворка [Google benchmark](https://github.com/google/benchmark).
+Постарался сделать замеры для наиболее типичных операций, встречающихся в обычной работе. Я проводил замеры на своём оборудовании, под
+Windows и Linux (в WSL), с использованием компиляторов MSVC, Clang, GCC. Сторонние результаты приветствуются.
+Также проводил замеры в WASM, сборка в Emscripten. Обращаю внимание, что под WASM в Emscripten собирается 32-битная сборка, а значит,
+размеры буферов SSO в объектах меньше.
+
+На [странице релизов](https://github.com/orefkov/simstr/releases) вы можете скачать бинарные сборки бенчмарков и запустить их на своём оборудовании.
+
+Также вы можете запустить [Emscripten сборку бенчмарков](https://orefkov.github.io/simstr/bench/benchStr.html) прямо в браузере.
+(Перед переходом по ссылке лучше предварительно откройте "Инструменты разработчика" (обычно **F12**), чтобы видеть консоль
+Javascript, так как до окончания бенчмарков страница не будет обновляться, а весь вывод будет виден в консоли).
+
+- [Исходный код бенчмарков](bench/bench_str.cpp)
+- [Результаты бенчмарков](https://orefkov.github.io/simstr/results.html)
 
 ## Строковые выражения
 Это специальные объекты, которые эффективно реализуют конкатенацию строк, с помощью `operator+`.
@@ -263,6 +283,7 @@ int split_and_calc_total_sim(ssa numbers, ssa delimiter) {
 Помимо приведённых здесь отдельных примеров, можно посмотреть исходники:
 - [тестов всей библиотеки](https://github.com/orefkov/simstr/blob/main/tests/test_str.cpp)
 - [тестов только strexpr части](https://github.com/orefkov/simstr/blob/main/tests/test_expr_only.cpp)
+- [примеры использования своих типов в строковых выражениях](https://github.com/orefkov/simstr/blob/main/tests/test_tostrexpr.cpp)
 - [бенчмарков](https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp)
 - [утилиты подготовки html](https://github.com/orefkov/simstr/blob/main/bench/process_result.cpp) из результатов бенчмарков.
 
@@ -320,27 +341,13 @@ target_link_libraries(<your target> PUBLIC simstr::simstr)
 Работа проверялась под Windows на MSVC-19 и Clang-19, под Linux - на GCC-13 и Clang-21.
 Также проверялась работа в WASM, сборка в Emscripten 4.0.6, Clang-21.
 
-
 ## Удобная отладка
 Вместе с библиотекой поставляются два файла, делающие просмотр simstr строковых объектов в отладчиках
 более удобным.\
 Более подробно описано [здесь](for_debug/readme_ru.md).
 
-## Бенчмарки
-Бенчмарки производятся с использованием фреймворка [Google benchmark](https://github.com/google/benchmark).
-Постарался сделать замеры для наиболее типичных операций, встречающихся в обычной работе. Я проводил замеры на своём оборудовании, под
-Windows и Linux (в WSL), с использованием компиляторов MSVC, Clang, GCC. Сторонние результаты приветствуются.
-Также проводил замеры в WASM, сборка в Emscripten. Обращаю внимание, что под WASM в Emscripten собирается 32-битная сборка, а значит,
-размеры буферов SSO в объектах меньше.
-
-- [Исходный код бенчмарков](bench/bench_str.cpp)
-- [Результаты бенчмарков](https://orefkov.github.io/simstr/results.html)
-
+## Где уже используется
 Также simstr используется в моих проектах:
 - [simjson](https://github.com/orefkov/simjson) - библиотека для простой работы с JSON с использованием строк simstr.
 - [simrex](https://github.com/orefkov/simrex) - обёртка для работы с регулярными выражениями [Oniguruma](https://github.com/kkos/oniguruma) с использованием строк simstr.
 - [v8sqlite](https://github.com/orefkov/v8sqlite) - внешняя компонента для 1С-Предприятия V8 для работы с sqlite.
-
-
-## Сгенерированная документация
-[Находится здесь](https://orefkov.github.io/simstr/docs_ru/)
