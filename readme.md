@@ -10,7 +10,7 @@ Version 1.6.1.
 
 This library contains a modern implementation of several types of string objects and various algorithms for working with strings.
 ## Generated Documentation
-[Located here](https://orefkov.github.io/simstr/docs_ru/)
+[Located here](https://orefkov.github.io/simstr/docs_en/)
 
 ## Brief Description
 The goal of the library is to make working with strings in C++ as simple and easy as in many other languages, especially
@@ -30,7 +30,7 @@ The library contains two parts:
   with constant strings.\
   To use this part, just take the file `"include/simstr/strexpr.h"` and write in your code
   ```cpp
-  #include "путь/к файлу/strexpr.h"
+  #include "path/to file/strexpr.h"
   ```
   This will allow you to use powerful and fast *"string expressions"* for concatenation and string construction for standard string types (`std::basic_string`, `std::basic_string_view`), as well as simplified versions of the `simple_str` and
   `simple_str_nt` classes, which implement all those string algorithms of the library that do not require storing or modifying strings.
@@ -343,7 +343,7 @@ The work in WASM was also checked, built in Emscripten 4.0.6, Clang-21.
 ## Convenient Debugging
 Along with the library, two files are supplied that make viewing simstr string objects in debuggers
 more convenient.\
-More details are described [here](for_debug/readme_ru.md).
+More details are described [here](for_debug/readme.md).
 
 ## Where it is already used
 Simstr is also used in my projects:
