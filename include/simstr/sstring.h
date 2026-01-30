@@ -1,9 +1,9 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.6.0
+ * ver. 1.6.1
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.6.0
+* ver. 1.6.1
 * Classes for working with strings
  */
 
@@ -767,10 +767,9 @@ protected:
        init(size_t size)
        set_size(size_t size)
     */
-public:
     template<typename O>
         requires(!std::is_same_v<O, K>)
-    from_utf_convertible(simple_str<O> init) {
+    void init_from_utf_convertible(simple_str<O> init) {
         using worker = utf_convert_selector<O, K>;
         Impl* d = static_cast<Impl*>(this);
         size_t len = init.length();
@@ -783,9 +782,6 @@ public:
             worker::convert(init.symbols(), len, str);
         }
     }
-    template<typename O, typename I, bool M>
-        requires(!std::is_same_v<O, K>)
-    from_utf_convertible(const str_algs<O, simple_str<O>, I, M>& init) : from_utf_convertible(init.to_str()) {}
 };
 
 /*!
@@ -2700,8 +2696,6 @@ protected:
     friend class sstring<K, Allocator>;
 
     K* data_;
-    // Поле не должно инициализироваться, так как может устанавливаться в базовых конструкторах
-    // The field should not be initialized, as it can be set in base constructors
     size_t size_;
 
     union {
@@ -2715,8 +2709,9 @@ protected:
         local_[0] = 0;
     }
     constexpr static size_t calc_capacity(size_t s) {
+        const int al = alignof(std::max_align_t) < 16 ? 16 : alignof(std::max_align_t);
         size_t real_need = (s + 1) * sizeof(K) + extra;
-        size_t aligned_alloced = (real_need + alignof(std::max_align_t) - 1) / alignof(std::max_align_t) * alignof(std::max_align_t);
+        size_t aligned_alloced = (real_need + al - 1) / al * al;
         return (aligned_alloced - extra) / sizeof(K) - 1;
     }
 
@@ -2778,8 +2773,6 @@ protected:
     }
 
 public:
-    using base_utf::base_utf;
-
     /*!
      * @ru @brief Создать пустой объект.
      * @param ...args - параметры для инициализации аллокатора.
@@ -2965,6 +2958,17 @@ public:
         create_empty();
         this->operator<<(op);
     }
+    template<typename O>
+        requires(!std::is_same_v<O, K>)
+    lstring(simple_str<O> init) {
+        this->init_from_utf_convertible(init);
+    }
+
+    template<typename O, typename I, bool M>
+        requires(!std::is_same_v<O, K>)
+    lstring(const str_algs<O, simple_str<O>, I, M>& init) {
+        this->init_from_utf_convertible(init.to_str());
+    }
 
     // copy and swap для присваиваний здесь не очень применимо, так как для строк с большим локальным буфером лишняя копия даже перемещением будет дорого стоить
     // Поэтому реализуем копирующее и перемещающее присваивание отдельно
@@ -3057,7 +3061,7 @@ public:
         return assign(other, S - 1);
     }
     /*!
-     * @ru @brief Оператор присаивания строкового выражения.
+     * @ru @brief Оператор присваивания строкового выражения.
      * @param expr - строковое выражение, материализуемое в буфер строки.
      * @return my_type& - ссылку на себя же.
      * @details Если в строковом выражении что-либо ссылается на части этой же строки, то результат не определён.
@@ -3439,7 +3443,6 @@ protected:
     }
 
 public:
-    using base_utf::base_utf;
 
     sstring() {
         create_empty();
@@ -3638,6 +3641,21 @@ public:
         bigLen_ = N - 1;
     }
 
+    /*!
+     * @ru @brief Инициализация из строкового источника с другим типом символов. Конвертирует через UTF.
+     * @tparam O - тип жругих символов.
+     * @en @brief Initialization from a string source with a different character type. Converts via UTF.
+     * @tparam O - type of other characters.     */
+    template<typename O> requires(!std::is_same_v<O, K>)
+    sstring(simple_str<O> init) {
+        this->init_from_utf_convertible(init);
+    }
+
+    template<typename O, typename I, bool M> requires(!std::is_same_v<O, K>)
+    sstring(const str_algs<O, simple_str<O>, I, M>& init) {
+        this->init_from_utf_convertible(init.to_str());
+    }
+
     constexpr void swap(my_type&& other) noexcept {
         char buf[sizeof(buf_) + sizeof(K)];
         memcpy(buf, buf_, sizeof(buf));
@@ -3794,6 +3812,160 @@ public:
 
 template<typename K, Allocatorable Allocator>
 inline const sstring<K> sstring<K, Allocator>::empty_str{};
+
+struct no_alloc{};
+
+template<typename K, size_t N>
+class decl_empty_bases cestring :
+    public str_algs<K, simple_str<K>, cestring<K, N>, true>,
+    public str_storable<K, cestring<K, N>, no_alloc>,
+    public null_terminated<K, lstring<K, N>>
+    //, public from_utf_convertible<K, lstring<K, N, forShared, Allocator>>
+{
+    using symb_type = K;
+    using my_type = cestring<K, N>;
+
+    enum : size_t {
+        /// @ru Размер внутреннего буфера в символах @en Size of internal buffer
+        LocalCapacity = N | (sizeof(void*) / sizeof(K) - 1),
+    };
+
+protected:
+
+    using base_algs = str_algs<K, simple_str<K>, my_type, true>;
+    using base_storable = str_storable<K, my_type, no_alloc>;
+    //using base_utf = from_utf_convertible<K, my_type>;
+    using traits = ch_traits<K>;
+    using s_str = base_storable::s_str;
+
+    friend base_storable;
+    //friend base_utf;
+    const K* cstr_{};
+    size_t size_{};
+    bool is_cstr_{};
+    K local_[LocalCapacity + 1]{};
+
+    constexpr void create_empty() {
+        is_cstr_ = false;
+        size_ = 0;
+        local_[0] = 0;
+    }
+
+    constexpr K* init(size_t s) {
+        size_ = s;
+        if (size_ > LocalCapacity) {
+            throw std::bad_alloc{};
+        }
+        is_cstr_ = false;
+        return local_;
+    }
+public:
+    /// @ru Длина строки. @en String length.
+    constexpr size_t length() const noexcept {
+        return size_;
+    }
+    /// @ru Указатель на константные символы. @en Pointer to constant characters.
+    constexpr const K* symbols() const noexcept {
+        return is_cstr_ ? cstr_ : local_;
+    }
+    /// @ru Пустая ли строка. @en Is the string empty?
+    constexpr bool is_empty() const noexcept {
+        return size_ == 0;
+    }
+    /// @ru Пустая ли строка, для совместимости с std::string. @en Whether the string is empty, for compatibility with std::string.
+    constexpr bool empty() const noexcept {
+        return size_ == 0;
+    }
+    /// @ru Текущая ёмкость буфера строки. @en Current row buffer capacity.
+    constexpr size_t capacity() const noexcept {
+        return LocalCapacity;
+    }
+    /*!
+     * @ru @brief Конструктор пустой строки.
+     * @en @brief Constructor for the empty string.
+     */
+    constexpr cestring() noexcept = default;
+
+    /*!
+     * @ru @brief Конструктор из другого строкового объекта.
+     * @param other - другой строковый объект, simple_str.
+     * @en @brief A constructor from another string object.
+     * @param other - another string object, simple_str.
+     */
+    constexpr cestring(s_str other) : base_storable() {
+        base_storable::init_from_str_other(other);
+    }
+    /*!
+     * @ru @brief Конструктор повторения строки.
+     * @param repeat - количество повторов.
+     * @param pattern - строка, которую надо повторить.
+     * @en @brief String repetition constructor.
+     * @param repeat - number of repetitions.
+     * @param pattern - the line to be repeated.
+     */
+    constexpr cestring(size_t repeat, s_str pattern) : base_storable() {
+        base_storable::init_str_repeat(repeat, pattern);
+    }
+    /*!
+     * @ru @brief Конструктор повторения символа.
+     * @param count - количество повторов.
+     * @param pad - символ, который надо повторить.
+     * @en @brief Character repetition constructor.
+     * @param count - number of repetitions.
+     * @param pad - the character to be repeated.
+     */
+    constexpr cestring(size_t count, K pad) : base_storable() {
+        base_storable::init_symb_repeat(count, pad);
+    }
+    /*!
+     * @ru @brief Конструктор из строкового выражения.
+     * @param expr - строковое выражение.
+     * @details Конструктор запрашивает у строкового выражения `length()`,
+     *  выделяет память нужного размера, и вызывает метод `place()` для размещения
+     *  результата в буфере.
+     * @en @brief Constructor from a string expression.
+     * @param expr - string expression.
+     * @details The constructor queries the string expression `length()`,
+     *  allocates memory of the required size, and calls the `place()` method to allocate
+     *  result in buffer.
+     */
+    constexpr  cestring(const StrExprForType<K> auto& expr) : base_storable() {
+        base_storable::init_str_expr(expr);
+    }
+    /*!
+     * @ru @brief Конструктор из строкового источника с заменой.
+     * @param f - строковый объект, из которого берётся исходная строка.
+     * @param pattern - подстрока, которую надо заменить.
+     * @param repl  - строка, на которую надо заменить.
+     * @param offset - начальная позиция для поиска подстрок.
+     * @param maxCount - максимальное количество замен, 0 - без ограничений.
+     * @en @brief Constructor from string source with replacement.
+     * @param f - the string object from which the source string is taken.
+     * @param pattern - substring to be replaced.
+     * @param repl - the string to be replaced with.
+     * @param offset - starting position for searching substrings.
+     * @param maxCount - maximum number of replacements, 0 - no restrictions.
+     */
+    template<StrType<K> From>
+    constexpr cestring(const From& f, s_str pattern, s_str repl, size_t offset = 0, size_t maxCount = 0)
+        : base_storable() {
+        base_storable::init_replaced(f, pattern, repl, offset, maxCount);
+    }
+
+    /// @ru Деструктор строки. @en String destructor.
+    constexpr ~cestring() {}
+
+    /*!
+     * @ru @brief Инициализация из строкового литерала.
+     * @param s - строковый литерал.
+     * @details В этом случае просто запоминаем указатель на строку и её длину.
+     * @en @brief Initialize from a string literal.
+     * @param s - string literal.
+     * @details In this case, we simply remember the pointer to the string and its length.
+     */
+    template<typename T, size_t M = const_lit_for<K, T>::Count>
+    constexpr cestring(T&& s) : base_storable(), cstr_(s), size_(M - 1), is_cstr_(true), local_{0} {}
+};
 
 template<typename K>
 consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<ubs> sb, simple_str_nt<uws> sw, simple_str_nt<u16s> s16, simple_str_nt<u32s> s32) {

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.0
+ * ver. 1.6.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1759,7 +1759,7 @@ template<typename K, FromIntNumber Val, bool All, bool Ucase, bool Ox>
 struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
     using symb_type = K;
     mutable need_sign<K, std::is_signed_v<Val>, Val> v_;
-    mutable K buf_[sizeof(Val) * 2];
+    mutable K buf_[sizeof(Val) * 2]{};
 
     explicit constexpr expr_hex(Val v) : v_(v){}
     constexpr expr_hex(const expr_hex_src<Val, All, Ucase, Ox>& v) : v_(v.v_){}

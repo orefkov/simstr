@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.0
+ * ver. 1.6.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1997,6 +1997,59 @@ TEST(SimStr, Subst) {
     bool success = true;
     lstringu<100> u16t = e_subst(S_FRM(u"Test {} from {}, {}."), from, total, e_choice(success, u"success", u"fail"));
     EXPECT_EQ(u16t, u"Test 1 from 100, success.");
+}
+
+void check_equal(stra a, stra b) {
+    EXPECT_EQ(a, b);
+}
+
+inline constexpr cestring<char, 100> ce_sample = "sample " + e_subst(S_FRM("test = {}"), e_hex(10)) + ", done";
+
+TEST(SimStr, ConstEval) {
+    constexpr cestring<char, 100> ce_empty;
+    static_assert(ce_empty.length() == 0);
+    static_assert(ce_empty == "");
+    static_assert(ce_empty.find("aa") == -1);
+
+    constexpr cestring<char, 100> ce_lit = "test";
+    static_assert(ce_lit.length() == 4);
+    static_assert(ce_lit == "test");
+    static_assert(ce_lit.find("st") == 2);
+    static_assert(ce_lit(1, 2) == "es");
+
+    constexpr cestring<char, 100> ce_str = "tester"_ss;
+    static_assert(ce_str.length() == 6);
+    static_assert(ce_str == "tester");
+    static_assert(ce_str.find("te") == 0);
+    static_assert(ce_str.find("ter") == 3);
+    static_assert(ce_str(1, -1) == "este");
+
+    constexpr cestring<char, 100> ce_repeat{10, "tu"};
+    static_assert(ce_repeat.length() == 20);
+
+    constexpr cestring<char, 100> ce_expr = "test = "_ss + 10 + " times";
+    static_assert(ce_expr == "test = 10 times");
+
+    constexpr cestring<char, 100> ce_subst = e_subst(S_FRM("test = {}"), 10);
+    static_assert(ce_subst == "test = 10");
+
+    constexpr cestring<char, 100> ce_hex = e_subst(S_FRM("test = {}"), e_hex(10));
+    static_assert(ce_hex == "test = 0x0000000A");
+
+    constexpr cestring<char, 100> ce_concat = e_concat("", "test = ", 10, " times");
+    static_assert(ce_concat == "test = 10 times");
+    static_assert(ce_concat(6, 3).to_int<int>().value == 10);
+
+    char arr[ce_concat.length()] = {};
+
+    static constexpr cestring<char, 40> ce_copy{ce_concat};
+    static_assert(ce_copy == "test = 10 times");
+
+    check_equal(ce_copy, "test = 10 times");
+    EXPECT_TRUE(ce_copy == "test = 10 times");
+
+    stringa test_copy = ce_sample(0, 10);
+    EXPECT_EQ(test_copy, "sample tes");
 }
 
 } // namespace simstr::tests

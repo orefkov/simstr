@@ -69,24 +69,54 @@ BENCHMARK(ConcatSimToStd)       ->Name("Concat std::string and number by StrExpr
 BENCHMARK(ConcatSimToSim)       ->Name("Concat stringa and number by StrExpr to simstr::stringa");
 BENCHMARK(ConcatSimToSimConcat) ->Name("Concat stringa and number by e_concat to simstr::stringa");
 
-void ConcatStdToStdHex(benchmark::State& state) {
+void ConcatStdToFmtHex(benchmark::State& state) {
     // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
     std::string s1 = "art ";
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
-            // What is standard method to get hex number?
-            std::string str = std::format("{}0x{:x} end", s1, i);
+            // It is not worked for char8_t, char16_t, char32_t :(
+            std::string str = s1 + std::format("{:#x}", i) + " end";
             benchmark::DoNotOptimize(str);
         }
     }
 }
+
+void ConcatAllFmtToHex(benchmark::State& state) {
+    // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
+    std::string s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            // It is not worked for char8_t, char16_t, char32_t :(
+            std::string str = std::format("{}{:#x} end", s1, i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+void ConcatStdToCharsHex(benchmark::State& state) {
+    // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
+    std::string s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            // it worked only for char :(
+            char buf[40];
+            size_t len = std::to_chars(buf, buf + std::size(buf), i, 16).ptr - buf;
+            std::string str = s1 + "0x" + std::string(buf, len) + " end";
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+
 void ConcatSimToStdHex(benchmark::State& state) {
     // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
     std::string s1 = "art ";
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
+            // Can work for all types of symbols
             std::string str = +s1 + e_hex<HexFlags::Short>(i) + " end";
             benchmark::DoNotOptimize(str);
         }
@@ -99,6 +129,7 @@ void ConcatSimToSimHex(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
+            // Can work for all types of symbols
             stringa str = s1 + e_hex<HexFlags::Short>(i) + " end";
             benchmark::DoNotOptimize(str);
         }
@@ -111,6 +142,7 @@ void ConcatSimToSimHexC(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
+            // Can work for all types of symbols
             stringa str = e_concat("", s1, e_hex<HexFlags::Short>(i), " end");
             benchmark::DoNotOptimize(str);
         }
@@ -130,11 +162,13 @@ void ConcatSimToSimHexS(benchmark::State& state) {
 }
 
 BENCHMARK(__)->Name("-----  Concatenate string + Hex Number + \"Literal\" ---------")->Repetitions(1);
-BENCHMARK(ConcatStdToStdHex)    ->Name("Concat std::string and hex number by std to std::string");
-BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number by StrExpr to std::string");
-BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number by StrExpr to simstr::stringa");
-BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number by e_concat to simstr::stringa");
-BENCHMARK(ConcatSimToSimHexS)   ->Name("Concat stringa and hex number by e_subst to simstr::stringa");
+BENCHMARK(ConcatStdToFmtHex)    ->Name("Concat std::string and format hex number and literal to std::string");
+BENCHMARK(ConcatAllFmtToHex)    ->Name("std::format std::string and hex number by literal to std::string");
+BENCHMARK(ConcatStdToCharsHex)  ->Name("Concat std::string and std::tochars and string to std::string");
+BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number and literal by StrExpr to std::string");
+BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number and literal by StrExpr to simstr::stringa");
+BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number and literal by e_concat to simstr::stringa");
+BENCHMARK(ConcatSimToSimHexS)   ->Name("Subst stringa and hex number by e_subst literal to simstr::stringa");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";
