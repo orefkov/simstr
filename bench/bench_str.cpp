@@ -161,6 +161,18 @@ void ConcatSimToSimHexS(benchmark::State& state) {
     }
 }
 
+void ConcatSimToSimHexVS(benchmark::State& state) {
+    // stringa SSO buffer is 23, but we use a short string to compare under the same conditions
+    stra s1 = "art ";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            benchmark::DoNotOptimize(s1);
+            stringa str = e_vsubst("{}{} end"_ss, s1, e_hex<HexFlags::Short>(i));
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 BENCHMARK(__)->Name("-----  Concatenate string + Hex Number + \"Literal\" ---------")->Repetitions(1);
 BENCHMARK(ConcatStdToFmtHex)    ->Name("Concat std::string and format hex number and literal to std::string");
 BENCHMARK(ConcatAllFmtToHex)    ->Name("std::format std::string and hex number by literal to std::string");
@@ -169,6 +181,7 @@ BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number and li
 BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number and literal by StrExpr to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number and literal by e_concat to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexS)   ->Name("Subst stringa and hex number by e_subst literal to simstr::stringa");
+BENCHMARK(ConcatSimToSimHexVS)  ->Name("Subst stringa and hex number by e_vsubst stra to simstr::stringa");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";

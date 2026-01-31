@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.1
+ * ver. 1.6.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -297,6 +297,9 @@ concept StdStrSourceForType = StdStrSource<T> && is_equal_str_type_v<K, typename
 
 template<typename T>
 concept StrSource = StdStrSource<T> || is_const_lit_v<T> || StrTypeCommon<T>;
+
+template<typename T>
+concept StrSourceNoLiteral = StdStrSource<T> || StrTypeCommon<T>;
 
 template<typename T> struct is_std_string : std::false_type{};
 
@@ -4020,7 +4023,7 @@ struct find_all_container {
     size_t positions_[N];
     size_t added_{};
 
-    void emplace_back(size_t pos) {
+    constexpr void emplace_back(size_t pos) {
         positions_[added_++] = pos;
     }
 };
@@ -5442,37 +5445,133 @@ constexpr expr_concat<K, to_str_exp_t<K, T>, to_str_exp_t<K, Args>...> e_concat(
     return { to_subst<K>(std::forward<T>(glue)), to_subst<K>(std::forward<Args>(args))...};
 }
 
+struct parse_subst_string_error {
+    parse_subst_string_error(const char*){}
+};
+
 namespace details {
+
+template<typename K, size_t NParams>
+constexpr size_t parse_pattern_string(str_src<K> pattern, const auto& add_part, const auto& add_param) {
+    char used_args[NParams] = {0};
+    const K* first = pattern.begin(), *last = pattern.end(), *start = first;
+    size_t all_len = 0;
+
+    auto find = [](const K* from, const K* last, K s) {
+        while (from != last) {
+            if (*from == s) {
+                break;
+            }
+            from++;
+        }
+        return from;
+    };
+    size_t idx_in_data = 0, idx_in_params = 0;
+
+    while (first != last) {
+        bool cont = false;
+        const K* open_pos = first;
+        if (*first != '{') {
+            open_pos = find(first, last, '{');
+
+            for (;;) {
+                const K* close_pos = find(first, open_pos, '}');
+                if (close_pos == open_pos) {
+                    if (open_pos < last && open_pos[1] == '{') {
+                        unsigned len = open_pos - first + 1;
+                        all_len += len;
+                        add_part(first - start, len);
+                        first = open_pos + 2;
+                        cont = true;
+                    } else if (unsigned len = open_pos - first) {
+                        add_part(first - start, len);
+                        all_len += len;
+                    }
+                    break;
+                }
+                ++close_pos;
+                if (close_pos == open_pos || *close_pos != '}') {
+                    throw parse_subst_string_error{"unescaped }"};
+                }
+                unsigned len = close_pos - first;
+                add_part(first - start, len);
+                all_len += len;
+                first = ++close_pos;
+            }
+            if (open_pos == last) {
+                break;
+            }
+        }
+        if (cont) {
+            continue;
+        }
+
+        if (++open_pos == last) {
+            throw parse_subst_string_error{"unescaped {"};
+        }
+        if (*open_pos == '}') {
+            if (idx_in_params == -1) {
+                throw parse_subst_string_error{"already used param ids"};
+            }
+            used_args[idx_in_params] = 1;
+            add_param(idx_in_params++);
+            first = open_pos + 1;
+        } else if (*open_pos == '{') {
+            add_part(open_pos - start, 1);
+            all_len++;
+            first = open_pos + 1;
+        } else {
+            if (idx_in_params != 0 && idx_in_params != -1) {
+                throw parse_subst_string_error{"already used non id params"};
+            }
+            idx_in_params = -1;
+            const K* end = find(open_pos, last, '}');
+            if (end == last) {
+                throw parse_subst_string_error{"not found }"};
+            }
+            auto [p, err, _] = str_src<K>(open_pos, end - open_pos).template to_int<unsigned, true, 10, false, false>();
+            if (err != IntConvertResult::Success || p < 1 || p > NParams) {
+                throw parse_subst_string_error{"bad param id"};
+            }
+            used_args[--p] = 1;
+            add_param(p);
+            first = end + 1;
+        }
+    }
+    for (auto c : used_args) {
+        if (!c) {
+            throw parse_subst_string_error{"unused param"};
+        }
+    }
+    return all_len;
+}
+
+struct portion {
+    unsigned start: 16;
+    unsigned len: 15;
+    unsigned is_param: 1;
+
+    portion() = default;
+
+    constexpr void set_param(unsigned param) {
+        if (param >= (1 << 16)) {
+            throw parse_subst_string_error{"the parameter id is too large"};
+        }
+        start = param;
+        is_param = 1;
+    }
+    constexpr void set_part(unsigned from, unsigned l) {
+        if (from >= (1 << 16) || len >= (1 << 15)) {
+            throw parse_subst_string_error{"the string part is too large"};
+        }
+        start = from;
+        len = l;
+        is_param = 0;
+    }
+};
 
 template<typename K, typename Pt, typename...Args>
 struct subst_params {
-    struct parse_subst_string_error {
-        parse_subst_string_error(const char*){}
-    };
-
-    struct portion {
-        unsigned start: 16;
-        unsigned len: 15;
-        unsigned is_param: 1;
-
-        portion() = default;
-
-        constexpr void set_param(unsigned param) {
-            if (param >= (1 << 16)) {
-                throw parse_subst_string_error{"the parameter id is too large"};
-            }
-            start = param;
-            is_param = 1;
-        }
-        constexpr void set_part(unsigned from, unsigned l) {
-            if (from >= (1 << 16) || len >= (1 << 15)) {
-                throw parse_subst_string_error{"the string part is too large"};
-            }
-            start = from;
-            len = l;
-            is_param = 0;
-        }
-    };
 
     inline static constexpr size_t NParams = sizeof...(Args);
     inline static constexpr size_t PtLen = const_lit<Pt>::Count;
@@ -5482,100 +5581,14 @@ struct subst_params {
     unsigned actual_{};
     // The pattern string can be divided into a maximum of this number of portions.
     // "a{}a{}a{}a" - Two portions of one symbol from the edges, and two portions for every three symbols
-    portion portions_[2 + PtLen / 3 * 2]{};
+    portion portions_[2 + (PtLen - 1) * 2 / 3]{};
 
     consteval subst_params(Pt&& pattern) : source_(pattern) {
-        const K* first = pattern;
-        const K* last = first + PtLen - 1;
-        char used_args[NParams] = {0};
-
-        auto find = [](const K* from, const K* last, K s) {
-            while (from != last) {
-                if (*from == s) {
-                    break;
-                }
-                from++;
-            }
-            return from;
-        };
-        size_t idx_in_data = 0, idx_in_params = 0;
-
-        while (first != last) {
-            bool cont = false;
-            const K* open_pos = first;
-            if (*first != '{') {
-                open_pos = find(first, last, '{');
-
-                for (;;) {
-                    const K* close_pos = find(first, open_pos, '}');
-                    if (close_pos == open_pos) {
-                        if (open_pos < last && open_pos[1] == '{') {
-                            unsigned len = open_pos - first + 1;
-                            portions_[idx_in_data++].set_part(first - pattern, len);
-                            all_len_ += len;
-                            first = open_pos + 2;
-                            cont = true;
-                        } else if (unsigned len = open_pos - first) {
-                            portions_[idx_in_data++].set_part(first - pattern, len);
-                            all_len_ += len;
-                        }
-                        break;
-                    }
-                    ++close_pos;
-                    if (close_pos == open_pos || *close_pos != '}') {
-                        throw parse_subst_string_error{"unescaped }"};
-                    }
-                    unsigned len = close_pos - first;
-                    portions_[idx_in_data++].set_part(first - pattern, len);
-                    all_len_ += len;
-                    first = ++close_pos;
-                }
-                if (open_pos == last) {
-                    break;
-                }
-            }
-            if (cont) {
-                continue;
-            }
-
-            if (++open_pos == last) {
-                throw parse_subst_string_error{"unescaped {"};
-            }
-            if (*open_pos == '}') {
-                if (idx_in_params == -1) {
-                    throw parse_subst_string_error{"already used param ids"};
-                }
-                used_args[idx_in_params]++;
-                portions_[idx_in_data++].set_param(idx_in_params++);
-                first = open_pos + 1;
-            } else if (*open_pos == '{') {
-                portions_[idx_in_data++].set_part(open_pos - pattern, 1);
-                all_len_++;
-                first = open_pos + 1;
-            } else {
-                if (idx_in_params != 0 && idx_in_params != -1) {
-                    throw parse_subst_string_error{"already used non id params"};
-                }
-                idx_in_params = -1;
-                const K* end = find(open_pos, last, '}');
-                if (end == last) {
-                    throw parse_subst_string_error{"not found }"};
-                }
-                auto [p, err, _] = str_src<K>(open_pos, end - open_pos).template to_int<unsigned, true, 10, false, false>();
-                if (err != IntConvertResult::Success || p < 1 || p > NParams) {
-                    throw parse_subst_string_error{"bad param id"};
-                }
-                used_args[--p]++;
-                portions_[idx_in_data++].set_param(p);
-                first = end + 1;
-            }
-        }
-        for (auto c : used_args) {
-            if (!c) {
-                throw parse_subst_string_error{"unused param"};
-            }
-        }
-        actual_ = idx_in_data;
+        all_len_ = parse_pattern_string<K, NParams>(pattern, [this](unsigned from, unsigned len){
+            portions_[actual_++].set_part(from, len);
+        }, [&, this](unsigned param) {
+            portions_[actual_++].set_param(param);
+        });
     }
 };
 
@@ -5626,6 +5639,87 @@ struct expr_subst : expr_to_std_string<expr_subst<K, Pt, Args...>> {
             } else {
                 ch_traits<K>::copy(ptr, subst_.source_ + subst_.portions_[idx].start, subst_.portions_[idx].len);
                 ptr += subst_.portions_[idx].len;
+            }
+        }
+        return ptr;
+    }
+};
+
+template<typename K, typename ... Args>
+struct expr_vsubst : expr_to_std_string<expr_vsubst<K, Args...>> {
+    inline static constexpr size_t Nparams = sizeof...(Args);
+    using symb_type = K;
+    using store_t = std::tuple<to_str_exp_t<K, Args>...>;
+
+    details::portion portions_[Nparams * 2 + 1];
+    std::vector<details::portion> more_portions_;
+    store_t args_;
+    str_src<K> pattern_;
+    size_t all_len_{};
+    unsigned actual_{};
+
+    constexpr expr_vsubst(str_src<K> pattern, Args&&...args)
+        : pattern_(pattern)
+        , args_(to_subst<K>(std::forward<Args>(args))...) {
+
+        all_len_ = details::parse_pattern_string<K, Nparams>(pattern_, [this](unsigned from, unsigned len) {
+            if (actual_ < std::size(portions_) - 1) {
+                portions_[actual_++].set_part(from, len);
+            } else {
+                more_portions_.emplace_back().set_part(from, len);
+            }
+        }, [&, this](unsigned param) {
+            if (actual_ < std::size(portions_) - 1) {
+                portions_[actual_++].set_param(param);
+            } else {
+                more_portions_.emplace_back().set_param(param);
+            }
+        });
+    }
+    constexpr size_t length() const noexcept {
+        return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
+            size_t idx = 0;
+            size_t expr_length_[Nparams] = {};
+            ((expr_length_[idx++] = std::get<Indexes>(args_).length()),...);
+            size_t l = all_len_;
+            for (idx = 0; idx < actual_; idx++) {
+                if (portions_[idx].is_param) {
+                    l += expr_length_[portions_[idx].start];
+                }
+            }
+            for (const auto& p : more_portions_) {
+                if (p.is_param) {
+                    l += expr_length_[p.start];
+                }
+            }
+            return l;
+        }(std::make_index_sequence<sizeof...(Args)>());
+    }
+    template<size_t Idx>
+    constexpr K* place_idx(K* ptr, size_t idx) const noexcept {
+        if (idx == Idx) {
+            return (K*)std::get<Idx>(args_).place((typename std::remove_cvref_t<std::tuple_element_t<Idx, store_t>>::symb_type*)ptr);
+        }
+        if constexpr (Idx < Nparams - 1) {
+            return place_idx<Idx + 1>(ptr, idx);
+        }
+        return ptr;
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        for (size_t idx = 0; idx < actual_; idx++) {
+            if (portions_[idx].is_param) {
+                ptr = place_idx<0>(ptr, portions_[idx].start);
+            } else {
+                ch_traits<K>::copy(ptr, pattern_.symbols() + portions_[idx].start, portions_[idx].len);
+                ptr += portions_[idx].len;
+            }
+        }
+        for (const auto& p : more_portions_) {
+            if (p.is_param) {
+                ptr = place_idx<0>(ptr, p.start);
+            } else {
+                ch_traits<K>::copy(ptr, pattern_.symbols() + p.start, p.len);
+                ptr += p.len;
             }
         }
         return ptr;
@@ -5688,6 +5782,53 @@ constexpr auto e_subst(T&& str_pattern, const details::subst_params<typename con
 }
 
 #define S_FRM(s) s, s
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строке-образце, задаваемой в рантайме, значения переданных строковых выражений.
+ * @tparam T - тип строки-образца, выводится из аргумента.
+ * @tparam Args... - типы переданных аргументов.
+ * @param str_pattern - Строковый объект-образец, в который будут подставляться значения переданных аргументов.
+ * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
+ * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
+ * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
+ *  значения переданных аргументов. Строка-образец задается в рантайм, строковым объектом, парсинг которого происходит во время выполнения.
+ *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
+ *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
+ *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
+ *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
+ *  Все переданные параметры должны участвовать в подстановках. В случае ошибки парсинга строки будет выкинуто исключение `parse_subst_string_error`.
+ *  Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
+ *  Функция не является заменой `std::vformat`, не работает с образцом, задаваемым в compile-time, и не поддерживает каких-либо параметров форматирования
+ * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
+ *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+ * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified positions in the pattern string, specified at runtime.
+ * @tparam T - the type of the pattern string, deduced from the argument.
+ * @tparam Args... - the types of the passed arguments.
+ * @param str_pattern - the pattern string object into which the values ​​of the passed arguments will be substituted.
+ * @param args... - the arguments to be substituted into the specified positions in the pattern. As in `e_concat`, these can be string literals,
+ * string expressions, standard strings, and any types that can be converted to string expressions.
+ * @details The function creates a string expression that, when materialized, generates text from the pattern, substituting the values ​​of the passed arguments into the
+ * substitution positions. The pattern string is specified at runtime by a string object that is parsed at runtime.
+ * Insertion points are designated either as `{}` or `{number}`.
+ * If no number is specified, parameters are substituted in the order passed to the function. If a number is specified, parameters are substituted according to the
+ * specified ordinal number. Parameter numbering starts with 1. You cannot mix parameters with and without numbers; only one of the options is used for all substitutions. If numbers are specified, one parameter can participate in multiple substitutions.
+ * All passed parameters must participate in substitutions. If a string parsing error occurs, a `parse_subst_string_error` exception will be thrown.
+ * To insert the curly braces themselves, they must be doubled - `{{`, `}}`.
+ * This function is not a replacement for `std::vformat`, does not work with the pattern specified at compile-time, and does not support any formatting options for
+ * substituted values. All passed arguments must be able to convert themselves to string expressions.
+ * (See @ref ConvertToStrExpr "Converting Types to String Expressions").
+ * @ru Пример: @en Example: @~
+ * ```cpp
+ *  std::string_view pattern;
+ *  .....
+ *  lstringa<100> text = e_vsubst(pattern, from, total, success ? "success"_ss : "fail"_ss);
+ * ```
+ */
+template<StrSourceNoLiteral T, typename...Args> requires (sizeof...(Args) > 0)
+constexpr auto e_vsubst(T&& str_pattern, Args&&...args) {
+    return expr_vsubst<symb_type_from_src_t<T>, Args...>{str_pattern, std::forward<Args>(args)...};
+}
 
 /*!
  * @ru @brief Небольшое пространство для методов работы со стандартными строками.

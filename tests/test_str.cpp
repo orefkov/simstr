@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.1
+ * ver. 1.6.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2050,6 +2050,9 @@ TEST(SimStr, ConstEval) {
 
     stringa test_copy = ce_sample(0, 10);
     EXPECT_EQ(test_copy, "sample tes");
+
+    constexpr cestring<char, 100> ce_repl = e_repl("test", "e", "--");
+    static_assert(ce_repl == "t--st");
 }
 
 } // namespace simstr::tests

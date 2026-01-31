@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.1
+ * ver. 1.6.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -332,6 +332,16 @@ TEST(StrExpr, Subst) {
 
     std::u16string u16t = e_subst(S_FRM(u"Test {}={}, {}"), u"test", 2, u"test"sv);
     EXPECT_EQ(u16t, u"Test test=2, test");
+}
+
+TEST(StrExpr, VSubst) {
+    const auto ttt = "test"_ss;
+    int ii = 3;
+    auto pattern = "Test {{--}} {}=, {}"_ss;
+    std::string t = e_vsubst(pattern, ttt, ii);
+    EXPECT_EQ(t, "Test {--} test=, 3");
+    t = e_vsubst("{1}-{1}-{1}-{1}-{1}-{1}-{1}-{1}"_ss, "abc");
+    EXPECT_EQ(t, "abc-abc-abc-abc-abc-abc-abc-abc");
 }
 
 } // namespace simstr::tests
