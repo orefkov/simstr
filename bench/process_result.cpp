@@ -3,6 +3,7 @@
 #include <fstream>
 #include <array>
 #include <algorithm>
+#include <map>
 
 using namespace simstr;
 
@@ -193,41 +194,46 @@ void write_one_result(out_t& out, ssa result, ssa line, auto& script_text, bool 
     script_text += e_choice(result[0] == 'N', "NaN", result) + e_choice(last, "]", ",");
 }
 
-ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
-    if (benchName == "ReplaceStr") {
-        int t = 0;
-    }
-    static hashStrMapA<stringa> textes;
+std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceText) {
+    static hashStrMapA<std::pair<stringa, size_t>> textes;
+    static auto lines_pos = [&]() {
+        std::map<size_t, size_t> l = {{0, 0}};
+        size_t line = 0;
+        sourceText.for_all_finded([&](size_t pos){
+            l.emplace(pos, ++line);
+        }, "\n");
+        return l;
+    }();
 
     size_t delim = benchName.find_last('/');
     if (delim != str::npos && benchName(delim + 1).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
         benchName.len = delim;
     }
-    auto [it, not_exist] = textes.try_emplace(benchName);
+    auto [it, not_exist] = textes.try_emplace(benchName, stringa{}, 0);
     if (not_exist) {
         // Ищем имя функции для этого бенчмарка
         // Looking for the name of the function for this benchmark
         size_t start = sourceText.find(lstringa<128>{"->Name(\"" + e_repl(benchName, "\"", "\\\"") + "\")"});
         if (start == str::npos) {
             std::cerr << "Can not found benchmark function name for " << benchName << std::endl;
-            return stra::empty_str;
+            return {stra::empty_str, 0};
         }
         start = sourceText(0, start).find('(', sourceText.find_last('\n', start - 1));
         if (start == str::npos) {
             std::cerr << "Can not found benchmark function name for " << benchName << std::endl;
-            return stra::empty_str;
+            return {stra::empty_str, 0};
         }
         start++;
         size_t end = sourceText.find_first_of(")<,", start);
         ssa funcName = sourceText.from_to(start, end);
-        auto [func_it, not_exist] = textes.try_emplace(funcName);
+        auto [func_it, not_exist] = textes.try_emplace(funcName, stringa{}, 0);
         if (not_exist) {
             // Теперь ищем саму эту функцию
             // Now we look for this function itself
             start = sourceText.find(lstringa<128>{funcName + "(benchmark::State"});
             if (start == str::npos) {
                 std::cerr << "Can not found source function " << funcName << " for benchmark " << benchName << std::endl;
-                return stra::empty_str;
+                return {stra::empty_str, 0};
             }
             start = sourceText.find_last('\n', start);
             size_t templ_start = sourceText.find_last('\n', start) + 1;
@@ -255,15 +261,16 @@ ssa extract_source_for_benchmark(ssa benchName, ssa sourceText) {
                     throw std::runtime_error{"Not found end of func"};
                 }
                 lstringa<2048> text{sourceText.from_to(beginLine, end + indent.length() + 1), indent, "\n"};
-                func_it->second = repl_html_symbols(text(1));
+                func_it->second.first = repl_html_symbols(text(1));
             } else {
                 end = sourceText.find("\n}\n", start);
-                func_it->second = repl_html_symbols(sourceText.from_to(start, end + 2));
+                func_it->second.first = repl_html_symbols(sourceText.from_to(start, end + 2));
             }
+            func_it->second.second = lines_pos.lower_bound(start)->second;
         }
         it->second = func_it->second;
     }
-    return it->second;
+    return {it->second.first, it->second.second};
 }
 
 void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText, ssa commentsText) {
@@ -280,13 +287,13 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
         ssa line = splitters[0].next(), benchName, result;
         if (auto rm = line.find("_mean"); rm != str::npos) {
             benchName = extract_name_result(line, result)(0, rm);
-            auto source = extract_source_for_benchmark(benchName, sourceText);
+            auto [source, line_num] = extract_source_for_benchmark(benchName, sourceText);
             auto comment = extract_comment(commentsText, benchName);
             // Нужно вывести название бенча и коммент
             // Need to display title and comment
-            out += "\n<tr><td class=\"benchmarkname\"><span class=\"tooltip\">" +
-                repl_html_symbols(benchName) +
-                "<span class=\"tooltiptext code\">" +
+            out += "\n<tr><td class=\"benchmarkname\"><span class=\"tooltip\"><a target=\"blank\" href=\"https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp#L"_ss +
+                line_num + "\">" + repl_html_symbols(benchName) +
+                "</a><span class=\"tooltiptext code\">" +
                 source + "</span></span></td><td>" +
                 e_if(!comment.is_empty(), "<span class=\"tooltip info\">&nbsp;>>&nbsp;<span class=\"tooltiptext\">" + comment + "</span></span>") +
                 "</td>";

@@ -19,6 +19,19 @@ table th {
     text-align: center;
 }
 
+.tooltip a:any-link {
+	text-decoration: none;
+}
+.tooltip a:link {
+	color: black;
+}
+.tooltip a:visited {
+	color: black;
+}
+.tooltip a:hover {
+	text-decoration: underline;
+}
+
 table tr:hover td {
     background-color: lightcyan;
 }
