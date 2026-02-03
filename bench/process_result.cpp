@@ -117,7 +117,7 @@ void write_platforms_cpu(out_t& out, const results_vector& results) {
         size_t rp = r.cpu_info_.find('(') + 1, lp = r.cpu_info_.find(')', rp);
         ssa shortCpuInfo = r.cpu_info_.from_to(rp, lp);
         ssa cpuInfo = r.cpu_info_(lp + 2);
-        out.append_formatted(R"--(
+        out += e_subst(R"--(
 <li><span class="platform">{}</span><span class="tooltip">{}<span class="tooltiptext">{}</span></span>&nbsp;Include in charts: <input type="checkbox" id="pl{}" checked onchange="buildCharts()"/></li>)--",
             r.platform_, shortCpuInfo, cpuInfo, counter++);
         script += "'" + e_repl(r.platform_.to_str(), "'", "\\'") + "'" + e_choice(&r == &results.back(), "]", ",");

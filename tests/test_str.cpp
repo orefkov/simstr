@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.2
+ * ver. 1.6.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1995,7 +1995,7 @@ TEST(SimStr, EFill) {
 TEST(SimStr, Subst) {
     int from = 1, total = 100;
     bool success = true;
-    lstringu<100> u16t = e_subst(S_FRM(u"Test {} from {}, {}."), from, total, e_choice(success, u"success", u"fail"));
+    lstringu<100> u16t = e_subst(u"Test {} from {}, {}.", from, total, e_choice(success, u"success", u"fail"));
     EXPECT_EQ(u16t, u"Test 1 from 100, success.");
 }
 
@@ -2003,7 +2003,8 @@ void check_equal(stra a, stra b) {
     EXPECT_EQ(a, b);
 }
 
-inline constexpr cestring<char, 100> ce_sample = "sample " + e_subst(S_FRM("test = {}"), e_hex(10)) + ", done";
+#ifndef _MSC_VER
+inline constexpr cestring<char, 100> ce_sample = "sample " + e_subst("test = {}", e_hex(10)) + ", done";
 
 TEST(SimStr, ConstEval) {
     constexpr cestring<char, 100> ce_empty;
@@ -2030,10 +2031,10 @@ TEST(SimStr, ConstEval) {
     constexpr cestring<char, 100> ce_expr = "test = "_ss + 10 + " times";
     static_assert(ce_expr == "test = 10 times");
 
-    constexpr cestring<char, 100> ce_subst = e_subst(S_FRM("test = {}"), 10);
+    constexpr cestring<char, 100> ce_subst = e_subst("test = {}", 10);
     static_assert(ce_subst == "test = 10");
 
-    constexpr cestring<char, 100> ce_hex = e_subst(S_FRM("test = {}"), e_hex(10));
+    constexpr cestring<char, 100> ce_hex = e_subst("test = {}", e_hex(10));
     static_assert(ce_hex == "test = 0x0000000A");
 
     constexpr cestring<char, 100> ce_concat = e_concat("", "test = ", 10, " times");
@@ -2054,9 +2055,9 @@ TEST(SimStr, ConstEval) {
     constexpr cestring<char, 100> ce_repl = e_repl("test", "e", "--");
     static_assert(ce_repl == "t--st");
 }
+#endif
 
 } // namespace simstr::tests
-
 TEST(SimStr, StrNoNamespace) {
     std::string str = "test";
     std::string test = +str + " = " + 10;

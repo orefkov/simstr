@@ -1,5 +1,5 @@
 /*
- * ver. 1.6.2
+ * ver. 1.6.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -69,7 +69,7 @@ TEST(ToStrExpr, CheckExclamation) {
     EXPECT_EQ(test, "Msg is <Happy Birthday!!!>");
 
     const add_exclamation cmsg{"Happy Birthday", 0};
-    test = e_subst(S_FRM("Msg is <{}>"), cmsg);
+    test = e_subst("Msg is <{}>", cmsg);
     EXPECT_EQ(test, "Msg is <Happy Birthday>");
 }
 //! [Method1]
@@ -149,7 +149,7 @@ TEST(ToStrExpr, CheckCarInfo) {
     EXPECT_EQ(test, "Car is <Model: Ford, Year: 2021>");
 
     ci.year++;
-    test = e_subst(S_FRM("Car is <{}>"), ci);
+    test = e_subst("Car is <{}>", ci);
     EXPECT_EQ(test, "Car is <Model: Ford, Year: 2022>");
 }
 //! [Method2]
@@ -216,7 +216,7 @@ TEST(ToStrExpr, CheckAnimal) {
     test = e_concat("", "<", dog, ">");
     EXPECT_EQ(test, "<Animal: Dog, Sound: Woof>");
 
-    test = e_subst(S_FRM("\\_{}_/"), animal{"Snake", "Pssstt"});
+    test = e_subst("\\_{}_/", animal{"Snake", "Pssstt"});
     EXPECT_EQ(test, "\\_Animal: Snake, Sound: Pssstt_/");
 }
 //! [Method3]
@@ -268,7 +268,7 @@ TEST(ToStrExpr, CheckTest) {
     t = e_concat("", "<", t2, ">");
     EXPECT_EQ(t, "<test 8 from 12>");
 
-    t = e_subst(S_FRM("<{}>"), test{99, 100});
+    t = e_subst("<{}>", test{99, 100});
     EXPECT_EQ(t, "<test 99 from 100>");
 
     // Проверим работу для не char
@@ -296,12 +296,13 @@ TEST(ToStrExpr, SubstCustom) {
     const auto ttt = "test"_ss;
     int ii = 3;
     const test tr{10, 10};
-    std::string t = e_subst(S_FRM("Test {{--}} {}={}, {}"), ttt, tr, ii);
+    std::string t = e_subst("Test {{--}} {}={}, {}", ttt, tr, ii);
     EXPECT_EQ(t, "Test {--} test=test 10 from 10, 3");
-    t = e_subst(S_FRM("Test {2}={1}, {2}, {1}"), "test", 2);
+    t = e_subst("Test {2}={1}, {2}, {1}", "test", 2);
     EXPECT_EQ(t, "Test 2=test, 2, test");
 
-    std::u16string u16t = e_subst(S_FRM(u"Test {}={}, {}"), u"test", 2, u"test"sv);
+    std::u16string u16t = e_subst(u"Test {}={}, {}", u"test", 2, u"test"sv);
     EXPECT_EQ(u16t, u"Test test=2, test");
 }
+
 } // namespace simstr::tests

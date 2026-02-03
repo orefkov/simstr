@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.2
+ * ver. 1.6.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -489,9 +489,6 @@ concept StrExpr = requires(const A& a) {
  */
 template<typename A, typename K>
 concept StrExprForType = StrExpr<A> && is_equal_str_type_v<K, typename std::remove_cvref_t<A>::symb_type>;
-
-//template<typename A, typename K>
-//concept StdString = StrExpr<A> && is_equal_str_type_v<K, typename std::remove_cvref_t<A>::value_type>;
 
 template<typename K, typename T>
 struct convert_to_strexpr;
@@ -1638,11 +1635,11 @@ struct expr_num : expr_to_std_string<expr_num<K, T>> {
     using my_type = expr_num<K, T>;
 
     enum { bufSize = 24 };
-    mutable T value;
     mutable K buf[bufSize];
+    mutable T value;
 
     constexpr expr_num(T t) : value(t) {}
-    constexpr expr_num(expr_num<K, T>&& t) : value(t.value) {}
+    constexpr expr_num(expr_num&& t) noexcept : value(t.value) {}
 
     constexpr size_t length() const noexcept {
         value = (T)fromInt(buf + bufSize, value);
@@ -1688,6 +1685,508 @@ struct convert_to_strexpr<K, T> {
 template<typename K, FromIntNumber T>
 constexpr expr_num<K, T> e_num(T t) {
     return {t};
+}
+
+namespace f{
+
+enum class int_align { none, left, right, center };
+enum class int_plus_sign {none, plus, space};
+
+enum fmt_kinds : unsigned {
+    fmt_none = 0,
+    fmt_align = 1,
+    fmt_width = 2,
+    fmt_fill = 4,
+    fmt_sign = 8,
+    fmt_upper = 16,
+    fmt_prefix = 32,
+    fmt_zero = 64,
+};
+
+template<typename A, typename B, unsigned Kind>
+struct fmt_info {
+    using a_t = A;
+    using b_t = B;
+    inline static constexpr unsigned kind = Kind;
+};
+
+struct fmt_default {
+    inline static constexpr unsigned kind = fmt_none;
+};
+
+template<int_align A>
+struct align_info{
+    inline static constexpr unsigned kind = fmt_align;
+};
+
+template<size_t Width = 0>
+struct width_info {
+    inline static constexpr unsigned kind = fmt_width;
+};
+
+template<unsigned Fill = ' '>
+struct fill_info {
+    inline static constexpr unsigned kind = fmt_fill;
+};
+
+template<int_plus_sign S>
+struct sign_info {
+    inline static constexpr unsigned kind = fmt_sign;
+};
+
+struct upper_info {
+    inline static constexpr unsigned kind = fmt_upper;
+};
+
+struct prefix_info {
+    inline static constexpr unsigned kind = fmt_prefix;
+};
+
+struct zero_info {
+    inline static constexpr unsigned kind = fmt_zero;
+};
+
+template<typename T>
+concept FmtParam = requires {
+    {std::remove_cvref_t<T>::kind} -> std::same_as<const unsigned&>;
+};
+
+template<FmtParam A, FmtParam B>
+requires((A::kind ^ B::kind) != 0)
+constexpr auto operator | (const A&, const B&) {
+    return fmt_info<A, B, A::kind | B::kind>{};
+}
+
+inline constexpr align_info<int_align::left> l;
+inline constexpr align_info<int_align::right>  r;
+inline constexpr align_info<int_align::center> c;
+
+template<size_t W>
+inline constexpr width_info<W> w;
+
+template<unsigned F>
+inline constexpr fill_info<F> f;
+
+inline constexpr sign_info<int_plus_sign::plus> sp;
+inline constexpr sign_info<int_plus_sign::space> ss;
+inline constexpr upper_info u;
+inline constexpr prefix_info p;
+inline constexpr zero_info z;
+
+inline constexpr width_info<unsigned(-1)> wp;
+inline constexpr fmt_default df;
+
+template<typename T>
+struct extract_align : std::false_type {
+    inline static constexpr int_align align = int_align::none;
+};
+
+template<int_align A>
+struct extract_align<align_info<A>> : std::true_type {
+    inline static constexpr int_align align = A;
+};
+
+template<typename A, typename B, unsigned U>
+struct extract_align<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_align<A>::value, in_b = extract_align<B>::value, value = in_a | in_b;
+    inline static constexpr int_align align = extract_align<std::conditional_t<in_a, A, std::conditional_t<in_b, B, align_info<int_align::none>>>>::align;
+};
+
+template<typename T>
+struct extract_width : std::false_type {
+    inline static constexpr size_t width = 0;
+};
+
+template<size_t W>
+struct extract_width<width_info<W>> : std::true_type {
+    inline static constexpr size_t width = W;
+};
+
+template<typename A, typename B, unsigned U>
+struct extract_width<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_width<A>::value, in_b = extract_width<B>::value, value = in_a | in_b;
+    inline static constexpr size_t width = extract_width<std::conditional_t<in_a, A, std::conditional_t<in_b, B, width_info<0>>>>::width;
+};
+
+template<typename T>
+struct extract_fill : std::false_type {
+    inline static constexpr unsigned fill = ' ';
+};
+
+template<unsigned F>
+struct extract_fill<fill_info<F>> : std::true_type {
+    inline static constexpr unsigned fill = F;
+};
+
+template<typename A, typename B, unsigned U>
+struct extract_fill<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_fill<A>::value, in_b = extract_fill<B>::value, value = in_a | in_b;
+    inline static constexpr unsigned fill = extract_fill<std::conditional_t<in_a, A, std::conditional_t<in_b, B, fill_info<' '>>>>::fill;
+};
+
+template<typename T>
+struct extract_sign : std::false_type {
+    inline static constexpr int_plus_sign sign = int_plus_sign::none;
+};
+
+template<int_plus_sign S>
+struct extract_sign<sign_info<S>> : std::true_type {
+    inline static constexpr int_plus_sign sign = S;
+};
+
+template<typename A, typename B, unsigned U>
+struct extract_sign<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_sign<A>::value, in_b = extract_sign<B>::value, value = in_a | in_b;
+    inline static constexpr int_plus_sign sign = extract_sign<std::conditional_t<in_a, A, std::conditional_t<in_b, B, sign_info<int_plus_sign::none>>>>::sign;
+};
+
+template<typename T>
+struct extract_upper : std::false_type {};
+
+template<>
+struct extract_upper<upper_info> : std::true_type {};
+
+template<typename A, typename B, unsigned U>
+struct extract_upper<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_upper<A>::value, in_b = extract_upper<B>::value,
+        value = extract_upper<std::conditional_t<in_a, A, std::conditional_t<in_b, B, std::false_type>>>::value;
+};
+
+template<typename T>
+struct extract_prefix : std::false_type{};
+
+template<>
+struct extract_prefix<prefix_info> : std::true_type {};
+
+template<typename A, typename B, unsigned U>
+struct extract_prefix<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_prefix<A>::value, in_b = extract_prefix<B>::value,
+        value = extract_prefix<std::conditional_t<in_a, A, std::conditional_t<in_b, B, std::false_type>>>::value;
+};
+
+template<typename T>
+struct extract_zero : std::false_type{};
+
+template<>
+struct extract_zero<zero_info> : std::true_type {};
+
+template<typename A, typename B, unsigned U>
+struct extract_zero<fmt_info<A, B, U>> {
+    inline static constexpr bool in_a = extract_zero<A>::value, in_b = extract_zero<B>::value,
+        value = extract_zero<std::conditional_t<in_a, A, std::conditional_t<in_b, B, std::false_type>>>::value;
+};
+
+template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, bool Prefix, bool Zero>
+struct fmt_params {
+    inline static constexpr int_align align = Align;
+    inline static constexpr unsigned width = Width;
+    inline static constexpr unsigned fill = Fill;
+    inline static constexpr int_plus_sign sign = Sign;
+    inline static constexpr bool upper = Upper;
+    inline static constexpr bool prefix = Prefix;
+    inline static constexpr bool zero = Zero;
+};
+
+template<FmtParam T>
+using p_to_fmt_t = fmt_params<
+    extract_align<T>::align,
+    extract_width<T>::width,
+    extract_fill<T>::fill,
+    extract_sign<T>::sign,
+    extract_upper<T>::value,
+    extract_prefix<T>::value,
+    extract_zero<T>::value>;
+
+template<FmtParam T>
+using to_fmt_t = p_to_fmt_t<std::remove_cvref_t<T>>;
+
+template<typename T>
+struct is_fmt_params : std::false_type{};
+
+template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, bool Prefix, bool Zero>
+struct is_fmt_params<fmt_params<Align, Width, Fill, Sign, Upper, Prefix, Zero>> : std::true_type{};
+
+template<typename T>
+concept FmtParamSet = is_fmt_params<T>::value;
+
+} // namespace f
+
+template<typename K, bool Ucase>
+constexpr K digits_symbols[36] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K('6'), K('7'), K('8'), K('9'),
+    K(Ucase ? 'A' : 'a'), K(Ucase ? 'B' : 'b'), K(Ucase ? 'C' : 'c'), K(Ucase ? 'D' : 'd'), K(Ucase ? 'E' : 'e'),
+    K(Ucase ? 'F' : 'f'), K(Ucase ? 'G' : 'g'), K(Ucase ? 'H' : 'h'), K(Ucase ? 'I' : 'i'), K(Ucase ? 'J' : 'j'),
+    K(Ucase ? 'K' : 'k'), K(Ucase ? 'L' : 'l'), K(Ucase ? 'M' : 'm'), K(Ucase ? 'N' : 'n'), K(Ucase ? 'O' : 'o'),
+    K(Ucase ? 'P' : 'p'), K(Ucase ? 'Q' : 'q'), K(Ucase ? 'R' : 'r'), K(Ucase ? 'S' : 's'), K(Ucase ? 'T' : 't'),
+    K(Ucase ? 'U' : 'u'), K(Ucase ? 'V' : 'v'), K(Ucase ? 'W' : 'w'), K(Ucase ? 'X' : 'x'), K(Ucase ? 'Y' : 'y'),
+    K(Ucase ? 'Z' : 'z'),
+};
+
+template<FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
+requires (Radix > 1 && Radix <= 36)
+struct expr_integer_src {
+    T value_;
+    unsigned width_{};
+    constexpr expr_integer_src(T v) : value_(v){}
+    constexpr expr_integer_src(T v, unsigned w) : value_(v), width_(w){}
+};
+
+template<is_one_of_char_v K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
+requires (Radix > 1 && Radix <= 36 && (FP::align == f::int_align::none || !FP::zero))
+struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
+    using symb_type = K;
+    using my_type = expr_num<K, T>;
+
+    enum { bufSize = 64 };
+    mutable K buf[bufSize];
+    mutable T value_;
+    unsigned width_{};
+
+    mutable bool negate_{};
+
+    constexpr expr_integer(T t) : value_(t){}
+    constexpr expr_integer(T t, unsigned w) : value_(t), width_(w){}
+    constexpr expr_integer(const expr_integer_src<T, Radix, FP>& v) : value_(v.value_), width_(v.width_){}
+
+    constexpr expr_integer(expr_integer&& t) noexcept : value_(t.value_), width_(t.width_){}
+
+    constexpr size_t length() const noexcept {
+        K* bufEnd = std::end(buf), *itr = bufEnd;
+
+        if (value_) {
+            need_sign<K, std::is_signed_v<T>, T> store(value_);
+            while (store.val) {
+                *--itr = digits_symbols<K, FP::upper>[store.val % Radix];
+                store.val /= Radix;
+            }
+            if constexpr (std::is_signed_v<T>) {
+                negate_ = store.negate;
+            }
+        } else {
+            *--itr = digits_symbols<K, FP::upper>[0];
+        }
+        size_t len = bufEnd - itr;
+        value_ = T(len);
+        if constexpr (std::is_signed_v<T>) {
+            if constexpr (FP::sign != f::int_plus_sign::none) {
+                len++;
+            } else {
+                if (negate_) {
+                    len++;
+                }
+            }
+        }
+        if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+            len++;  // add 0
+            if constexpr (Radix != 8) { // for octo just add 0,
+                len++; // for other b or x
+            }
+        }
+        if constexpr (FP::width == unsigned(-1)) {
+            return std::max<size_t>(width_, len);
+        } else {
+            return std::max<size_t>(FP::width, len);
+        }
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        size_t len = (size_t)value_, all_len = len;
+        if constexpr (std::is_signed_v<T>) {
+            if constexpr (FP::sign != f::int_plus_sign::none) {
+                all_len++;
+            } else {
+                if (negate_) {
+                    all_len++;
+                }
+            }
+        }
+        if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+            all_len++;  // add 0
+            if constexpr (Radix != 8) { // for octo just add 0,
+                all_len++; // for other b or x
+            }
+        }
+        if constexpr (FP::zero) {
+            if constexpr (std::is_signed_v<T>) {
+                if (negate_) {
+                    *ptr++ = K('-');
+                } else {
+                    if constexpr (FP::sign == f::int_plus_sign::plus) {
+                        *ptr++ = K('+');
+                    } else if constexpr (FP::sign == f::int_plus_sign::space) {
+                        *ptr++ = K(' ');
+                    }
+                }
+            }
+            if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+                *ptr++ = K('0');
+                if constexpr (Radix == 2) {
+                    *ptr++ = K('b');
+                } else if constexpr (Radix == 16) {
+                    *ptr++ = K('x');
+                }
+            }
+            size_t before = 0;
+            if constexpr (FP::width == unsigned(-1)) {
+                if (width_ > all_len) {
+                    before = width_ - all_len;
+                }
+            } else {
+                if (FP::width > all_len) {
+                    before = FP::width - all_len;
+                }
+            }
+            if (before) {
+                ch_traits<K>::assign(ptr, before, K('0'));
+                ptr += before;
+            }
+            ch_traits<K>::copy(ptr, std::end(buf) - len, len);
+            ptr += len;
+        } else {
+            size_t before = 0, after = 0;
+            if constexpr (FP::width == unsigned(-1)) {
+                if (width_ > all_len) {
+                    if constexpr (FP::align == f::int_align::left) {
+                        after = width_ - all_len;
+                    } else if constexpr (FP::align == f::int_align::center) {
+                        before = (width_ - all_len) / 2;
+                        after = width_ - all_len - before;
+                    } else {
+                        before = width_ - all_len;
+                    }
+                }
+            } else {
+                if (FP::width > all_len) {
+                    if constexpr (FP::align == f::int_align::left) {
+                        after = FP::width - all_len;
+                    } else if constexpr (FP::align == f::int_align::center) {
+                        before = (FP::width - all_len) / 2;
+                        after = FP::width - all_len - before;
+                    } else {
+                        before = FP::width - all_len;
+                    }
+                }
+            }
+            if (before) {
+                ch_traits<K>::assign(ptr, before, K(FP::fill));
+                ptr += before;
+            }
+            if constexpr (std::is_signed_v<T>) {
+                if (negate_) {
+                    *ptr++ = K('-');
+                } else {
+                    if constexpr (FP::sign == f::int_plus_sign::plus) {
+                        *ptr++ = K('+');
+                    } else if constexpr (FP::sign == f::int_plus_sign::space) {
+                        *ptr++ = K(' ');
+                    }
+                }
+            }
+            if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+                *ptr++ = K('0');
+                if constexpr (Radix == 2) {
+                    *ptr++ = K('b');
+                } else if constexpr (Radix == 16) {
+                    *ptr++ = K('x');
+                }
+            }
+            ch_traits<K>::copy(ptr, std::end(buf) - len, len);
+            ptr += len;
+
+            if (after) {
+                ch_traits<K>::assign(ptr, after, K(FP::fill));
+                ptr += after;
+            }
+        }
+        return ptr;
+    }
+};
+
+template<typename K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
+struct convert_to_strexpr<K, expr_integer_src<T, Radix, FP>> {
+    using type = expr_integer<K, T, Radix, FP>;
+};
+
+template<unsigned R, typename T, typename F>
+struct flags_checker {
+    using val_t = T;
+    using flags_t = f::to_fmt_t<F>;
+    inline static constexpr unsigned Radix = R;
+};
+
+template<typename T, bool ArgWidth>
+concept good_int_flags =
+    T::Radix > 1 && T::Radix <= 36
+    // Должно быть задано только или выравнивание, или заполнение нулём.
+    // Only either alignment or zero-padding must be specified.
+    && (T::flags_t::align == f::int_align::none || !T::flags_t::zero)
+    // Флаг вывода знака должен задаваться только для знаковых чисел
+    // The sign output flag should only be set for signed numbers.
+    && (std::is_signed_v<typename T::val_t> || T::flags_t::sign == f::int_plus_sign::none)
+    // Неверное поле ширины
+    // Invalid width field
+    && (T::flags_t::width == unsigned(-1)) == ArgWidth;
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Создает объект, который преобразовывается в строковое выражение, генерирующее строковое представление числа.
+ * @tparam R - Основание счисления, должно быть от 2 до 36.
+ * @tparam fp - параметры для форматирования числа.
+ * @tparam T - тип числа, выводится из аргумента.
+ * @param v - число.
+ * @return источник для строкового выражения expr_integer_src.
+ * @details параметры форматирования числа задаются набором констант, через '|'.
+ * - f::l: при задании ширины поля выравнивать влево.
+ * - f::r: при задании ширины поля выравнивать вправо.
+ * - f::с: при задании ширины поля выравнивать по центру.
+ * - f::p: выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16.
+ * - f::z: дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания.
+ * - f::u: Для систем счисления более 10, выводить символы в верхнем регистре.
+ * - f::sp: Для знаковых типов чисел для положительных значений выводить '+' перед числом.
+ * - f::ss: Для знаковых типов чисел для положительных значений выводить пробел перед числом.
+ * - f::f<'c'>`: Задаёт символ-заполнитель при указании ширины поля. По умолчанию - пробел.
+ * - f::w<N>: Задаёт ширину поля. При указании ширины можно либо указать желаемое выравнивание (r, l, c),
+ *   либо дополнение нулями (z), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
+ *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
+ * - f::wp: То же самое, что и f::w<-1>. В этом случае ширина должна передаваться дополнительным аргументом e_int.
+ * @en @brief Creates an object that is converted to a string expression that generates a string representation of a number.
+ * @tparam R - Number base, must be from 2 to 36.
+ * @tparam fp - parameters for format number.
+ * @tparam T - number type, deduced from the argument.
+ * @param v - number.
+ * @return the source for the string expression expr_integer_src.
+ * @details number formatting parameters are specified by a set of constants, via '|'.
+ * - f::l: when setting the field width, align to the left.
+ * - f::r: when setting the field width, align to the right.
+ * - f::с: when setting the field width, align to the center.
+ * - f::p: print number system prefix, 0b for 2, 0 for 8, 0x for 16.
+ * - f::z: pad the number to the specified width with zeros on the right. Not compatible with alignment options.
+ * - f::u: For number systems greater than 10, output characters in uppercase.
+ * - f::sp: For signed number types, print '+' before the number for positive values.
+ * - f::ss: For signed number types, print a space before the number for positive values.
+ * - f::f<'c'>: Specifies a placeholder character when specifying the field width. Default is space.
+ * - f::w<N>: Sets the field width. When specifying the width, you can either specify the desired alignment (r, l, c),
+ *   or zero padding (z), but not both. If none of these are specified, right alignment is applied.
+ *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
+ * - f::wp: Same as f::w<-1>. In this case, the width must be passed as an additional argument e_int.
+ *
+ * @ru Пример: @en Example: @~
+ * ```cpp
+ *  stringu u16t = u"Number "_ss + num + " in octal is " + e_int<8, f::w<16> | f::z>(num) +
+ *       ", in bin is " + e_int<2, f::w<32> | f::p | f::z>(num);
+ * ```
+ */
+template<unsigned R, auto fp = f::df, FromIntNumber T> requires good_int_flags<flags_checker<R, T,  decltype(fp)>, false>
+constexpr auto e_int(T v) {
+    using fmt_param = f::to_fmt_t<decltype(fp)>;
+    return expr_integer_src<T, R, fmt_param>{v};
+}
+/*!
+ * @ru @brief То же самое, что `e_int(num)`, только дополнительно передаётся ширина поля.
+ * @en @brief Same as `e_int(num)`, only the field width is additionally specified.
+ */
+template<unsigned R, auto fp = f::df, FromIntNumber T> requires good_int_flags<flags_checker<R, T,  decltype(fp)>, true>
+constexpr auto e_int(T v, unsigned w) {
+    using fmt_param = f::to_fmt_t<decltype(fp)>;
+    return expr_integer_src<T, R, fmt_param>{v, w};
 }
 
 template<typename K>
@@ -1753,11 +2252,6 @@ struct expr_hex_src {
     Val v_;
 };
 
-template<typename K, bool Ucase>
-constexpr K hex_symbols[16] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K('6'),
-    K('7'), K('8'), K('9'), K(Ucase ? 'A' : 'a'), K(Ucase ? 'B' : 'b'), K(Ucase ? 'C' : 'c'),
-    K(Ucase ? 'D' : 'd'), K(Ucase ? 'E' : 'e'), K(Ucase ? 'F' : 'f')};
-
 template<typename K, FromIntNumber Val, bool All, bool Ucase, bool Ox>
 struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
     using symb_type = K;
@@ -1771,11 +2265,11 @@ struct expr_hex : expr_to_std_string<expr_hex<K, Val, All, Ucase, Ox>> {
         K *ptr = buf_ + std::size(buf_);
         size_t l = 0;
         for (;;) {
-            *--ptr = hex_symbols<K, Ucase>[v_.val & 0xF];
+            *--ptr = digits_symbols<K, Ucase>[v_.val & 0xF];
             v_.val >>= 4;
             l++;
             if (v_.val) {
-                *--ptr = hex_symbols<K, Ucase>[v_.val & 0xF];
+                *--ptr = digits_symbols<K, Ucase>[v_.val & 0xF];
                 v_.val >>= 4;
                 l++;
             }
@@ -5355,26 +5849,57 @@ template<typename K, typename T>
 using to_str_exp_t = decltype(to_subst<K>(std::declval<T>()));
 
 /*!
- * @ru @brief Строковое выражение для объединения более чем одного строкового выражения, с указанием разделителя.
- *  Создаётся при вызове функции `e_concat`.
- * @tparam K - тип символов.
- * @tparam G - тип разделителя.
- * @tparam Args... - типы строковых выражений.
- * @en @brief A string expression for concatenating more than one string expression, specifying a separator.
- *  Created when calling the `e_concat` function.
- * @tparam K - character type.
- * @tparam G - separator type.
- * @tparam Args... - string expression types. */
+ * @ingroup StrExprs
+ * @ru @brief Строковое выражения, объединяющее указанные строковые выражения, с использованием заданного разделителя.
+ * @tparam K - тип символов, выводится из типа разделителя.
+ * @en @brief String expression concatenating the specified string expressions using the specified delimiter.
+ * @tparam K - character type, deduced from the separator type.
+ */
 template<typename K, typename G, typename Arg, typename...Args>
-struct expr_concat : expr_to_std_string<expr_concat<K, G, Arg, Args...>> {
+struct e_concat : expr_to_std_string<e_concat<K, G, Arg, Args...>> {
     using symb_type = K;
-    using store_t = std::tuple<Args...>;
-    G glue_;
-    Arg arg_;
+    using store_t = std::tuple<to_str_exp_t<K, Args>...>;
+    using arg_t = to_str_exp_t<K, Arg>;
+    to_str_exp_t<K, G> glue_;
+    arg_t arg_;
     store_t args_;
     mutable size_t glue_len_;
-
-    constexpr expr_concat(G&& glue, Arg&& arg, Args&&...args) : glue_(std::forward<G>(glue)), arg_(std::forward<Arg>(arg)), args_(std::forward<Args>(args)...) {}
+    /*!
+    * @ru @brief Создание строкового выражения, объединяющего указанные строковые выражения, с использованием заданного разделителя.
+    * @param glue - "клей", используемый при соединении аргументов, вставляется между ними.
+    * @param arg, args... - объединяемые аргументы, не менее двух.
+    * @details "Склеивает" переданные аргументы, вставляя между ними заданный "клей".
+    * Соединителем и аргументами могут быть строковые литералы, строковые выражения, стандартные строки.
+    * Аргументами также могут быть любые типы, для которых есть преобразование в строковое выражение.
+    * (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+    * Для аргументов, которые сами являются строковыми выражениями, `e_concat` сохраняет только ссылку на них.
+    * Обычно это не является проблемой, если ссылка не на временный объект, или строковое выражение материализуется
+    * сейчас же, до ';'. Если же вам необходимо вернуть `e_concat` как строковое выражение из функции,
+    * можно заставить его сохранить аргументы строковые выражения по копии, обернув их в `force_copy{}`.
+    * См. пример в tests/test_tostrexpr.cpp, Method4.
+    * @en @brief Create a string expression concatenating the specified string expressions using the specified delimiter.
+    * @param glue - the "glue" used when connecting arguments is inserted between them.
+    * @param arg, args... - the arguments to be combined, at least two.
+    * @details "Glues" the passed arguments, inserting the specified "glue" between them.
+    * The connector and arguments can be string literals, string expressions, standard strings.
+    * Arguments can also be any type for which there is a conversion to a string expression.
+    * (see @ref ConvertToStrExpr "Converting types to string expressions").
+    * For arguments that are themselves string expressions, `e_concat` stores only a reference to them.
+    * This is usually not a problem if the reference is not to a temporary object, or the string expression is materialized
+    * now, before ';'. If you need to return `e_concat` as a string expression from a function,
+    * you can force it to preserve string expression arguments over a copy by wrapping them in `force_copy{}`.
+    * See tests/test_tostrexpr.cpp, Method4 for an example.
+    * @ru Пример: @en Example @~
+    * ```cpp
+    *  std::string t = e_concat("", text, " = ", count, " times.");
+    *  ....
+    *  std::string t = "msg=" + e_concat(", ", text1, text3, text3, count1, count2);
+    * ```
+    */
+    constexpr e_concat(G&& glue, Arg&& arg, Args&&...args)
+        : glue_(to_subst<K>(std::forward<G>(glue)))
+        , arg_(to_subst<K>(std::forward<Arg>(arg)))
+        , args_(to_subst<K>(std::forward<Args>(args))...) {}
 
     constexpr size_t length() const noexcept {
         return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
@@ -5386,7 +5911,7 @@ struct expr_concat : expr_to_std_string<expr_concat<K, G, Arg, Args...>> {
     }
     constexpr K* place(K* ptr) const noexcept {
         return [this]<size_t...Indexes>(K* ptr, std::index_sequence<Indexes...>) {
-            ptr = (K*)arg_.place((typename std::remove_cvref_t<Arg>::symb_type*)ptr);
+            ptr = (K*)arg_.place((typename std::remove_cvref_t<arg_t>::symb_type*)ptr);
             const K* glueStart = ptr;
             ptr = glue_.place(ptr);
             (
@@ -5399,51 +5924,9 @@ struct expr_concat : expr_to_std_string<expr_concat<K, G, Arg, Args...>> {
         }(ptr, std::make_index_sequence<sizeof...(Args)>());
     }
 };
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Создание строкового выражения, объединяющего указанные строковые выражения, с использованием
- * заданного разделителя.
- * @tparam T - тип разделителя, выводится из аргумента.
- * @tparam K - тип символов, выводится из типа разделителя.
- * @tparam Args... - склеиваемые аргументы.
- * @param glue - "клей", используемый при соединении аргументов, вставляется между ними.
- * @param args... - объединяемые аргументы, не менее двух.
- * @details "Склеивает" переданные аргументы, вставляя между ними заданный "клей".
- * Соединителем и аргументами могут быть строковые литералы, строковые выражения, стандартные строки.
- * Аргументами также могут быть любые типы, для которых есть преобразование в строковое выражение.
- * (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
- * Для аргументов, которые сами являются строковыми выражениями, `e_concat` сохраняет только ссылку на них.
- * Обычно это не является проблемой, если ссылка не на временный объект, или строковое выражение материализуется
- * сейчас же, до ';'. Если же вам необходимо вернуть `e_concat` как строковое выражение из функции,
- * можно заставить его сохранить аргументы строковые выражения по копии, обернув их в `force_copy{}`.
- * См. пример в tests/test_tostrexpr.cpp, Method4.
- * @en @brief Create a string expression concatenating the specified string expressions using the specified delimiter.
- * @tparam T - delimiter type, deduced from the argument.
- * @tparam K - character type, deduced from the separator type.
- * @tparam Args... - arguments to be merged.
- * @param glue - the "glue" used when connecting arguments is inserted between them.
- * @param args... - the arguments to be combined, at least two.
- * @details "Glues" the passed arguments, inserting the specified "glue" between them.
- * The connector and arguments can be string literals, string expressions, standard strings.
- * Arguments can also be any type for which there is a conversion to a string expression.
- * (see @ref ConvertToStrExpr "Converting types to string expressions").
- * For arguments that are themselves string expressions, `e_concat` stores only a reference to them.
- * This is usually not a problem if the reference is not to a temporary object, or the string expression is materialized
- * now, before ';'. If you need to return `e_concat` as a string expression from a function,
- * you can force it to preserve string expression arguments over a copy by wrapping them in `force_copy{}`.
-* See tests/test_tostrexpr.cpp, Method4 for an example.
- * @ru Пример: @en Example @~
- * ```cpp
- *  std::string t = e_concat("", text, " = ", count, " times.");
- *  ....
- *  std::string t = "msg=" + e_concat(", ", text1, text3, text3, count1, count2);
- * ```
- */
-template<typename T, typename K = symb_type_from_src_t<T>, typename ... Args> requires (sizeof...(Args) > 1)
-constexpr expr_concat<K, to_str_exp_t<K, T>, to_str_exp_t<K, Args>...> e_concat(T&& glue, Args&&...args) {
-    return { to_subst<K>(std::forward<T>(glue)), to_subst<K>(std::forward<Args>(args))...};
-}
+// CTAD deducing rule for e_concat
+template<typename T, typename ... Args> requires (sizeof...(Args) > 1)
+e_concat(T&&, Args&&...) -> e_concat<symb_type_from_src_t<T>, T, Args...>;
 
 struct parse_subst_string_error {
     parse_subst_string_error(const char*){}
@@ -5452,7 +5935,7 @@ struct parse_subst_string_error {
 namespace details {
 
 template<typename K, size_t NParams>
-constexpr size_t parse_pattern_string(str_src<K> pattern, const auto& add_part, const auto& add_param) {
+constexpr size_t parse_pattern_string(str_src<K> pattern, auto&& add_part, auto&& add_param) {
     char used_args[NParams] = {0};
     const K* first = pattern.begin(), *last = pattern.end(), *start = first;
     size_t all_len = 0;
@@ -5466,10 +5949,9 @@ constexpr size_t parse_pattern_string(str_src<K> pattern, const auto& add_part, 
         }
         return from;
     };
-    size_t idx_in_data = 0, idx_in_params = 0;
+    size_t idx_in_params = 0;
 
     while (first != last) {
-        bool cont = false;
         const K* open_pos = first;
         if (*first != '{') {
             open_pos = find(first, last, '{');
@@ -5477,16 +5959,9 @@ constexpr size_t parse_pattern_string(str_src<K> pattern, const auto& add_part, 
             for (;;) {
                 const K* close_pos = find(first, open_pos, '}');
                 if (close_pos == open_pos) {
-                    if (open_pos < last && open_pos[1] == '{') {
-                        unsigned len = open_pos - first + 1;
-                        all_len += len;
-                        add_part(first - start, len);
-                        first = open_pos + 2;
-                        cont = true;
-                    } else if (unsigned len = open_pos - first) {
-                        add_part(first - start, len);
-                        all_len += len;
-                    }
+                    unsigned len = open_pos - first;
+                    add_part(first - start, len);
+                    all_len += len;
                     break;
                 }
                 ++close_pos;
@@ -5502,16 +5977,15 @@ constexpr size_t parse_pattern_string(str_src<K> pattern, const auto& add_part, 
                 break;
             }
         }
-        if (cont) {
-            continue;
-        }
-
         if (++open_pos == last) {
             throw parse_subst_string_error{"unescaped {"};
         }
         if (*open_pos == '}') {
             if (idx_in_params == -1) {
                 throw parse_subst_string_error{"already used param ids"};
+            }
+            if (idx_in_params == NParams) {
+                throw parse_subst_string_error{"too many params"};
             }
             used_args[idx_in_params] = 1;
             add_param(idx_in_params++);
@@ -5570,47 +6044,88 @@ struct portion {
     }
 };
 
-template<typename K, typename Pt, typename...Args>
+template<typename K, size_t PtLen, size_t NParams>
 struct subst_params {
-
-    inline static constexpr size_t NParams = sizeof...(Args);
-    inline static constexpr size_t PtLen = const_lit<Pt>::Count;
-
-    Pt source_;
+    const K(&source_)[PtLen];
     unsigned all_len_{};
     unsigned actual_{};
     // The pattern string can be divided into a maximum of this number of portions.
-    // "a{}a{}a{}a" - Two portions of one symbol from the edges, and two portions for every three symbols
-    portion portions_[2 + (PtLen - 1) * 2 / 3]{};
+    // "a{}a{}a{}a" - One portion of one symbol from the edge, and two portions for every three symbols
+    portion portions_[1 + ((PtLen - 2) * 2 / 3)]{};
 
-    consteval subst_params(Pt&& pattern) : source_(pattern) {
-        all_len_ = parse_pattern_string<K, NParams>(pattern, [this](unsigned from, unsigned len){
-            portions_[actual_++].set_part(from, len);
-        }, [&, this](unsigned param) {
-            portions_[actual_++].set_param(param);
-        });
+    consteval subst_params(const K(&pattern)[PtLen]) : source_(pattern) {
+        all_len_ = parse_pattern_string<K, NParams>(pattern,
+            [this](unsigned from, unsigned len) {
+                portions_[actual_++].set_part(from, len);
+            }, [this](unsigned param) {
+                portions_[actual_++].set_param(param);
+            });
     }
 };
 
 } // namespace details
 
-template<typename K, typename Pt, typename ... Args>
-struct expr_subst : expr_to_std_string<expr_subst<K, Pt, Args...>> {
-    inline static constexpr size_t Nparams = sizeof...(Args);
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Строковое выражение, которое подставляет в заданные места в строковом литерале - образце значения переданных строковых выражений.
+ * @en @brief String expression that substitutes the values ​​of the passed string expressions into the specified places in a string literal.
+ */
+template<typename K, size_t PtLen, typename ... Args>
+struct e_subst : expr_to_std_string<e_subst<K, PtLen, Args...>> {
+    inline static constexpr size_t NParams = sizeof...(Args);
     using symb_type = K;
     using store_t = std::tuple<to_str_exp_t<K, Args>...>;
 
-    const details::subst_params<K, Pt, Args...>& subst_;
+    const details::subst_params<K, PtLen, NParams>& subst_;
     store_t args_;
-
-    constexpr expr_subst(const details::subst_params<K, Pt, Args...>& subst, Args&&...args)
+    /*!
+    * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строковом литерале - образце значения переданных строковых выражений.
+    * @param pattern - распарсенная во время компиляции информация составе строки-шаблона, содержит длины текстовых порций и места вставки параметров.
+    *   Создается автоматически из переданного строкового литерала.
+    * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
+    * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
+    * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
+    *  значения переданных аргументов. Строка-образец задается строковым литералом, константной времени компиляции.
+    *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
+    *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
+    *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
+    *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
+    *  Все переданные параметры должны участвовать в подстановках. Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
+    *  Строка-образец обрабатывается во время компиляции, и для неё сразу создаётся массив с информацией о вставках - какие части строки копировать
+    *  в результат, в какие места вставлять переданные значения.
+    *  Функция не является заменой `std::format`, не работает с образцом, задаваемым в рантайм, и не поддерживает каких-либо параметров форматирования
+    * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
+    *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+    * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified places in a string literal.
+    * @param pattern - information parsed during compilation in the template string, containing the lengths of text chunks and places to insert parameters.
+    *   Created automatically from the passed string literal.
+    * @param args... - arguments that will be inserted into the specified places in the sample. Also, as in `e_concat`, there can be string literals,
+    * string expressions, standard strings, as well as any types for which there is a conversion to a string expression.
+    * @details The function creates a string expression, which, when materialized, generates text from the sample, substituting it in placeholders
+    * values ​​of the passed arguments. The pattern string is specified by a string literal, a compile-time constant.
+    * Insertion locations are indicated by either `{}` or `{number}`.
+    * In case without spectacle number, the parameters are submitted to the order of order. In case of the index number, the parameters are submitted in accordance with
+    * with the specified serial number. The numbering of parameters starts from 1. You cannot mix parameters without a number and with a number - only used
+    * one of the options for all substitutions. In the case of specifying numbers, one parameter can participate in several substitutions.
+    * All passed parameters must participate in substitutions. To insert curly braces themselves, they must be doubled - `{{`, `}}`.
+    * The sample string is processed during compilation, and an array is immediately created for it with information about insertions - which parts of the string to copy
+    * in the result, where to insert the passed values.
+    * The function is not a replacement for `std::format`, does not work with the sample specified at runtime, and does not support any formatting options
+    * for substituted values. All passed arguments must be able to convert themselves to string expressions
+    * (see @ref ConvertToStrExpr "Converting types to string expressions").
+    * @ru Пример: @en Example: @~
+    * ```cpp
+    *  lstringu<100> u16t = e_subst(u"Test {} from {}, {}.", from, total, success ? u"success"_ss : u"fail"_ss);
+    * ```
+    */
+    constexpr e_subst(const details::subst_params<K, PtLen, NParams>& subst, Args&&...args)
         : subst_(subst)
         , args_(to_subst<K>(std::forward<Args>(args))...){}
 
     constexpr size_t length() const noexcept {
         return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
             size_t idx = 0;
-            size_t expr_length_[Nparams] = {};
+            size_t expr_length_[NParams] = {};
             ((expr_length_[idx++] = std::get<Indexes>(args_).length()),...);
             size_t l = subst_.all_len_;
             for (idx = 0; idx < subst_.actual_; idx++) {
@@ -5626,12 +6141,11 @@ struct expr_subst : expr_to_std_string<expr_subst<K, Pt, Args...>> {
         if (idx == Idx) {
             return (K*)std::get<Idx>(args_).place((typename std::remove_cvref_t<std::tuple_element_t<Idx, store_t>>::symb_type*)ptr);
         }
-        if constexpr (Idx < Nparams - 1) {
+        if constexpr (Idx < NParams - 1) {
             return place_idx<Idx + 1>(ptr, idx);
         }
         return ptr;
     }
-
     constexpr K* place(K* ptr) const noexcept {
         for (size_t idx = 0; idx < subst_.actual_; idx++) {
             if (subst_.portions_[idx].is_param) {
@@ -5645,36 +6159,88 @@ struct expr_subst : expr_to_std_string<expr_subst<K, Pt, Args...>> {
     }
 };
 
+// CTAD deducing rule for e_subst
+template<typename K, size_t N, typename...Args> requires (sizeof...(Args) > 0)
+e_subst(const K(&)[N], Args&&...) -> e_subst<K, N, Args...>;
+
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Строковое выражение, которое подставляет в заданные места в строке-образце, задаваемой в рантайме, значения переданных строковых выражений.
+ * @en @brief String expression that substitutes the values ​​of the passed string expressions into the specified positions in the pattern string, specified at runtime.
+ */
 template<typename K, typename ... Args>
-struct expr_vsubst : expr_to_std_string<expr_vsubst<K, Args...>> {
+struct e_vsubst : expr_to_std_string<e_vsubst<K, Args...>> {
     inline static constexpr size_t Nparams = sizeof...(Args);
     using symb_type = K;
     using store_t = std::tuple<to_str_exp_t<K, Args>...>;
 
-    details::portion portions_[Nparams * 2 + 1];
+    details::portion portions_[Nparams * 3];
     std::vector<details::portion> more_portions_;
     store_t args_;
     str_src<K> pattern_;
     size_t all_len_{};
     unsigned actual_{};
-
-    constexpr expr_vsubst(str_src<K> pattern, Args&&...args)
+    /*!
+    * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строке-образце, задаваемой в рантайме, значения переданных строковых выражений.
+    * @param pattern - Строковый объект-образец, в который будут подставляться значения переданных аргументов.
+    * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
+    * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
+    * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
+    *  значения переданных аргументов. Строка-образец задается в рантайм, строковым объектом, парсинг которого происходит во время выполнения.
+    *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
+    *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
+    *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
+    *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
+    *  Все переданные параметры должны участвовать в подстановках. В случае ошибки парсинга строки будет выкинуто исключение `parse_subst_string_error`.
+    *  Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
+    *  Функция не является заменой `std::vformat`, не работает с образцом, задаваемым в compile-time, и не поддерживает каких-либо параметров форматирования
+    * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
+    *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
+    * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified positions in the pattern string, specified at runtime.
+    * @param pattern - the pattern string object into which the values ​​of the passed arguments will be substituted.
+    * @param args... - the arguments to be substituted into the specified positions in the pattern. As in `e_concat`, these can be string literals,
+    * string expressions, standard strings, and any types that can be converted to string expressions.
+    * @details The function creates a string expression that, when materialized, generates text from the pattern, substituting the values ​​of the passed arguments into the
+    * substitution positions. The pattern string is specified at runtime by a string object that is parsed at runtime.
+    * Insertion points are designated either as `{}` or `{number}`.
+    * If no number is specified, parameters are substituted in the order passed to the function. If a number is specified, parameters are substituted according to the
+    * specified ordinal number. Parameter numbering starts with 1. You cannot mix parameters with and without numbers; only one of the options is used for all substitutions. If numbers are specified, one parameter can participate in multiple substitutions.
+    * All passed parameters must participate in substitutions. If a string parsing error occurs, a `parse_subst_string_error` exception will be thrown.
+    * To insert the curly braces themselves, they must be doubled - `{{`, `}}`.
+    * This function is not a replacement for `std::vformat`, does not work with the pattern specified at compile-time, and does not support any formatting options for
+    * substituted values. All passed arguments must be able to convert themselves to string expressions.
+    * (See @ref ConvertToStrExpr "Converting Types to String Expressions").
+    * @ru Пример: @en Example: @~
+    * ```cpp
+    *  std::string_view pattern;
+    *  .....
+    *  lstringa<100> text = e_vsubst(pattern, from, total, success ? "success"_ss : "fail"_ss);
+    * ```
+    */
+    constexpr e_vsubst(str_src<K> pattern, Args&&...args)
         : pattern_(pattern)
         , args_(to_subst<K>(std::forward<Args>(args))...) {
 
         all_len_ = details::parse_pattern_string<K, Nparams>(pattern_, [this](unsigned from, unsigned len) {
-            if (actual_ < std::size(portions_) - 1) {
-                portions_[actual_++].set_part(from, len);
-            } else {
-                more_portions_.emplace_back().set_part(from, len);
+                if (actual_ < std::size(portions_)) {
+                    portions_[actual_++].set_part(from, len);
+                } else {
+                    if (actual_ == std::size(portions_)) {
+                        more_portions_.reserve((pattern_.len - 1) * 2 / 3 - std::size(portions_));
+                    }
+                    more_portions_.emplace_back().set_part(from, len);
+                }
+            }, [this](unsigned param) {
+                if (actual_ < std::size(portions_)) {
+                    portions_[actual_++].set_param(param);
+                } else {
+                    if (actual_ == std::size(portions_)) {
+                        more_portions_.reserve((pattern_.len - 1) * 2 / 3 - std::size(portions_));
+                    }
+                    more_portions_.emplace_back().set_param(param);
+                }
             }
-        }, [&, this](unsigned param) {
-            if (actual_ < std::size(portions_) - 1) {
-                portions_[actual_++].set_param(param);
-            } else {
-                more_portions_.emplace_back().set_param(param);
-            }
-        });
+        );
     }
     constexpr size_t length() const noexcept {
         return [this]<size_t...Indexes>(std::index_sequence<Indexes...>) {
@@ -5718,117 +6284,20 @@ struct expr_vsubst : expr_to_std_string<expr_vsubst<K, Args...>> {
             if (p.is_param) {
                 ptr = place_idx<0>(ptr, p.start);
             } else {
-                ch_traits<K>::copy(ptr, pattern_.symbols() + p.start, p.len);
-                ptr += p.len;
+                const K* from = pattern_.symbols() + p.start;
+                for (size_t idx = p.len; idx--;) {
+                    *ptr++ = *from++;
+                }
+                //ch_traits<K>::copy(ptr, pattern_.symbols() + p.start, p.len);
+                //ptr += p.len;
             }
         }
         return ptr;
     }
 };
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строковом литерале - образце значения переданных строковых выражений.
- * @tparam T - тип строки-образца, выводится из аргумента.
- * @tparam Args... - типы переданных аргументов.
- * @param str_pattern - Строка-образец, строковый литерал, служит для вывода типа символов выражения и получения длины образца во время компиляции.
- * @param pattern - распарсенная во время компиляции информация составе строки-шаблона, содержит длины текстовых порций и места вставки параметров.
- * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
- * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
- * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
- *  значения переданных аргументов. Строка-образец задается строковым литералом, константной времени компиляции.
- *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
- *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
- *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
- *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
- *  Все переданные параметры должны участвовать в подстановках. Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
- *  Строка-образец обрабатывается во время компиляции, и для неё сразу создаётся массив с информацией о вставках - какие части строки копировать
- *  в результат, в какие места вставлять переданные значения. Из-за невозможности вывести компилятором тип для объекта с этой информацией напрямую из
- *  строкового литерала, его приходится указывать дважды - первый раз как параметр для вывода типа, второй - как параметр для конструктора
- *  типа, выведенного из первого параметра. Для упрощения задания образца используется макрос `S_FRM("образец{}")`, который просто повторяет параметр
- *  два раза.
- *  Функция не является заменой `std::format`, не работает с образцом, задаваемым в рантайм, и не поддерживает каких-либо параметров форматирования
- * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
- *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
- * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified places in a string literal.
- * @tparam T - type of the pattern string, inferred from the argument.
- * @tparam Args... - types of arguments passed.
- * @param str_pattern - The pattern string, a string literal, is used to infer the character type of an expression and obtain the length of the pattern at compile time.
- * @param pattern - information parsed during compilation in the template string, containing the lengths of text chunks and places to insert parameters.
- * @param args... - arguments that will be inserted into the specified places in the sample. Also, as in `e_concat`, there can be string literals,
- * string expressions, standard strings, as well as any types for which there is a conversion to a string expression.
- * @details The function creates a string expression, which, when materialized, generates text from the sample, substituting it in placeholders
- * values ​​of the passed arguments. The pattern string is specified by a string literal, a compile-time constant.
- * Insertion locations are indicated by either `{}` or `{number}`.
- * In case without spectacle number, the parameters are submitted to the order of order. In case of the index number, the parameters are submitted in accordance with
- * with the specified serial number. The numbering of parameters starts from 1. You cannot mix parameters without a number and with a number - only used
- * one of the options for all substitutions. In the case of specifying numbers, one parameter can participate in several substitutions.
- * All passed parameters must participate in substitutions. To insert curly braces themselves, they must be doubled - `{{`, `}}`.
- * The sample string is processed during compilation, and an array is immediately created for it with information about insertions - which parts of the string to copy
- * in the result, where to insert the passed values. Because the compiler cannot deduced the type for an object with this information directly from
- * a string literal, it has to be specified twice - the first time as a parameter for type deducing, the second time as a parameter for the constructor
- * the type deduced from the first parameter. To simplify specifying a sample, use the macro `S_FRM("sample{}")`, which simply repeats the parameter twice.
- * The function is not a replacement for `std::format`, does not work with the sample specified at runtime, and does not support any formatting options
- * for substituted values. All passed arguments must be able to convert themselves to string expressions
- * (see @ref ConvertToStrExpr "Converting types to string expressions").
- * @ru Пример: @en Example: @~
- * ```cpp
- *  lstringu<100> u16t = e_subst(S_FRM(u"Test {} from {}, {}."), from, total, success ? u"success"_ss : u"fail"_ss);
- * ```
- */
-template<typename T, typename...Args> requires (sizeof...(Args) > 0)
-constexpr auto e_subst(T&& str_pattern, const details::subst_params<typename const_lit<T>::symb_type, std::type_identity_t<T>, std::type_identity_t<Args>...>& pattern, Args&&...args) {
-    return expr_subst<typename const_lit<T>::symb_type, T, Args...>{pattern, std::forward<Args>(args)...};
-}
-
-#define S_FRM(s) s, s
-
-/*!
- * @ingroup StrExprs
- * @ru @brief Создает строковое выражение, которое подставляет в заданные места в строке-образце, задаваемой в рантайме, значения переданных строковых выражений.
- * @tparam T - тип строки-образца, выводится из аргумента.
- * @tparam Args... - типы переданных аргументов.
- * @param str_pattern - Строковый объект-образец, в который будут подставляться значения переданных аргументов.
- * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
- * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
- * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
- *  значения переданных аргументов. Строка-образец задается в рантайм, строковым объектом, парсинг которого происходит во время выполнения.
- *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
- *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
- *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только
- *  один из вариантов для всех подстановок. В случае указания номеров - один параметр может участвовать в нескольких подстановках.
- *  Все переданные параметры должны участвовать в подстановках. В случае ошибки парсинга строки будет выкинуто исключение `parse_subst_string_error`.
- *  Для вставки самих фигурных скобок они должны удваиваться - `{{`, `}}`.
- *  Функция не является заменой `std::vformat`, не работает с образцом, задаваемым в compile-time, и не поддерживает каких-либо параметров форматирования
- * подставляемых значений. Все передаваемые аргументы должны сами уметь преобразовывать себя в строковые выражения
- *  (см. @ref ConvertToStrExpr "Конвертация типов в в строковые выражения").
- * @en @brief Creates a string expression that substitutes the values ​​of the passed string expressions into the specified positions in the pattern string, specified at runtime.
- * @tparam T - the type of the pattern string, deduced from the argument.
- * @tparam Args... - the types of the passed arguments.
- * @param str_pattern - the pattern string object into which the values ​​of the passed arguments will be substituted.
- * @param args... - the arguments to be substituted into the specified positions in the pattern. As in `e_concat`, these can be string literals,
- * string expressions, standard strings, and any types that can be converted to string expressions.
- * @details The function creates a string expression that, when materialized, generates text from the pattern, substituting the values ​​of the passed arguments into the
- * substitution positions. The pattern string is specified at runtime by a string object that is parsed at runtime.
- * Insertion points are designated either as `{}` or `{number}`.
- * If no number is specified, parameters are substituted in the order passed to the function. If a number is specified, parameters are substituted according to the
- * specified ordinal number. Parameter numbering starts with 1. You cannot mix parameters with and without numbers; only one of the options is used for all substitutions. If numbers are specified, one parameter can participate in multiple substitutions.
- * All passed parameters must participate in substitutions. If a string parsing error occurs, a `parse_subst_string_error` exception will be thrown.
- * To insert the curly braces themselves, they must be doubled - `{{`, `}}`.
- * This function is not a replacement for `std::vformat`, does not work with the pattern specified at compile-time, and does not support any formatting options for
- * substituted values. All passed arguments must be able to convert themselves to string expressions.
- * (See @ref ConvertToStrExpr "Converting Types to String Expressions").
- * @ru Пример: @en Example: @~
- * ```cpp
- *  std::string_view pattern;
- *  .....
- *  lstringa<100> text = e_vsubst(pattern, from, total, success ? "success"_ss : "fail"_ss);
- * ```
- */
+// CTAD deducing rule for e_vsubst
 template<StrSourceNoLiteral T, typename...Args> requires (sizeof...(Args) > 0)
-constexpr auto e_vsubst(T&& str_pattern, Args&&...args) {
-    return expr_vsubst<symb_type_from_src_t<T>, Args...>{str_pattern, std::forward<Args>(args)...};
-}
+e_vsubst(T&&, Args&&...) -> e_vsubst<symb_type_from_src_t<T>, Args...>;
 
 /*!
  * @ru @brief Небольшое пространство для методов работы со стандартными строками.

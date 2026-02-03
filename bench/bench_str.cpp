@@ -155,7 +155,7 @@ void ConcatSimToSimHexS(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
-            stringa str = e_subst(S_FRM("{}{} end"), s1, e_hex<HexFlags::Short>(i));
+            stringa str = e_subst("{}{} end", s1, e_hex<HexFlags::Short>(i));
             benchmark::DoNotOptimize(str);
         }
     }
@@ -176,12 +176,57 @@ void ConcatSimToSimHexVS(benchmark::State& state) {
 BENCHMARK(__)->Name("-----  Concatenate string + Hex Number + \"Literal\" ---------")->Repetitions(1);
 BENCHMARK(ConcatStdToFmtHex)    ->Name("Concat std::string and format hex number and literal to std::string");
 BENCHMARK(ConcatAllFmtToHex)    ->Name("std::format std::string and hex number by literal to std::string");
-BENCHMARK(ConcatStdToCharsHex)  ->Name("Concat std::string and std::tochars and string to std::string");
+BENCHMARK(ConcatStdToCharsHex)  ->Name("Concat std::string and std::to_chars and string to std::string");
 BENCHMARK(ConcatSimToStdHex)    ->Name("Concat std::string and hex number and literal by StrExpr to std::string");
 BENCHMARK(ConcatSimToSimHex)    ->Name("Concat stringa and hex number and literal by StrExpr to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number and literal by e_concat to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexS)   ->Name("Subst stringa and hex number by e_subst literal to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexVS)  ->Name("Subst stringa and hex number by e_vsubst stra to simstr::stringa");
+
+void SubstSimToSimBin(benchmark::State& state) {
+    static bool first = true;
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            stringa str = e_subst("art {} end", e_int<8, f::w<10> | f::p | f::z>(i));
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void FormatStdToStdBin(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::string str = std::format("art {:#010o} end", i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void VSubstSimToSimBin(benchmark::State& state) {
+    ssa pattern = "art {} end";
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            stringa str = e_vsubst(pattern, e_int<8, f::w<10> | f::p | f::z>(i));
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void VFormatStdToStdBin(benchmark::State& state) {
+    std::string_view pattern = "art {:#010o} end";
+    static bool first = true;
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::string str = std::vformat(pattern, std::make_format_args(i));
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+BENCHMARK(__)->Name("-----  format/vformat and subst/vsubst octal number ---------")->Repetitions(1);
+BENCHMARK(SubstSimToSimBin)     ->Name("e_subst(\"art {} end\", e_int<8, f::w<10> | f::p | f::z>(i))");
+BENCHMARK(FormatStdToStdBin)    ->Name("std::format(\"art {:#010o} end\", i)");
+BENCHMARK(VSubstSimToSimBin)    ->Name("e_vsubst(pattern, e_int<8, f::w<10> | f::p | f::z>(i))");
+BENCHMARK(VFormatStdToStdBin)   ->Name("std::vformat(pattern, std::make_format_args(i))");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";
@@ -2343,7 +2388,10 @@ BENCHMARK(BuildFuncNameSimStr)         ->Name("Build func full name stringa;");
 BENCHMARK(BuildFuncNameSimStr1)        ->Name("Build func full name stringa 1;");
 
 int main(int argc, char** argv) {
-    char arg1[] = "--benchmark_repetitions=10", arg2[] = "--benchmark_report_aggregates_only=true";
+    std::cout << "Benchmarks of simstr, version " SIMSTR_VERSION << "\n"
+        << "Sources: https://github.com/orefkov/simstr\n"
+        << "Results: https://orefkov.github.io/simstr/results.html\n" << std::endl;
+    char arg1[] = "--benchmark_repetitions=4", arg2[] = "--benchmark_report_aggregates_only=true";
     char* my_params[] = {argv[0], arg1, arg2};
     if (argc < 2) {
         argc = 3;

@@ -265,6 +265,7 @@
             }
         });
     </script>
-</head><body><div class="header"><h2>SimStr benchmarks results</h2>
+</head><body><div class="header"><h2>simstr benchmarks results</h2>
+<div style="font-size:16pt;margin:20px;text-align:center"><a href="https://github.com/orefkov/simstr">simstr</a> is a powerful and convenient library for productive work with strings in C++.</div>
 <span>All times in ns.</span>
 <span><a href="https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp">Source for benchmarks</a></span>

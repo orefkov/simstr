@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.2
+ * ver. 1.6.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -8,6 +8,7 @@
 
 #include "../include/simstr/strexpr.h"
 #include <gtest/gtest.h>
+#include <format>
 #include <list>
 
 using namespace std::literals;
@@ -325,12 +326,12 @@ TEST(StrExpr, Concat) {
 TEST(StrExpr, Subst) {
     const auto ttt = "test"_ss;
     int ii = 3;
-    std::string t = e_subst(S_FRM("Test {{--}} {}=, {}"), ttt, ii);
+    std::string t = e_subst("Test {{--}} {}=, {}", ttt, ii);
     EXPECT_EQ(t, "Test {--} test=, 3");
-    t = e_subst(S_FRM("Test {2}={1}, {2}, {1}"), "test", 2);
+    t = e_subst("Test {2}={1}, {2}, {1}", "test", 2);
     EXPECT_EQ(t, "Test 2=test, 2, test");
 
-    std::u16string u16t = e_subst(S_FRM(u"Test {}={}, {}"), u"test", 2, u"test"sv);
+    std::u16string u16t = e_subst(u"Test {}={}, {}", u"test", 2, u"test"sv);
     EXPECT_EQ(u16t, u"Test test=2, test");
 }
 
@@ -343,5 +344,59 @@ TEST(StrExpr, VSubst) {
     t = e_vsubst("{1}-{1}-{1}-{1}-{1}-{1}-{1}-{1}"_ss, "abc");
     EXPECT_EQ(t, "abc-abc-abc-abc-abc-abc-abc-abc");
 }
+
+TEST(StrExpr, EInt) {
+    std::string kk = eea + e_int<10, f::c | f::w<10> | f::f<'_'> | f::sp>(123);
+    EXPECT_EQ(kk, "___+123___");
+    std::u16string uk = eeu + e_int<2, f::p>(123);
+    EXPECT_EQ(uk, u"0b1111011");
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z>(123);
+    std::string kf = std::format("{:#011b}", 123);
+
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z>(-123);
+    kf = std::format("{:#011b}", -123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z | f::sp>(123);
+    kf = std::format("{:+#011b}", 123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z | f::sp>(-123);
+    kf = std::format("{:+#011b}", -123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z | f::ss>(123);
+    kf = std::format("{: #011b}", 123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::z | f::ss>(-123);
+    kf = std::format("{: #011b}", -123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::w<11> | f::r | f::f<'_'>| f::ss>(-123);
+    kf = std::format("{:_> 11b}", -123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::w<11> | f::r | f::f<'_'>| f::ss>(123);
+    kf = std::format("{:_> 11b}", 123);
+    EXPECT_EQ(kk, kf);
+
+    kk = eea + e_int<2, f::p | f::w<11> | f::r | f::f<'_'>| f::ss>(123);
+    kf = std::format("{:_> #11b}", 123);
+    EXPECT_EQ(kk, kf);
+
+    //EXPECT_EQ(kk, "0b001111011");
+    //std::cout << std::format("'{:+#011b}'\n", 123);
+
+    //std::cout << std::format("'{:+#011b}'\n", -123);
+    //EXPECT_EQ(kk, std::format("{:#011b}", -123));
+
+    std::u32string uu = eeuu + e_int<16, f::wp | f::p | f::u | f::z/* | f::r*/>(123, 9);
+    EXPECT_EQ(uu, U"0x000007B");
+}
+
 
 } // namespace simstr::tests

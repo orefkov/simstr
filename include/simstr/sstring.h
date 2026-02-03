@@ -1,9 +1,9 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.6.2
+ * ver. 1.6.3
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.6.2
+* ver. 1.6.3
 * Classes for working with strings
  */
 
@@ -3822,6 +3822,7 @@ class decl_empty_bases cestring :
     public null_terminated<K, lstring<K, N>>
     //, public from_utf_convertible<K, lstring<K, N, forShared, Allocator>>
 {
+public:
     using symb_type = K;
     using my_type = cestring<K, N>;
 
