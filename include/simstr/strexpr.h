@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.3
+ * ver. 1.6.4
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1691,6 +1691,7 @@ namespace f{
 
 enum class int_align { none, left, right, center };
 enum class int_plus_sign {none, plus, space};
+enum class int_prefix {none, lcase, ucase};
 
 enum fmt_kinds : unsigned {
     fmt_none = 0,
@@ -1738,6 +1739,7 @@ struct upper_info {
     inline static constexpr unsigned kind = fmt_upper;
 };
 
+template<int_prefix>
 struct prefix_info {
     inline static constexpr unsigned kind = fmt_prefix;
 };
@@ -1752,7 +1754,7 @@ concept FmtParam = requires {
 };
 
 template<FmtParam A, FmtParam B>
-requires((A::kind ^ B::kind) != 0)
+requires((A::kind & B::kind) == 0)
 constexpr auto operator | (const A&, const B&) {
     return fmt_info<A, B, A::kind | B::kind>{};
 }
@@ -1770,7 +1772,8 @@ inline constexpr fill_info<F> f;
 inline constexpr sign_info<int_plus_sign::plus> sp;
 inline constexpr sign_info<int_plus_sign::space> ss;
 inline constexpr upper_info u;
-inline constexpr prefix_info p;
+inline constexpr prefix_info<int_prefix::lcase> p;
+inline constexpr prefix_info<int_prefix::ucase> P;
 inline constexpr zero_info z;
 
 inline constexpr width_info<unsigned(-1)> wp;
@@ -1853,15 +1856,19 @@ struct extract_upper<fmt_info<A, B, U>> {
 };
 
 template<typename T>
-struct extract_prefix : std::false_type{};
+struct extract_prefix : std::false_type{
+    inline static constexpr int_prefix prefix = int_prefix::none;
+};
 
-template<>
-struct extract_prefix<prefix_info> : std::true_type {};
+template<int_prefix P>
+struct extract_prefix<prefix_info<P>> : std::true_type {
+    inline static constexpr int_prefix prefix = P;
+};
 
 template<typename A, typename B, unsigned U>
 struct extract_prefix<fmt_info<A, B, U>> {
-    inline static constexpr bool in_a = extract_prefix<A>::value, in_b = extract_prefix<B>::value,
-        value = extract_prefix<std::conditional_t<in_a, A, std::conditional_t<in_b, B, std::false_type>>>::value;
+    inline static constexpr bool in_a = extract_prefix<A>::value, in_b = extract_prefix<B>::value, value = in_a | in_b;
+    inline static constexpr int_prefix prefix = extract_prefix<std::conditional_t<in_a, A, std::conditional_t<in_b, B, prefix_info<int_prefix::none>>>>::prefix;
 };
 
 template<typename T>
@@ -1876,14 +1883,14 @@ struct extract_zero<fmt_info<A, B, U>> {
         value = extract_zero<std::conditional_t<in_a, A, std::conditional_t<in_b, B, std::false_type>>>::value;
 };
 
-template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, bool Prefix, bool Zero>
+template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, int_prefix Prefix, bool Zero>
 struct fmt_params {
     inline static constexpr int_align align = Align;
     inline static constexpr unsigned width = Width;
     inline static constexpr unsigned fill = Fill;
     inline static constexpr int_plus_sign sign = Sign;
     inline static constexpr bool upper = Upper;
-    inline static constexpr bool prefix = Prefix;
+    inline static constexpr int_prefix prefix = Prefix;
     inline static constexpr bool zero = Zero;
 };
 
@@ -1894,7 +1901,7 @@ using p_to_fmt_t = fmt_params<
     extract_fill<T>::fill,
     extract_sign<T>::sign,
     extract_upper<T>::value,
-    extract_prefix<T>::value,
+    extract_prefix<T>::prefix,
     extract_zero<T>::value>;
 
 template<FmtParam T>
@@ -1903,11 +1910,95 @@ using to_fmt_t = p_to_fmt_t<std::remove_cvref_t<T>>;
 template<typename T>
 struct is_fmt_params : std::false_type{};
 
-template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, bool Prefix, bool Zero>
+template<int_align Align, unsigned Width, unsigned Fill, int_plus_sign Sign, bool Upper, int_prefix Prefix, bool Zero>
 struct is_fmt_params<fmt_params<Align, Width, Fill, Sign, Upper, Prefix, Zero>> : std::true_type{};
 
 template<typename T>
 concept FmtParamSet = is_fmt_params<T>::value;
+
+struct fmt_end{};
+
+template<f::FmtParam F>
+constexpr auto operator|(const F& f, fmt_end) {
+    return f;
+}
+
+template<char C = 0, char...Chars>
+constexpr auto parse_fmt_symbol();
+
+template<unsigned N, char C = 'Z', char...Chars>
+constexpr auto parse_width() {
+    if constexpr (C >= '0' && C <= '9') {
+        return parse_width<N * 10 + C - '0', Chars...>();
+    } else {
+        return w<N> | parse_fmt_symbol<C, Chars...>();
+    }
+}
+
+template<unsigned N, char C = 'Z', char...Chars>
+constexpr auto parse_fill() {
+    if constexpr (C >= '0' && C <= '9') {
+        return parse_fill<N * 16 + C - '0', Chars...>();
+    } else if constexpr (C >= 'a' && C <= 'f') {
+        return parse_fill<N * 16 + C - 'a' + 10, Chars...>();
+    } else if constexpr (C >= 'A' && C <= 'F') {
+        return parse_fill<N * 16 + C - 'A' + 10, Chars...>();
+    } else {
+        return f<N> | parse_fmt_symbol<C, Chars...>();
+    }
+}
+
+template<char C, char...Chars>
+constexpr auto parse_fmt_symbol() {
+    if constexpr (C == '0') {
+        return z | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'a') {
+        return p | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'A') {
+        return P | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'b') {
+        return l | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'c') {
+        return c | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'd') {
+        return r | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'e') {
+        return sp | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'f') {
+        return ss | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'E') {
+        return u | parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == '\'') {
+        return parse_fmt_symbol<Chars...>();
+    } else if constexpr (C == 'F') {
+        return parse_fill<0, Chars...>();
+    } else if constexpr (C >= '1' && C <= '9') {
+        return parse_width<C - '0', Chars...>();
+    } else {
+        return fmt_end{};
+    }
+}
+
+template<unsigned R, typename T>
+struct fmt_radix_info {};
+
+template<unsigned N, char C = 0, char...Chars>
+constexpr auto parse_radix() {
+    if constexpr (C >='0' && C <= '9') {
+        return parse_radix<N * 10 + C - '0', Chars...>();
+    } else if constexpr (C == 0) {
+        return fmt_radix_info<N, to_fmt_t<fmt_default>>{};
+    } else {
+        return fmt_radix_info<N, decltype(parse_fmt_symbol<C, Chars...>())>{};
+    }
+};
+
+template<char C1, char C2, char C3, char...Chars>
+constexpr auto skip_0x() {
+    static_assert(C1 == '0' && C2 == 'x' && "Fmt symbols must begin with 0x");
+    static_assert(C3 >= '1' && C3 <= '9' && "Radix must begin with 1-9");
+    return parse_radix<C3 - '0', Chars...>();
+}
 
 } // namespace f
 
@@ -1931,7 +2022,7 @@ struct expr_integer_src {
 };
 
 template<is_one_of_char_v K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
-requires (Radix > 1 && Radix <= 36 && (FP::align == f::int_align::none || !FP::zero))
+requires (Radix > 1 && Radix <= 36)
 struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
     using symb_type = K;
     using my_type = expr_num<K, T>;
@@ -1975,7 +2066,7 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
                 }
             }
         }
-        if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+        if constexpr (FP::prefix != f::int_prefix::none && (Radix == 2 || Radix == 8 || Radix == 16)) {
             len++;  // add 0
             if constexpr (Radix != 8) { // for octo just add 0,
                 len++; // for other b or x
@@ -1998,7 +2089,7 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
                 }
             }
         }
-        if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+        if constexpr (FP::prefix != f::int_prefix::none && (Radix == 2 || Radix == 8 || Radix == 16)) {
             all_len++;  // add 0
             if constexpr (Radix != 8) { // for octo just add 0,
                 all_len++; // for other b or x
@@ -2016,12 +2107,12 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
                     }
                 }
             }
-            if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+            if constexpr (FP::prefix != f::int_prefix::none && (Radix == 2 || Radix == 8 || Radix == 16)) {
                 *ptr++ = K('0');
                 if constexpr (Radix == 2) {
-                    *ptr++ = K('b');
+                    *ptr++ = FP::prefix == f::int_prefix::lcase ? K('b') : K('B');
                 } else if constexpr (Radix == 16) {
-                    *ptr++ = K('x');
+                    *ptr++ = FP::prefix == f::int_prefix::lcase ? K('x')  : K('X');
                 }
             }
             size_t before = 0;
@@ -2080,12 +2171,12 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
                     }
                 }
             }
-            if constexpr (FP::prefix && (Radix == 2 || Radix == 8 || Radix == 16)) {
+            if constexpr (FP::prefix != f::int_prefix::none && (Radix == 2 || Radix == 8 || Radix == 16)) {
                 *ptr++ = K('0');
                 if constexpr (Radix == 2) {
-                    *ptr++ = K('b');
+                    *ptr++ = FP::prefix == f::int_prefix::lcase ? K('b') : K('B');
                 } else if constexpr (Radix == 16) {
-                    *ptr++ = K('x');
+                    *ptr++ = FP::prefix == f::int_prefix::lcase ? K('x') : K('X');
                 }
             }
             ch_traits<K>::copy(ptr, std::end(buf) - len, len);
@@ -2123,7 +2214,10 @@ concept good_int_flags =
     && (std::is_signed_v<typename T::val_t> || T::flags_t::sign == f::int_plus_sign::none)
     // Неверное поле ширины
     // Invalid width field
-    && (T::flags_t::width == unsigned(-1)) == ArgWidth;
+    && (T::flags_t::width == unsigned(-1)) == ArgWidth
+    // Префикс может быть только при основании 2, 8, 16
+    // Prefix may by only for radix 2, 8, 16
+    && (T::flags_t::prefix == f::int_prefix::none || T::Radix == 2 || T::Radix == 8 || T::Radix == 16);
 
 /*!
  * @ingroup StrExprs
@@ -2134,19 +2228,21 @@ concept good_int_flags =
  * @param v - число.
  * @return источник для строкового выражения expr_integer_src.
  * @details параметры форматирования числа задаются набором констант, через '|'.
- * - f::l: при задании ширины поля выравнивать влево.
- * - f::r: при задании ширины поля выравнивать вправо.
- * - f::с: при задании ширины поля выравнивать по центру.
- * - f::p: выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16.
- * - f::z: дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания.
- * - f::u: Для систем счисления более 10, выводить символы в верхнем регистре.
- * - f::sp: Для знаковых типов чисел для положительных значений выводить '+' перед числом.
- * - f::ss: Для знаковых типов чисел для положительных значений выводить пробел перед числом.
- * - f::f<'c'>`: Задаёт символ-заполнитель при указании ширины поля. По умолчанию - пробел.
- * - f::w<N>: Задаёт ширину поля. При указании ширины можно либо указать желаемое выравнивание (r, l, c),
+ * - f::l при задании ширины поля выравнивать влево.
+ * - f::r при задании ширины поля выравнивать вправо.
+ * - f::с при задании ширины поля выравнивать по центру.
+ * - f::p выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16.
+ * - f::P выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16.
+ * - f::z дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания.
+ * - f::u Для систем счисления более 10, выводить символы в верхнем регистре.
+ * - f::sp Для знаковых типов чисел для положительных значений выводить '+' перед числом.
+ * - f::ss Для знаковых типов чисел для положительных значений выводить пробел перед числом.
+ * - f::f<'c'>` Задаёт символ-заполнитель при указании ширины поля. По умолчанию - пробел.
+ * - f::w<N> Задаёт ширину поля. При указании ширины можно либо указать желаемое выравнивание (r, l, c),
  *   либо дополнение нулями (z), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
  *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
- * - f::wp: То же самое, что и f::w<-1>. В этом случае ширина должна передаваться дополнительным аргументом e_int.
+ * - f::wp То же самое, что и f::w<-1>. В этом случае ширина должна передаваться дополнительным аргументом e_int.
+ * <br/>
  * @en @brief Creates an object that is converted to a string expression that generates a string representation of a number.
  * @tparam R - Number base, must be from 2 to 36.
  * @tparam fp - parameters for format number.
@@ -2154,24 +2250,79 @@ concept good_int_flags =
  * @param v - number.
  * @return the source for the string expression expr_integer_src.
  * @details number formatting parameters are specified by a set of constants, via '|'.
- * - f::l: when setting the field width, align to the left.
- * - f::r: when setting the field width, align to the right.
- * - f::с: when setting the field width, align to the center.
- * - f::p: print number system prefix, 0b for 2, 0 for 8, 0x for 16.
- * - f::z: pad the number to the specified width with zeros on the right. Not compatible with alignment options.
- * - f::u: For number systems greater than 10, output characters in uppercase.
- * - f::sp: For signed number types, print '+' before the number for positive values.
- * - f::ss: For signed number types, print a space before the number for positive values.
- * - f::f<'c'>: Specifies a placeholder character when specifying the field width. Default is space.
- * - f::w<N>: Sets the field width. When specifying the width, you can either specify the desired alignment (r, l, c),
+ * - f::l when setting the field width, align to the left.
+ * - f::r when setting the field width, align to the right.
+ * - f::с when setting the field width, align to the center.
+ * - f::p print number system prefix, 0b for 2, 0 for 8, 0x for 16.
+ * - f::P print number system prefix, 0B for 2, 0 for 8, 0X for 16.
+ * - f::z pad the number to the specified width with zeros on the right. Not compatible with alignment options.
+ * - f::u For number systems greater than 10, output characters in uppercase.
+ * - f::sp For signed number types, print '+' before the number for positive values.
+ * - f::ss For signed number types, print a space before the number for positive values.
+ * - f::f<'c'> Specifies a placeholder character when specifying the field width. Default is space.
+ * - f::w<N> Sets the field width. When specifying the width, you can either specify the desired alignment (r, l, c),
  *   or zero padding (z), but not both. If none of these are specified, right alignment is applied.
  *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
- * - f::wp: Same as f::w<-1>. In this case, the width must be passed as an additional argument e_int.
- *
+ * - f::wp Same as f::w<-1>. In this case, the width must be passed as an additional argument e_int.
+ * <br/>
  * @ru Пример: @en Example: @~
  * ```cpp
- *  stringu u16t = u"Number "_ss + num + " in octal is " + e_int<8, f::w<16> | f::z>(num) +
- *       ", in bin is " + e_int<2, f::w<32> | f::p | f::z>(num);
+ *  stringu u16t = u"Number "_ss + num
+ *      + " in octal is " + e_int<8, f::w<16> | f::z>(num)
+ *      + ", in binary is " + e_int<2, f::w<32> | f::p | f::z>(num);
+ * ```
+ * @ru Возможна также сокращённая запись этой функции в виде `num / 0xПараметрыФорматирования_fmt`.
+ * Параметры форматирования задаются следующим образом: сначала идёт `0x`, затем основание счисления, записанное в
+ * десятичном виде. Далее могут идти символы, обозначающие различные флаги:
+ * - b при задании ширины поля выравнивать влево, аналог f::l.
+ * - d при задании ширины поля выравнивать вправо, аналог f::r.
+ * - с при задании ширины поля выравнивать по центру, аналог f::c.
+ * - a выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16, аналог f::p.
+ * - A выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16, аналог f::P.
+ * - 0 дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания, аналог f::z.
+ * - E Для систем счисления более 10, выводить символы в верхнем регистре, аналог f::u.
+ * - e Для знаковых типов чисел для положительных значений выводить '+' перед числом, аналог f::sp.
+ * - f Для знаковых типов чисел для положительных значений выводить пробел перед числом, аналог f::ss.
+ * - FКодCимволаВhex Задаёт код символа-заполнителя при указании ширины поля, аналог f::f<'c'>.
+ * - Число в десятичном виде, начинающееся не с 0. Задаёт ширину поля, аналог f::w<N>.
+ *   При указании ширины можно либо указать желаемое выравнивание (b, c, d),
+ *   либо дополнение нулями (0), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
+ *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
+ * - ' разделитель, пропускается.
+ * Так как после `F` все символы воспринимаются как hex код символа разделителя, при необходимости его использования
+ * лучше ставить его в конце литерала форматирования, или отделять '.
+ * <br/>
+ * @en @brief Creates a set of radix and flags that can be applied to integers
+ * numbers to set formatting parameters using the division operator: `num / 0xFormatOptions_fmt`.
+ * Formatting parameters are set as follows: first comes `0x`, then the radix written in
+ * decimal form. Next may be symbols indicating various flags:
+ * - b when setting the field width, align to the left, analogous to f::l.
+ * - d when setting the field width, align to the right, analogous to f::r.
+ * - c when setting the field width, align to the center, analogous to f::c.
+ * - a display the number system prefix, 0b for 2, 0 for 8, 0x for 16, analogous to f::p.
+ * - A display the number system prefix, 0B for 2, 0 for 8, 0X for 16, analogous to f::P.
+ * - 0 pad the number to the specified width with zeros on the right. Not compatible with alignment options, similar to f::z.
+ * - E For number systems greater than 10, display characters in uppercase, analogous to f::u.
+ * - e For signed number types, for positive values, print '+' before the number, analogous to f::sp.
+ * - f For signed number types, for positive values, print a space before the number, analogous to f::ss.
+ * - FCodeInhex Sets the code of the filler character when specifying the field width, analogous to f::f<'c'>.
+ * - Number in decimal form, not starting from 0. Sets the field width, analogous to f::w<N>.
+ *   When specifying the width, you can either specify the desired alignment (b, c, d),
+ *   or zero padding (0), but not both. If none of these are specified, right alignment is applied.
+ *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
+ * - ' delimiter, skipped.
+ * Since after `F` all characters are perceived as hex code of the delimiter character, if necessary, use it
+ * it is better to put it at the end of format literal, or separate with '.
+ * <br/>
+ * @ru Пример: @en Example: @~
+ * ```cpp
+ *  stringu u16t = u"Number "_ss + num
+ *      + " in octal is " + num / 0x8'016_fmt      // same as e_int<8, f::w<16> | f::z>(num)
+ *      + ", in binary is " + num / 0x2a032_fmt;   // same as e_int<2, f::w<32> | f::p | f::z>(num);
+ *   ....
+ *  stringa text = "Count is "_ss + count / 0x16A08E_fmt; // same as e_int<16, f::P | f::z | f::w<8> | f::u>(count)
+ *   ....
+ *  stringa text = "Number "_ss + count / 0x16c20EF5F_fmt; // same as e_int<16, f::c | f::w<20> | f::u | f::f<'_'>>(count)
  * ```
  */
 template<unsigned R, auto fp = f::df, FromIntNumber T> requires good_int_flags<flags_checker<R, T,  decltype(fp)>, false>
@@ -2187,6 +2338,11 @@ template<unsigned R, auto fp = f::df, FromIntNumber T> requires good_int_flags<f
 constexpr auto e_int(T v, unsigned w) {
     using fmt_param = f::to_fmt_t<decltype(fp)>;
     return expr_integer_src<T, R, fmt_param>{v, w};
+}
+
+template<typename T, unsigned R, typename F> requires good_int_flags<flags_checker<R, T, F>, false>
+auto operator / (T v, const f::fmt_radix_info<R, F>&) {
+    return expr_integer_src<T, R, f::to_fmt_t<F>>{v};
 }
 
 template<typename K>
@@ -4751,6 +4907,71 @@ struct str_src_nt : str_src<K>, null_terminated<K, str_src_nt<K>> {
 template<typename K>
 inline const str_src_nt<K> str_src_nt<K>::empty_str{str_src_nt<K>::empty_string, 0};
 template<typename K> struct simple_str_selector;
+
+inline namespace literals {
+/*!
+ * @ingroup StrExprs
+ * @ru @brief Создает набор из основания системы счисления и флагов, который может быть применён к целым
+ *  числам для задания параметров форматирования с помощью оператора деления: `num / 0xПараметрыФорматирования_fmt`.
+ * Параметры форматирования задаются следующим образом: сначала идёт `0x`, затем основание счисления, записанное в
+ * десятичном виде. Далее могут идти символы, обозначающие различные флаги:
+ * - b при задании ширины поля выравнивать влево, аналог f::l.
+ * - d при задании ширины поля выравнивать вправо, аналог f::r.
+ * - c при задании ширины поля выравнивать по центру, аналог f::c.
+ * - a выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16, аналог f::p.
+ * - A выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16, аналог f::P.
+ * - 0 дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания, аналог f::z.
+ * - E Для систем счисления более 10, выводить символы в верхнем регистре, аналог f::u.
+ * - e Для знаковых типов чисел для положительных значений выводить '+' перед числом, аналог f::sp.
+ * - f Для знаковых типов чисел для положительных значений выводить пробел перед числом, аналог f::ss.
+ * - FКодCимволаВhex Задаёт код символа-заполнителя при указании ширины поля, аналог f::f<'c'>.
+ * - Число в десятичном виде, начинающееся не с 0. Задаёт ширину поля, аналог f::w<N>.
+ *   При указании ширины можно либо указать желаемое выравнивание (b, c, d),
+ *   либо дополнение нулями (0), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
+ *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
+ * - ' разделитель, пропускается.
+ * Так как после `F` все символы воспринимаются как hex код символа разделителя, при необходимости его использования
+ * лучше ставить его в конце литерала форматирования, или отделять '.
+ * <br/>
+ * @en @brief Creates a set of radix and flags that can be applied to integers
+ * numbers to set formatting parameters using the division operator: `num / 0xFormatOptions_fmt`.
+ * Formatting parameters are set as follows: first comes `0x`, then the radix written in
+ * decimal form. Next may be symbols indicating various flags:
+ * - b when setting the field width, align to the left, analogous to f::l.
+ * - d when setting the field width, align to the right, analogous to f::r.
+ * - c when setting the field width, align to the center, analogous to f::c.
+ * - a display the number system prefix, 0b for 2, 0 for 8, 0x for 16, analogous to f::p.
+ * - A display the number system prefix, 0B for 2, 0 for 8, 0X for 16, analogous to f::P.
+ * - 0 pad the number to the specified width with zeros on the right. Not compatible with alignment options, similar to f::z.
+ * - E For number systems greater than 10, display characters in uppercase, analogous to f::u.
+ * - e For signed number types, for positive values, print '+' before the number, analogous to f::sp.
+ * - f For signed number types, for positive values, print a space before the number, analogous to f::ss.
+ * - FCodeInhex Sets the code of the filler character when specifying the field width, analogous to f::f<'c'>.
+ * - Number in decimal form, not starting from 0. Sets the field width, analogous to f::w<N>.
+ *   When specifying the width, you can either specify the desired alignment (b, c, d),
+ *   or zero padding (0), but not both. If none of these are specified, right alignment is applied.
+ *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
+ * - ' delimiter, skipped.
+ * Since after `F` all characters are perceived as hex code of the delimiter character, if necessary, use it
+ * it is better to put it at the end of format literal, or separate with '.
+ * <br/>
+ * @ru Пример: @en Example: @~
+ * ```cpp
+ *  stringu u16t = u"Number "_ss + num
+ *      + " in octal is " + num / 0x8'016_fmt      // same as e_int<8, f::w<16> | f::z>(num)
+ *      + ", in binary is " + num / 0x2a032_fmt;   // same as e_int<2, f::w<32> | f::p | f::z>(num);
+ *   ....
+ *  stringa text = "Count is "_ss + count / 0x16A08E_fmt; // same as e_int<16, f::P | f::z | f::w<8> | f::u>(count)
+ *   ....
+ *  stringa text = "Number "_ss + count / 0x16c20EF5F_fmt; // same as e_int<16, f::c | f::w<20> | f::u | f::f<'_'>>(count)
+ * ```
+ */
+template<char...Chars>
+consteval auto operator""_fmt() {
+    return f::skip_0x<Chars...>();
+}
+
+}
 
 #ifndef IN_FULL_SIMSTR
 

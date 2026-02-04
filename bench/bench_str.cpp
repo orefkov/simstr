@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <charconv>
+#include <iomanip>
 
 using namespace simstr;
 using namespace std::literals;
@@ -183,17 +184,25 @@ BENCHMARK(ConcatSimToSimHexC)   ->Name("Concat stringa and hex number and litera
 BENCHMARK(ConcatSimToSimHexS)   ->Name("Subst stringa and hex number by e_subst literal to simstr::stringa");
 BENCHMARK(ConcatSimToSimHexVS)  ->Name("Subst stringa and hex number by e_vsubst stra to simstr::stringa");
 
-void SubstSimToSimBin(benchmark::State& state) {
-    static bool first = true;
+void ConcatSimToSimOct(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
-            stringa str = e_subst("art {} end", e_int<8, f::w<10> | f::p | f::z>(i));
+            stringa str = "art "_ss + i / 0x8a010_fmt + " end";
             benchmark::DoNotOptimize(str);
         }
     }
 }
 
-void FormatStdToStdBin(benchmark::State& state) {
+void SubstSimToSimOct(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            stringa str = e_subst("art {} end", i / 0x8a010_fmt);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void FormatStdToStdOct(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             std::string str = std::format("art {:#010o} end", i);
@@ -202,19 +211,18 @@ void FormatStdToStdBin(benchmark::State& state) {
     }
 }
 
-void VSubstSimToSimBin(benchmark::State& state) {
+void VSubstSimToSimOct(benchmark::State& state) {
     ssa pattern = "art {} end";
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
-            stringa str = e_vsubst(pattern, e_int<8, f::w<10> | f::p | f::z>(i));
+            stringa str = e_vsubst(pattern, i / 0x8a010_fmt);
             benchmark::DoNotOptimize(str);
         }
     }
 }
 
-void VFormatStdToStdBin(benchmark::State& state) {
+void VFormatStdToStdOct(benchmark::State& state) {
     std::string_view pattern = "art {:#010o} end";
-    static bool first = true;
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             std::string str = std::vformat(pattern, std::make_format_args(i));
@@ -222,11 +230,25 @@ void VFormatStdToStdBin(benchmark::State& state) {
         }
     }
 }
+
+void StreamStdToStdOct(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::stringstream strm;
+            strm << "art 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end";
+            std::string str = strm.str();
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 BENCHMARK(__)->Name("-----  format/vformat and subst/vsubst octal number ---------")->Repetitions(1);
-BENCHMARK(SubstSimToSimBin)     ->Name("e_subst(\"art {} end\", e_int<8, f::w<10> | f::p | f::z>(i))");
-BENCHMARK(FormatStdToStdBin)    ->Name("std::format(\"art {:#010o} end\", i)");
-BENCHMARK(VSubstSimToSimBin)    ->Name("e_vsubst(pattern, e_int<8, f::w<10> | f::p | f::z>(i))");
-BENCHMARK(VFormatStdToStdBin)   ->Name("std::vformat(pattern, std::make_format_args(i))");
+BENCHMARK(ConcatSimToSimOct)    ->Name("\"art \"_ss + i / 0x8a010_fmt + \" end\"");
+BENCHMARK(SubstSimToSimOct)     ->Name("e_subst(\"art {} end\", i / 0x8a010_fmt)");
+BENCHMARK(VSubstSimToSimOct)    ->Name("e_vsubst(pattern, i / 0x8a010_fmt)");
+BENCHMARK(FormatStdToStdOct)    ->Name("std::format(\"art {:#010o} end\", i)");
+BENCHMARK(VFormatStdToStdOct)   ->Name("std::vformat(pattern, std::make_format_args(i))");
+BENCHMARK(StreamStdToStdOct)    ->Name("strm << \"art 0\" << std::oct << std::setw(9) << std::setfill('0') << i << \" end\"");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";

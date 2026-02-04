@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.3
+ * ver. 1.6.4
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 #include <format>
 #include <list>
+#include <array>
 
 using namespace std::literals;
 
@@ -398,5 +399,9 @@ TEST(StrExpr, EInt) {
     EXPECT_EQ(uu, U"0x000007B");
 }
 
+TEST(StrExpr, EIntFmt) {
+    std::string test = "'0x"_ss + 10 / 0x16E08_fmt + "' " + 10 / 0x11'8EF5f_fmt;
+    EXPECT_EQ(test, "'0x0000000A' _______A");
+}
 
 } // namespace simstr::tests
