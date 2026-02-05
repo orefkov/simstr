@@ -1999,11 +1999,17 @@ TEST(SimStr, Subst) {
     EXPECT_EQ(u16t, u"Test 1 from 100, success.");
 }
 
-void check_equal(stra a, stra b) {
-    EXPECT_EQ(a, b);
+TEST(SimStr, EIntFmt) {
+    stringa test = "'0x"_ss + 10 / 0x16E08_fmt + "' " + 10 / 0x11'8EF5f_fmt;
+    EXPECT_EQ(test, "'0x0000000A' _______A");
+    test = 100 / 0x2a010_fmt;
+    EXPECT_EQ(test, "0b01100100");
 }
 
 #ifndef _MSC_VER
+void check_equal(stra a, stra b) {
+    EXPECT_EQ(a, b);
+}
 inline constexpr cestring<char, 100> ce_sample = "sample " + e_subst("test = {}", e_hex(10)) + ", done";
 
 TEST(SimStr, ConstEval) {

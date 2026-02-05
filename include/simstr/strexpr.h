@@ -53,7 +53,7 @@ namespace simstr {
 
 // Выводим типы для 16 и 32 битных символов в зависимости от размера wchar_t
 // Infer types for 16 and 32 bit characters depending on the size of wchar_t
-inline constexpr bool wchar_is_u16 = sizeof(wchar_t) == 2;
+inline constexpr bool wchar_is_u16 = sizeof(wchar_t) == sizeof(char16_t);
 
 using wchar_type = std::conditional<wchar_is_u16, char16_t, char32_t>::type;
 
@@ -94,8 +94,7 @@ concept is_one_of_char_v = is_one_of_type<K, u8s, ubs, wchar_t, u16s, u32s>::val
 template<typename K>
 concept is_one_of_std_char_v = is_one_of_type<K, u8s, ubs, wchar_t, wchar_type>::value;
 
-template<typename From>
-requires (is_one_of_std_char_v<From>)
+template<is_one_of_std_char_v From>
 auto to_one_of_std_char(From* from) {
     if constexpr (std::is_same_v<From, u8s> || std::is_same_v<From, wchar_t>) {
         return from;
@@ -105,8 +104,8 @@ auto to_one_of_std_char(From* from) {
         return from_w(from);
     }
 }
-template<typename From>
-requires (is_one_of_std_char_v<From>)
+
+template<is_one_of_std_char_v From>
 auto to_one_of_std_char(const From* from) {
     if constexpr (std::is_same_v<From, u8s> || std::is_same_v<From, wchar_t>) {
         return from;
@@ -184,8 +183,7 @@ and an expression with the char[100] parameter will not compile.
 template<typename T> struct const_lit; // sfinae отработает, так как не найдёт определения | sfinae will work because it won't find a definition
 // Для правильных типов параметров есть определение, в виде специализации шаблона
 // There is a definition for the correct parameter types, in the form of a template specialization
-template<typename T, size_t N>
-    requires(is_one_of_char_v<T>)
+template<is_one_of_char_v T, size_t N>
 struct const_lit<const T(&)[N]> {
     using symb_type = T;
     constexpr static size_t Count = N;
@@ -200,8 +198,7 @@ concept is_const_lit_v = requires {
 // Here we further restrict the type of the literal
 template<typename K, typename T> struct const_lit_for;
 
-template<typename K, typename P, size_t N>
-    requires(is_equal_str_type_v<K, P>)
+template<typename K, is_equal_str_type_v<K> P, size_t N>
 struct const_lit_for<K, const P(&)[N]> {
     constexpr static size_t Count = N;
 };
@@ -623,8 +620,7 @@ constexpr std::basic_string<K, std::char_traits<K>, Allocator> to_std_string(con
  */
 template<typename Impl>
 struct expr_to_std_string {
-    template<typename P, typename Allocator>
-    requires is_equal_str_type_v<typename Impl::symb_type, P>
+    template<is_equal_str_type_v<typename Impl::symb_type> P, typename Allocator>
     constexpr operator std::basic_string<P, std::char_traits<P>, Allocator>() const {
         return to_std_string<P, Allocator>(*static_cast<const Impl*>(this));
     }
@@ -793,11 +789,9 @@ inline constexpr strexprjoin_c<A, convert_to_strexpr_t<typename A::symb_type, B>
  *
  *  @ru Пример: @en Example: @~
  *  ```cpp
- *  result = shost + e_choice(sserv.is_empty(), eea, ":" + sserv);
- *  ```
- *
- *  ```cpp
- *  result += "E" + e_choice(adjusted_exponent > 0, "+"_ss, eea) + adjusted_exponent;
+ *  // строковые литералы и числа не являются строковыми выражениями, нам надо с чего то начать операцию сложения со строковым выражением
+ *  // string literals and numbers are not string expressions, we need to start the addition operation with a string expression somewhere
+ *  result = eea + "Count is " + count;
  *  ```
  */
 template<typename K>
@@ -1534,7 +1528,7 @@ constexpr auto e_if(bool c, T&& str) {
  * @tparam K is a symbol.
  * @tparam T - source type.
  */
-template<typename K, StdStrSource T> requires is_equal_str_type_v<K, typename T::value_type>
+template<typename K, StdStrSourceForType<K> T>
 struct expr_stdstr {
     using symb_type = K;
     const T& t_;
@@ -1552,11 +1546,11 @@ struct expr_stdstr {
 };
 
 /*!
- * @ru @brief Специализация шаблона для преобразования целых чисел в строковое выражение, позволяет использовать их в
+ * @ru @brief Специализация шаблона для преобразования стандартный строк в строковое выражение, позволяет использовать их в
  * операциях конкатенации со строковыми выражениями.
  * @tparam K - тип символов строкового выражения.
  * @tparam T - тип числа.
- * @en @brief A template specialization for converting integers to string expressions, allowing their use in
+ * @en @brief A template specialization for converting standard strings to string expressions, allowing their use in
  * concatenation operations with string expressions.
  * @tparam K - the character type of the string expression.
  * @tparam T - the number type.
@@ -2003,7 +1997,7 @@ constexpr auto skip_0x() {
 } // namespace f
 
 template<typename K, bool Ucase>
-constexpr K digits_symbols[36] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K('6'), K('7'), K('8'), K('9'),
+inline constexpr K digits_symbols[36] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5'), K('6'), K('7'), K('8'), K('9'),
     K(Ucase ? 'A' : 'a'), K(Ucase ? 'B' : 'b'), K(Ucase ? 'C' : 'c'), K(Ucase ? 'D' : 'd'), K(Ucase ? 'E' : 'e'),
     K(Ucase ? 'F' : 'f'), K(Ucase ? 'G' : 'g'), K(Ucase ? 'H' : 'h'), K(Ucase ? 'I' : 'i'), K(Ucase ? 'J' : 'j'),
     K(Ucase ? 'K' : 'k'), K(Ucase ? 'L' : 'l'), K(Ucase ? 'M' : 'm'), K(Ucase ? 'N' : 'n'), K(Ucase ? 'O' : 'o'),
@@ -2012,13 +2006,18 @@ constexpr K digits_symbols[36] = {K('0'), K('1'), K('2'), K('3'), K('4'), K('5')
     K(Ucase ? 'Z' : 'z'),
 };
 
-template<FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
-requires (Radix > 1 && Radix <= 36)
+template<FromIntNumber T, unsigned Radix, f::FmtParamSet FP> requires (Radix > 1 && Radix <= 36)
 struct expr_integer_src {
     T value_;
     unsigned width_{};
     constexpr expr_integer_src(T v) : value_(v){}
     constexpr expr_integer_src(T v, unsigned w) : value_(v), width_(w){}
+
+    template<is_std_string_v S>
+    operator S() const;
+
+    template<typename S> requires std::is_constructible_v<S, empty_expr<typename S::symb_type>>
+    operator S() const;
 };
 
 template<is_one_of_char_v K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
@@ -2191,6 +2190,21 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
     }
 };
 
+template<FromIntNumber T, unsigned Radix, f::FmtParamSet FP> requires (Radix > 1 && Radix <= 36)
+template<is_std_string_v S>
+expr_integer_src<T, Radix, FP>::operator S() const {
+    using st = typename S::value_type;
+    using Al = typename S::allocator_type;
+    return to_std_string<st, Al>(expr_integer<st, T, Radix, FP>{value_, width_});
+}
+
+template<FromIntNumber T, unsigned Radix, f::FmtParamSet FP> requires (Radix > 1 && Radix <= 36)
+template<typename S> requires std::is_constructible_v<S, empty_expr<typename S::symb_type>>
+expr_integer_src<T, Radix, FP>::operator S() const {
+    using st = typename S::symb_type;
+    return S{expr_integer<st, T, Radix, FP>{value_, width_}};
+}
+
 template<typename K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
 struct convert_to_strexpr<K, expr_integer_src<T, Radix, FP>> {
     using type = expr_integer<K, T, Radix, FP>;
@@ -2292,8 +2306,7 @@ concept good_int_flags =
  * Так как после `F` все символы воспринимаются как hex код символа разделителя, при необходимости его использования
  * лучше ставить его в конце литерала форматирования, или отделять '.
  * <br/>
- * @en @brief Creates a set of radix and flags that can be applied to integers
- * numbers to set formatting parameters using the division operator: `num / 0xFormatOptions_fmt`.
+ * @en It is also possible to write this function in a shortened form: `num / 0xFormatOptions_fmt`.
  * Formatting parameters are set as follows: first comes `0x`, then the radix written in
  * decimal form. Next may be symbols indicating various flags:
  * - b when setting the field width, align to the left, analogous to f::l.
@@ -4967,11 +4980,11 @@ inline namespace literals {
  * ```
  */
 template<char...Chars>
-consteval auto operator""_fmt() {
+SS_CONSTEVAL auto operator""_fmt() {
     return f::skip_0x<Chars...>();
 }
 
-}
+} // namespace literals
 
 #ifndef IN_FULL_SIMSTR
 

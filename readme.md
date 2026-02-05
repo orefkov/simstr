@@ -299,6 +299,7 @@ When connecting only `strexpr.h` - the types `simple_str<K>` and `simple_str_nt<
 
 ## Articles
 - [Overview and introduction](docs/overview.md)
+- [So how do you quickly concatenate strings?](https://orefkov.github.io/simstr/articles/fast_concat.html)
 - [Overview article on Habr](https://habr.com/ru/articles/935590) (on Russian)
 - [Description of the applied technique "Expression Templates"](https://habr.com/ru/articles/936468/)(on Russian)
 

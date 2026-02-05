@@ -300,6 +300,7 @@ int split_and_calc_total_sim(ssa numbers, ssa delimiter) {
 
 ## Статьи
 - [Обзор и введение](docs/overview_ru.md)
+- [Так как же всё-таки быстро конкатенировать строки?](https://orefkov.github.io/simstr/articles/fast_concat_ru.html)
 - [Обзорная статья на Хабре](https://habr.com/ru/articles/935590)
 - [Описание применяемой техники "Expression Templates"](https://habr.com/ru/articles/936468/)
 

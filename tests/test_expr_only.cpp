@@ -402,6 +402,8 @@ TEST(StrExpr, EInt) {
 TEST(StrExpr, EIntFmt) {
     std::string test = "'0x"_ss + 10 / 0x16E08_fmt + "' " + 10 / 0x11'8EF5f_fmt;
     EXPECT_EQ(test, "'0x0000000A' _______A");
+    test = 100 / 0x2a010_fmt;
+    EXPECT_EQ(test, "0b01100100");
 }
 
 } // namespace simstr::tests
