@@ -189,9 +189,9 @@ ssa extract_comment(ssa commentsText, ssa benchmarkName) {
     return stra::empty_str;
 }
 
-void write_one_result(out_t& out, ssa result, ssa line, auto& script_text, bool last) {
+void write_one_result(out_t& out, ssa result, ssa line, auto& script_text, char delim) {
     out += "<td class=\"benchmarkresult\">" + result + "</td>";
-    script_text += e_choice(result[0] == 'N', "NaN", result) + e_choice(last, "]", ",");
+    script_text += e_choice(result[0] == 'N', "NaN", result) + delim;
 }
 
 std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceText) {
@@ -274,6 +274,12 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
 }
 
 void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText, ssa commentsText) {
+    ssa releaseVersion = sourceText(sourceText.find_end("\n * ver. ")).until("\n").trimmed();
+    if (!releaseVersion) {
+        std::cerr << "Not found release version in sources" << std::endl;
+        throw std::runtime_error{"Not found release version in sources"};
+    }
+
     std::vector<Splitter<u8s>> splitters;
     splitters.reserve(results.size());
 
@@ -291,14 +297,14 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             auto comment = extract_comment(commentsText, benchName);
             // Нужно вывести название бенча и коммент
             // Need to display title and comment
-            out += "\n<tr><td class=\"benchmarkname\"><span class=\"tooltip\"><a target=\"blank\" href=\"https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp#L"_ss +
-                line_num + "\">" + repl_html_symbols(benchName) +
+            out += "\n<tr><td class=\"benchmarkname\"><span class=\"tooltip\"><a target=\"blank\" href=\"https://github.com/orefkov/simstr/blob/rel"
+                + releaseVersion + "/bench/bench_str.cpp#L" + line_num + "\">" + repl_html_symbols(benchName) +
                 "</a><span class=\"tooltiptext code\">" +
                 source + "</span></span></td><td>" +
                 e_if(!comment.is_empty(), "<span class=\"tooltip info\">&nbsp;>>&nbsp;<span class=\"tooltiptext\">" + comment + "</span></span>") +
                 "</td>";
-            script_text += e_if(needCommaForTests, "},") + "\n{name:'" + e_repl(benchName.to_str(), "'", "\\'") + "',data:[";
-            write_one_result(out, result, line, script_text, result.size() == 1);
+            script_text += e_if(needCommaForTests, "},") + "\n{name:'" + e_repl(benchName, "'", "\\'") + "',data:[";
+            write_one_result(out, result, line, script_text, result.size() == 1 ?  ']' : ',');
 
             for (unsigned idx = 1; idx < results.size(); idx++) {
                 if (splitters[idx].is_done()) {
@@ -318,7 +324,7 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
                         result = stra::empty_str;
                     }
                 }
-                write_one_result(out, result, line, script_text, idx == results.size() - 1);
+                write_one_result(out, result, line, script_text, idx == results.size() - 1 ?  ']' : ',');
             }
             out += "</tr>";
             needCommaForTests = true;
@@ -336,7 +342,7 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             write_benchset_header(out, results, benchName, ++benchSetId);
             needFooter = true;
             needCommaForTests = false;
-            script_text = "bench_sets['" + e_repl(benchName.to_str(), "'", "\\'") + "'] = {id:'bs" + benchSetId +"', tests:[";
+            script_text = "bench_sets['" + e_repl(benchName, "'", "\\'") + "'] = {id:'bs" + benchSetId +"', tests:[";
         }
         // Эти строки надо пропустить во всех файлах
         // These lines must be skipped in all files
@@ -346,9 +352,6 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
                 throw std::runtime_error{"Not expected end of file"};
             }
             line = splitters[idx].next();
-            if (line.starts_with("std::unordered_map<std::string, size_t> emplace & find std::string_view;_cv")) {
-                int t = 1;
-            }
         }
     }
     if (needFooter) {

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.4
+ * ver. 1.6.5
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2004,6 +2004,11 @@ TEST(SimStr, EIntFmt) {
     EXPECT_EQ(test, "'0x0000000A' _______A");
     test = 100 / 0x2a010_fmt;
     EXPECT_EQ(test, "0b01100100");
+
+    std::u16string textu = +u"val = 0X"sv + 0x12A / 123_f16;
+    EXPECT_EQ(textu, u"val = 0X12a");
+    textu = u"val = "_ss + 0x12A / 0_f16;
+    EXPECT_EQ(textu, u"val = 0x0000012A");
 }
 
 #ifndef _MSC_VER

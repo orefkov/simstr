@@ -1,9 +1,8 @@
 ﻿/*
+* ver. 1.6.5
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 1.6.4
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
-* ver. 1.6.4
 * Classes for working with strings
  */
 

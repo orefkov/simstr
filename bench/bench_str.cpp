@@ -1,6 +1,9 @@
 ﻿/*
+ * ver. 1.6.5
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
+ * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
+ * Benchmarks
  */
 
 #include "bench.h"
@@ -8,6 +11,28 @@
 #include <string>
 #include <charconv>
 #include <iomanip>
+#include <fmt/format.h>
+#include <fmt/compile.h>
+
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+static void DoTeardown(const benchmark::State& state) {
+    emscripten_sleep(1);
+}
+static void DoSetup(const benchmark::State& state) {
+    EM_ASM({
+        on_begin_benchmark(UTF8ToString($0));
+    }, state.name().c_str());
+    emscripten_sleep(1);
+}
+#undef BENCHMARK
+#define BENCHMARK(...)                                                \
+  BENCHMARK_PRIVATE_DECLARE(_benchmark_) =                            \
+      (::benchmark::internal::RegisterBenchmarkInternal(              \
+          ::benchmark::internal::make_unique<                         \
+              ::benchmark::internal::FunctionBenchmark>(#__VA_ARGS__, \
+        __VA_ARGS__)))->Setup(DoSetup)->Teardown(DoTeardown)
+#endif
 
 using namespace simstr;
 using namespace std::literals;
@@ -110,7 +135,6 @@ void ConcatStdToCharsHex(benchmark::State& state) {
     }
 }
 
-
 void ConcatSimToStdHex(benchmark::State& state) {
     // We use a short string so that the longest result is 15 characters and fits in the std::string SSO buffer.
     std::string s1 = "art ";
@@ -118,7 +142,7 @@ void ConcatSimToStdHex(benchmark::State& state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
             // Can work for all types of symbols
-            std::string str = +s1 + e_hex<HexFlags::Short>(i) + " end";
+            std::string str = +s1 + i / 1_f16 + " end";
             benchmark::DoNotOptimize(str);
         }
     }
@@ -131,7 +155,7 @@ void ConcatSimToSimHex(benchmark::State& state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
             // Can work for all types of symbols
-            stringa str = s1 + e_hex<HexFlags::Short>(i) + " end";
+            stringa str = s1 + i / 1_f16 + " end";
             benchmark::DoNotOptimize(str);
         }
     }
@@ -144,7 +168,7 @@ void ConcatSimToSimHexC(benchmark::State& state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
             // Can work for all types of symbols
-            stringa str = e_concat("", s1, e_hex<HexFlags::Short>(i), " end");
+            stringa str = e_concat("", s1, i / 1_f16, " end");
             benchmark::DoNotOptimize(str);
         }
     }
@@ -156,7 +180,7 @@ void ConcatSimToSimHexS(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
-            stringa str = e_subst("{}{} end", s1, e_hex<HexFlags::Short>(i));
+            stringa str = e_subst("{}{} end", s1, i / 1_f16);
             benchmark::DoNotOptimize(str);
         }
     }
@@ -168,7 +192,7 @@ void ConcatSimToSimHexVS(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             benchmark::DoNotOptimize(s1);
-            stringa str = e_vsubst("{}{} end"_ss, s1, e_hex<HexFlags::Short>(i));
+            stringa str = e_vsubst("{}{} end"_ss, s1, i / 1_f16);
             benchmark::DoNotOptimize(str);
         }
     }
@@ -187,7 +211,7 @@ BENCHMARK(ConcatSimToSimHexVS)  ->Name("Subst stringa and hex number by e_vsubst
 void ConcatSimToSimOct(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
-            stringa str = "art "_ss + i / 0x8a010_fmt + " end";
+            stringa str = "abcdefghihklmopqr "_ss + i / 0x8a010_fmt + " end";
             benchmark::DoNotOptimize(str);
         }
     }
@@ -196,23 +220,14 @@ void ConcatSimToSimOct(benchmark::State& state) {
 void SubstSimToSimOct(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
-            stringa str = e_subst("art {} end", i / 0x8a010_fmt);
-            benchmark::DoNotOptimize(str);
-        }
-    }
-}
-
-void FormatStdToStdOct(benchmark::State& state) {
-    for (auto _: state) {
-        for (unsigned i = 1; i <= 100'000; i *= 10) {
-            std::string str = std::format("art {:#010o} end", i);
+            stringa str = e_subst("abcdefghihklmopqr {} end", i / 0x8a010_fmt);
             benchmark::DoNotOptimize(str);
         }
     }
 }
 
 void VSubstSimToSimOct(benchmark::State& state) {
-    ssa pattern = "art {} end";
+    ssa pattern = "abcdefghihklmopqr {} end";
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             stringa str = e_vsubst(pattern, i / 0x8a010_fmt);
@@ -221,8 +236,17 @@ void VSubstSimToSimOct(benchmark::State& state) {
     }
 }
 
+void FormatStdToStdOct(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::string str = std::format("abcdefghihklmopqr {:#010o} end", i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 void VFormatStdToStdOct(benchmark::State& state) {
-    std::string_view pattern = "art {:#010o} end";
+    std::string_view pattern = "abcdefghihklmopqr {:#010o} end";
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             std::string str = std::vformat(pattern, std::make_format_args(i));
@@ -235,20 +259,41 @@ void StreamStdToStdOct(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             std::stringstream strm;
-            strm << "art 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end";
+            strm << "abcdefghihklmopqr 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end";
             std::string str = strm.str();
             benchmark::DoNotOptimize(str);
         }
     }
 }
 
-BENCHMARK(__)->Name("-----  format/vformat and subst/vsubst octal number ---------")->Repetitions(1);
-BENCHMARK(ConcatSimToSimOct)    ->Name("\"art \"_ss + i / 0x8a010_fmt + \" end\"");
-BENCHMARK(SubstSimToSimOct)     ->Name("e_subst(\"art {} end\", i / 0x8a010_fmt)");
+void FmtFormatComp(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::string str = fmt::format(FMT_COMPILE("abcdefghihklmopqr {:#010o} end"), i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
+void FmtFormat(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            std::string str = fmt::format("abcdefghihklmopqr {:#010o} end", i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+
+}
+
+BENCHMARK(__)->Name("---- format/vformat and subst/vsubst octal number to 32 symbols result ----")->Repetitions(1);
+BENCHMARK(ConcatSimToSimOct)    ->Name("\"abcdefghihklmopqr \"_ss + i / 0x8a010_fmt + \" end\"");
+BENCHMARK(SubstSimToSimOct)     ->Name("e_subst(\"abcdefghihklmopqr {} end\", i / 0x8a010_fmt)");
 BENCHMARK(VSubstSimToSimOct)    ->Name("e_vsubst(pattern, i / 0x8a010_fmt)");
-BENCHMARK(FormatStdToStdOct)    ->Name("std::format(\"art {:#010o} end\", i)");
+BENCHMARK(FmtFormatComp)        ->Name("fmt::format(FMT_COMPILE(\"abcdefghihklmopqr {:#010o} end\"), i)");
+BENCHMARK(FmtFormat)            ->Name("fmt::format(\"abcdefghihklmopqr {:#010o} end\", i)");
+BENCHMARK(FormatStdToStdOct)    ->Name("std::format(\"abcdefghihklmopqr {:#010o} end\", i)");
 BENCHMARK(VFormatStdToStdOct)   ->Name("std::vformat(pattern, std::make_format_args(i))");
-BENCHMARK(StreamStdToStdOct)    ->Name("strm << \"art 0\" << std::oct << std::setw(9) << std::setfill('0') << i << \" end\"");
+BENCHMARK(StreamStdToStdOct)    ->Name("strm << \"abcdefghihklmopqr 0\" << std::oct << std::setw(9) << std::setfill('0') << i << \" end\"");
 
 void ConcatStdToStdS(benchmark::State& state) {
     std::string s1 = "start ";
@@ -2413,6 +2458,11 @@ int main(int argc, char** argv) {
     std::cout << "Benchmarks of simstr, version " SIMSTR_VERSION << "\n"
         << "Sources: https://github.com/orefkov/simstr\n"
         << "Results: https://orefkov.github.io/simstr/results.html\n" << std::endl;
+
+#ifdef EMSCRIPTEN
+    EM_ASM({ console.log(navigator.userAgent); });
+#endif
+
     char arg1[] = "--benchmark_repetitions=4", arg2[] = "--benchmark_report_aggregates_only=true";
     char* my_params[] = {argv[0], arg1, arg2};
     if (argc < 2) {
@@ -2424,5 +2474,8 @@ int main(int argc, char** argv) {
         return 1;
     ::benchmark::RunSpecifiedBenchmarks();
     ::benchmark::Shutdown();
+#ifdef EMSCRIPTEN
+    EM_ASM({ on_done(); });
+#endif
     return 0;
 }

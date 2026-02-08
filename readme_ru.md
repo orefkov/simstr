@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.6.4.
+Версия 1.6.5.
 
 <h2>Ускорь работу со строками в 2-10 раз!</h2>
 
@@ -109,8 +109,6 @@ Windows и Linux (в WSL), с использованием компилятор�
 На [странице релизов](https://github.com/orefkov/simstr/releases) вы можете скачать бинарные сборки бенчмарков и запустить их на своём оборудовании.
 
 Также вы можете запустить [Emscripten сборку бенчмарков](https://orefkov.github.io/simstr/bench/benchStr.html) прямо в браузере.
-(Перед переходом по ссылке лучше предварительно откройте "Инструменты разработчика" (обычно **F12**), чтобы видеть консоль
-Javascript, так как до окончания бенчмарков страница не будет обновляться, а весь вывод будет виден в консоли).
 
 - [Исходный код бенчмарков](bench/bench_str.cpp)
 - [Результаты бенчмарков](https://orefkov.github.io/simstr/results.html)
@@ -325,8 +323,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.6.4 # Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 1.6.4
+        GIT_TAG tags/rel1.6.5 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.6.5
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

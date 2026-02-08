@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>SimStr Bencjmarks</title>
+    <style>
+	body {
+	color: white;
+    background-color: black;
+	}
+	#output {
+	position: absolute;
+	left: 10px;
+	top: 80px;
+	right: 10px;
+	bottom: 10px;
+	  margin: 0 auto;
+	  border: 0;
+	  display: block;
+	  background-color: black;
+	  color: white;
+	  font-family: 'Cascadia Code', 'Consolas', 'Lucida Console', Monaco, monospace;
+	  outline: none;
+	}
+	.ctr {
+	text-align: center;
+	font-size: 16pt;
+	}
+    </style>
+  </head>
+  <body>
+  <div class="ctr" id="bs_name"></div><div class="ctr" id="b_name"></div>
+    <textarea class="emscripten" id="output" rows="20"></textarea>
+    <script type='text/javascript'>
+      var outputElement = document.getElementById('output');
+      var bsNameEl= document.getElementById('bs_name');
+      var bNameEl= document.getElementById('b_name');
+      if (outputElement) outputElement.value = ''; // clear browser cache
+      var Module = {
+        print(...args) {
+          console.log(...args);
+          if (outputElement) {
+            var text = args.join(' ').replace('_mean', '     ');
+			var rpt = text.indexOf("/repeats");
+			if (rpt != -1)
+				text = text.substr(0, rpt);
+			if (text.indexOf('_median ') == -1 && text.indexOf('_stddev ') == -1 && text.indexOf('_cv ') == -1) {
+				outputElement.value += text + "\n";
+				outputElement.scrollTop = outputElement.scrollHeight; // focus on bottom
+			}
+          }
+        },
+        setStatus(text) {
+          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+          if (text === Module.setStatus.last.text) return;
+          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+          var now = Date.now();
+          if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
+          Module.setStatus.last.time = now;
+          Module.setStatus.last.text = text;
+          if (m) {
+            text = m[1];
+          } else {
+          }
+        },
+        totalDependencies: 0,
+        monitorRunDependencies(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+        },
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = () => {
+        Module.setStatus('Exception thrown, see JavaScript console');
+        Module.setStatus = (text) => {
+          if (text) console.error('[post-exception status] ' + text);
+        };
+      };
+	  function on_begin_benchmark(name) {
+		if (name.substr(0, 3) == "---") {
+			bsNameEl.innerText = name.match(/^[- ]+(.+?)[ -]+$/)[1];
+			bNameEl.innerText = "";
+		} else {
+			bNameEl.innerText = name;
+		}
+	  }
+	  function on_done() {
+		bsNameEl.innerText = "Done";
+		bNameEl.innerText = "";
+	  }
+
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

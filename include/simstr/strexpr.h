@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.4
+ * ver. 1.6.5
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2247,7 +2247,7 @@ concept good_int_flags =
  * - f::с при задании ширины поля выравнивать по центру.
  * - f::p выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16.
  * - f::P выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16.
- * - f::z дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания.
+ * - f::z дополнять число до заданной ширины нулями слева. Не совместимо с опциями выравнивания.
  * - f::u Для систем счисления более 10, выводить символы в верхнем регистре.
  * - f::sp Для знаковых типов чисел для положительных значений выводить '+' перед числом.
  * - f::ss Для знаковых типов чисел для положительных значений выводить пробел перед числом.
@@ -2269,8 +2269,8 @@ concept good_int_flags =
  * - f::с when setting the field width, align to the center.
  * - f::p print number system prefix, 0b for 2, 0 for 8, 0x for 16.
  * - f::P print number system prefix, 0B for 2, 0 for 8, 0X for 16.
- * - f::z pad the number to the specified width with zeros on the right. Not compatible with alignment options.
- * - f::u For number systems greater than 10, output characters in uppercase.
+ * - f::z pad the number to the specified width with zeros on the let. Not compatible with alignment options.
+ * - f::u For radix greater than 10, output characters in uppercase.
  * - f::sp For signed number types, print '+' before the number for positive values.
  * - f::ss For signed number types, print a space before the number for positive values.
  * - f::f<'c'> Specifies a placeholder character when specifying the field width. Default is space.
@@ -2293,7 +2293,7 @@ concept good_int_flags =
  * - с при задании ширины поля выравнивать по центру, аналог f::c.
  * - a выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16, аналог f::p.
  * - A выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16, аналог f::P.
- * - 0 дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания, аналог f::z.
+ * - 0 дополнять число до заданной ширины нулями слева. Не совместимо с опциями выравнивания, аналог f::z.
  * - E Для систем счисления более 10, выводить символы в верхнем регистре, аналог f::u.
  * - e Для знаковых типов чисел для положительных значений выводить '+' перед числом, аналог f::sp.
  * - f Для знаковых типов чисел для положительных значений выводить пробел перед числом, аналог f::ss.
@@ -2303,6 +2303,7 @@ concept good_int_flags =
  *   либо дополнение нулями (0), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
  *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
  * - ' разделитель, пропускается.
+ *
  * Так как после `F` все символы воспринимаются как hex код символа разделителя, при необходимости его использования
  * лучше ставить его в конце литерала форматирования, или отделять '.
  * <br/>
@@ -2314,8 +2315,8 @@ concept good_int_flags =
  * - c when setting the field width, align to the center, analogous to f::c.
  * - a display the number system prefix, 0b for 2, 0 for 8, 0x for 16, analogous to f::p.
  * - A display the number system prefix, 0B for 2, 0 for 8, 0X for 16, analogous to f::P.
- * - 0 pad the number to the specified width with zeros on the right. Not compatible with alignment options, similar to f::z.
- * - E For number systems greater than 10, display characters in uppercase, analogous to f::u.
+ * - 0 pad the number to the specified width with zeros on the left. Not compatible with alignment options, similar to f::z.
+ * - E For radix greater than 10, display characters in uppercase, analogous to f::u.
  * - e For signed number types, for positive values, print '+' before the number, analogous to f::sp.
  * - f For signed number types, for positive values, print a space before the number, analogous to f::ss.
  * - FCodeInhex Sets the code of the filler character when specifying the field width, analogous to f::f<'c'>.
@@ -2324,6 +2325,7 @@ concept good_int_flags =
  *   or zero padding (0), but not both. If none of these are specified, right alignment is applied.
  *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
  * - ' delimiter, skipped.
+ *
  * Since after `F` all characters are perceived as hex code of the delimiter character, if necessary, use it
  * it is better to put it at the end of format literal, or separate with '.
  * <br/>
@@ -2491,25 +2493,86 @@ enum HexFlags : unsigned {
 
 /*!
  * @ingroup StrExprs
- * @ru @brief Позволяет конкатенировать текст и беззнаковое число в 16-ричном виде.
+ * @ru @brief Создает объект, который может преобразовываться в строковое выражение, генерирующее 16ричное представление числа.
  * @tparam Flags - флаги форматирования, побитовое ИЛИ из HexFlags.
  * @tparam T - тип числа, выводится автоматически.
- * @en @brief Allows you to concatenate text and a unsigned number in hexadecimal.
+ * @param v - число.
+ * @details Это более быстрое преобразование в строку в 16ричном виде, чем через `e_int`, однако с меньшими возможностями
+ *  форматирования. По умолчанию создается представление в виде `0x000012AB`, то есть префикс `0x` и дополнения нулями до ширины
+ *  по размеру типа числа (2 символа на байт). Можно указать флаги:
+ * - HexFlags::Short - не дополнять нулями до фиксированной ширины.
+ * - HexFlags::Lcase - выводить символы в нижнем регистре.
+ * - HexFlags::No0x - не выводить префикс.
+ *
+ * Кроме того, возможна краткая запись этого выражения в виде `num / N_f16`
+ * N обозначает флаги форматирования
+ * - 1 - HexFlags::Short
+ * - 2 - HexFlags::Lcase
+ * - 3 - HexFlags::No0x
+ *
+ * @en @brief Creates an object that can be converted to a string expression that generates a hexadecimal representation of a number.
  * @tparam Flags - format flags, bitwise OR of HexFlags.
  * @tparam T - number type, deducted automatically.
- * @details @ru Пример @en Example @~
+ * @param v - number.
+ * @details This is a faster conversion to a hexadecimal string than `e_int`, but with less power formatting.
+ * By default, a representation of the form `0x000012AB` is created, that is, prefixed with `0x` and padded with zeros to the width
+ * by number type size (2 characters per byte). You can specify flags:
+ * - HexFlags::Short - do not pad with zeros to a fixed width.
+ * - HexFlags::Lcase - display characters in lowercase.
+ * - HexFlags::No0x - do not display the prefix.
+ *
+ * In addition, this expression can be written briefly as `num / N_f16`
+ * N stands for formatting flags
+ * - 1 - HexFlags::Short
+ * - 2 - HexFlags::Lcase
+ * - 3 - HexFlags::No0x
+ *
+ * @ru Пример @en Example @~
  * ```cpp
- *    stringa text = +"val = "sv + e_hex(10u);
+ *    stringa text = +"val = "sv + e_hex(10);
  *    EXPECT_EQ(text, "val = 0x0000000A");
  *
- *    stringu textu = +u"val = 0X"sv + e_hex<HexFlags::No0x | HexFlags::Short | HexFlags::Lcase>(0x12Au);
+ *    stringu textu = +u"val = 0X"sv + e_hex<HexFlags::No0x | HexFlags::Short | HexFlags::Lcase>(0x12A);
  *    EXPECT_EQ(textu, u"val = 0X12a");
+ *
+ *    text = "Num in hex: " + num / 0_f16;      // same as e_hex(num);
+ *    text = "Num in hex: " + num / 13_f16;     // same as e_hex<HexFlags::Short | HexFlags::No0x>(num);
+ *    text = "Num in hex: " + num / 123_f16;    // same as e_hex<HexFlags::Short | HexFlags::No0x | HexFlags::Lcase>(num);
+ *    text = "Num in hex: " + num / 2_f16;      // same as e_hex<HexFlags::No0x | HexFlags::Lcase>(num);
  * ```
  */
 template<unsigned Flags = 0, FromIntNumber T>
 constexpr auto e_hex(T v) {
     return expr_hex_src<T, (Flags & HexFlags::Short) == 0, (Flags & HexFlags::Lcase) == 0, (Flags & HexFlags::No0x) == 0>{v};
 }
+
+template<char c = 0, char...Chars>
+constexpr unsigned parse_f16_flags() {
+    if constexpr (c == '1') {
+        return HexFlags::Short | parse_f16_flags<Chars...>();
+    } else if constexpr (c == '2') {
+        return HexFlags::Lcase | parse_f16_flags<Chars...>();
+    } else if constexpr (c == '3') {
+        return HexFlags::No0x | parse_f16_flags<Chars...>();
+    } else {
+        return 0;
+    }
+}
+
+template<unsigned N>
+struct f16flags{};
+
+template<FromIntNumber T, unsigned Flags>
+constexpr auto operator/(T v, const f16flags<Flags>&) {
+    return expr_hex_src<T, (Flags & HexFlags::Short) == 0, (Flags & HexFlags::Lcase) == 0, (Flags & HexFlags::No0x) == 0>{v};
+}
+
+inline namespace literals {
+template<char...Chars>
+constexpr auto operator""_f16() {
+    return f16flags<parse_f16_flags<Chars...>()>{};
+}
+} // namespace literals
 
 /*!
  * @ru @brief Специализация шаблона для преобразования e_hex в строковое выражение, позволяет использовать их в
@@ -3386,6 +3449,19 @@ public:
      */
     constexpr str_piece from_to(size_t from, size_t to) const noexcept {
         return str_piece{_str() + from, to - from};
+    }
+    /*!
+     * @ru @brief Получить подстроку str_src от начала и до первого найденного вхождения указанной подстроки.
+     * @details Если не найдено, вернёт всю строку.
+     * @param offset - позиция для начала поиска.
+     * @return Подстроку, str_src.
+     * @en @brief Get the substring str_src from the beginning to the first found occurrence of the specified substring.
+     * @details If not found, returns the entire string.
+     * @param offset - position to start the search.
+     * @return Substring, str_src.
+     */
+    constexpr str_piece until(str_piece pattern, size_t offset = 0) const noexcept {
+        return (*this)(0, find_or_all(pattern, offset));
     }
     /*!
      * @ru @brief Проверка на пустоту.
@@ -4933,7 +5009,7 @@ inline namespace literals {
  * - c при задании ширины поля выравнивать по центру, аналог f::c.
  * - a выводить префикс системы счисления, 0b для 2, 0 для 8, 0x для 16, аналог f::p.
  * - A выводить префикс системы счисления, 0B для 2, 0 для 8, 0X для 16, аналог f::P.
- * - 0 дополнять число до заданной ширины нулями справа. Не совместимо с опциями выравнивания, аналог f::z.
+ * - 0 дополнять число до заданной ширины нулями слева. Не совместимо с опциями выравнивания, аналог f::z.
  * - E Для систем счисления более 10, выводить символы в верхнем регистре, аналог f::u.
  * - e Для знаковых типов чисел для положительных значений выводить '+' перед числом, аналог f::sp.
  * - f Для знаковых типов чисел для положительных значений выводить пробел перед числом, аналог f::ss.
@@ -4943,6 +5019,7 @@ inline namespace literals {
  *   либо дополнение нулями (0), но не оба сразу. Если ничего из этого не указано, применяется выравнивание вправо.
  *   Число дополняется до заданной ширины, если оно короче. Если длиннее, то выводится всё число.
  * - ' разделитель, пропускается.
+ *
  * Так как после `F` все символы воспринимаются как hex код символа разделителя, при необходимости его использования
  * лучше ставить его в конце литерала форматирования, или отделять '.
  * <br/>
@@ -4955,8 +5032,8 @@ inline namespace literals {
  * - c when setting the field width, align to the center, analogous to f::c.
  * - a display the number system prefix, 0b for 2, 0 for 8, 0x for 16, analogous to f::p.
  * - A display the number system prefix, 0B for 2, 0 for 8, 0X for 16, analogous to f::P.
- * - 0 pad the number to the specified width with zeros on the right. Not compatible with alignment options, similar to f::z.
- * - E For number systems greater than 10, display characters in uppercase, analogous to f::u.
+ * - 0 pad the number to the specified width with zeros on the left. Not compatible with alignment options, similar to f::z.
+ * - E For radix greater than 10, display characters in uppercase, analogous to f::u.
  * - e For signed number types, for positive values, print '+' before the number, analogous to f::sp.
  * - f For signed number types, for positive values, print a space before the number, analogous to f::ss.
  * - FCodeInhex Sets the code of the filler character when specifying the field width, analogous to f::f<'c'>.
@@ -4965,6 +5042,7 @@ inline namespace literals {
  *   or zero padding (0), but not both. If none of these are specified, right alignment is applied.
  *   The number is padded to the given width if it is shorter. If it is longer, then the entire number is displayed.
  * - ' delimiter, skipped.
+ *
  * Since after `F` all characters are perceived as hex code of the delimiter character, if necessary, use it
  * it is better to put it at the end of format literal, or separate with '.
  * <br/>
@@ -6715,6 +6793,57 @@ std::basic_string<K, std::char_traits<K>, A>& prepend(std::basic_string<K, std::
 template<typename K, typename A, StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& insert(std::basic_string<K, std::char_traits<K>, A>& str, size_t from, const E& expr) {
     return change(str, from, 0, expr);
+}
+
+/*!
+ * @ru @brief Переписать всю строку заданным строковым выражением, при необходимости изменив размер строки.
+ * @tparam K - тип символов.
+ * @tparam A - тип аллокатора.
+ * @tparam E - тип строкового выражения.
+ * @param str - строка.
+ * @param expr - строковое выражение для вставки.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - ссылку на переданную строку.
+ * @details Метод заменяет содержимое строки результатом строкового выражения.
+ *
+ * ВАЖНО!!! части строкового выражения не должны ссылаться на саму строку, иначе результат неопределён!!!
+ *
+ * @en @brief Rewrite the entire string with the given string expression, resizing the string if necessary.
+ * @tparam K - character type.
+ * @tparam A - allocator type.
+ * @tparam E - string expression type.
+ * @param str - string.
+ * @param expr - string expression to insert.
+ * @return std::basic_string<K, std::char_traits<K>, A>& - a reference to the passed string.
+ * @details The method replaces the contents of a string with the result of a string expression.
+ *
+ * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
+ *
+ */
+template<typename K, typename A, StrExprForType<K> E>
+std::basic_string<K, std::char_traits<K>, A>& overwrite(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
+    if (size_t expr_length = expr.length()) {
+        if (expr_length <= str.length()) {
+            K* data = str.data();
+            expr.place((typename E::symb_type*)data);
+            str.resize(expr_length);
+        } else {
+            auto fill = [&](K* data, size_t) -> size_t {
+                expr.place((typename E::symb_type*)data);
+                return expr_length;
+            };
+            if constexpr (requires{str.resize_and_overwrite(expr_length, fill);}) {
+                str.resize_and_overwrite(expr_length, fill);
+            } else if constexpr (requires{str._Resize_and_overwrite(expr_length, fill);}) {
+                str._Resize_and_overwrite(expr_length, fill);
+            } else {
+                str.resize(expr_length);
+                expr.place((typename E::symb_type*)str.data());
+            }
+        }
+    } else {
+        str.clear();
+    }
+    return str;
 }
 
 namespace details {

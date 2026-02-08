@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.6.4.
+Version 1.6.5.
 
 <h2>Speed up your work with strings by 2-10 times!</h2>
 
@@ -108,8 +108,6 @@ the sizes of SSO buffers in objects are smaller.
 On the [release page](https://github.com/orefkov/simstr/releases) you can download binary builds of benchmarks and run them on your equipment.
 
 You can also run the [Emscripten build of benchmarks](https://orefkov.github.io/simstr/bench/benchStr.html) directly in the browser.
-(Before following the link, it is better to open "Developer Tools" (usually **F12**) in advance to see the console
-Javascript, since the page will not be updated until the benchmarks are completed, and all output will be visible in the console).
 
 - [Benchmark source code](bench/bench_str.cpp)
 - [Benchmark results](https://orefkov.github.io/simstr/results.html)
@@ -324,8 +322,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.6.4 # Specify the desired release
-        FIND_PACKAGE_ARGS NAMES simstr 1.6.4
+        GIT_TAG tags/rel1.6.5 # Specify the desired release
+        FIND_PACKAGE_ARGS NAMES simstr 1.6.5
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()
