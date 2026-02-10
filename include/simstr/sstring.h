@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.6.5
+* ver. 1.6.6
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -386,7 +386,7 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
      * @en @brief Constructor from a string literal.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
-    constexpr simple_str(T&& v) noexcept : str(v), len(N - 1) {}
+    constexpr simple_str(T&& v) noexcept : str((const K*)v), len(N - 1) {}
     /*!
      * @ru @brief Конструктор из указателя и длины.
      * @en @brief Constructor from pointer and length.
@@ -597,6 +597,17 @@ using struu = simple_str_nt<u32s>;
 template<typename Src, typename Dest>
 struct utf_convert_selector;
 
+template<typename Src>
+struct utf_convert_selector<Src, Src> {
+    static size_t need_len(const Src* src, size_t srcLen) {
+        return srcLen;
+    }
+    static size_t convert(const Src* src, size_t srcLen, Src* dest) {
+        ch_traits<Src>::copy(dest, src, srcLen + 1);
+        return srcLen;
+    }
+};
+
 template<>
 struct utf_convert_selector<u8s, u16s> {
     static SIMSTR_API size_t need_len(const u8s* src, size_t srcLen);
@@ -607,16 +618,6 @@ template<>
 struct utf_convert_selector<u8s, u32s> {
     static SIMSTR_API size_t need_len(const u8s* src, size_t srcLen);
     static SIMSTR_API size_t convert(const u8s* src, size_t srcLen, u32s* dest);
-};
-
-template<>
-struct utf_convert_selector<u8s, wchar_t> {
-    static size_t need_len(const u8s* src, size_t srcLen) {
-        return utf_convert_selector<u8s, wchar_type>::need_len(src, srcLen);
-    }
-    static size_t convert(const u8s* src, size_t srcLen, wchar_t* dest) {
-        return utf_convert_selector<u8s, wchar_type>::convert(src, srcLen, to_w(dest));
-    }
 };
 
 template<>
@@ -632,42 +633,6 @@ struct utf_convert_selector<u16s, u32s> {
 };
 
 template<>
-struct utf_convert_selector<u16s, u16s> {
-    // При конвертации char16_t в wchar_t под windows будет вызываться эта реализация
-    // When converting char16_t to wchar_t under windows this implementation will be called
-    static size_t need_len(const u16s* src, size_t srcLen) {
-        return srcLen;
-    }
-    static size_t convert(const u16s* src, size_t srcLen, u16s* dest) {
-        ch_traits<u16s>::copy(dest, src, srcLen + 1);
-        return srcLen;
-    }
-};
-
-template<>
-struct utf_convert_selector<u32s, u32s> {
-    // При конвертации char32_t в wchar_t под linux будет вызываться эта реализация
-    // When converting char32_t to wchar_t under Linux, this implementation will be called
-    static size_t need_len(const u32s* src, size_t srcLen) {
-        return srcLen;
-    }
-    static size_t convert(const u32s* src, size_t srcLen, u32s* dest) {
-        ch_traits<u32s>::copy(dest, src, srcLen + 1);
-        return srcLen;
-    }
-};
-
-template<>
-struct utf_convert_selector<u16s, wchar_t> {
-    static size_t need_len(const u16s* src, size_t srcLen) {
-        return utf_convert_selector<u16s, wchar_type>::need_len(src, srcLen);
-    }
-    static size_t convert(const u16s* src, size_t srcLen, wchar_t* dest) {
-        return utf_convert_selector<u16s, wchar_type>::convert(src, srcLen, to_w(dest));
-    }
-};
-
-template<>
 struct utf_convert_selector<u32s, u8s> {
     static SIMSTR_API size_t need_len(const u32s* src, size_t srcLen);
     static SIMSTR_API size_t convert(const u32s* src, size_t srcLen, u8s* dest);
@@ -677,68 +642,6 @@ template<>
 struct utf_convert_selector<u32s, u16s> {
     static SIMSTR_API size_t need_len(const u32s* src, size_t srcLen);
     static SIMSTR_API size_t convert(const u32s* src, size_t srcLen, u16s* dest);
-};
-
-template<>
-struct utf_convert_selector<u32s, wchar_t> {
-    static size_t need_len(const u32s* src, size_t srcLen) {
-        return utf_convert_selector<u32s, wchar_type>::need_len(src, srcLen);
-    }
-    static size_t convert(const u32s* src, size_t srcLen, wchar_t* dest) {
-        return utf_convert_selector<u32s, wchar_type>::convert(src, srcLen, to_w(dest));
-    }
-};
-
-template<>
-struct utf_convert_selector<wchar_t, u8s> {
-    static size_t need_len(const wchar_t* src, size_t srcLen) {
-        return utf_convert_selector<wchar_type, u8s>::need_len(to_w(src), srcLen);
-    }
-    static size_t convert(const wchar_t* src, size_t srcLen, u8s* dest) {
-        return utf_convert_selector<wchar_type, u8s>::convert(to_w(src), srcLen, dest);
-    }
-};
-
-template<>
-struct utf_convert_selector<wchar_t, u16s> {
-    static size_t need_len(const wchar_t* src, size_t srcLen) {
-        return utf_convert_selector<wchar_type, u16s>::need_len(to_w(src), srcLen);
-    }
-    static size_t convert(const wchar_t* src, size_t srcLen, u16s* dest) {
-        return utf_convert_selector<wchar_type, u16s>::convert(to_w(src), srcLen, dest);
-    }
-};
-
-template<>
-struct utf_convert_selector<wchar_t, u32s> {
-    static size_t need_len(const wchar_t* src, size_t srcLen) {
-        return utf_convert_selector<wchar_type, u32s>::need_len(to_w(src), srcLen);
-    }
-    static size_t convert(const wchar_t* src, size_t srcLen, u32s* dest) {
-        return utf_convert_selector<wchar_type, u32s>::convert(to_w(src), srcLen, dest);
-    }
-};
-
-template<>
-struct utf_convert_selector<u8s, ubs> {
-    static size_t need_len(const u8s* src, size_t srcLen) {
-        return srcLen;
-    }
-    static size_t convert(const u8s* src, size_t srcLen, ubs* dest) {
-        ch_traits<u8s>::copy((u8s*)dest, src, srcLen);
-        return srcLen;
-    }
-};
-
-template<>
-struct utf_convert_selector<ubs, u8s> {
-    static size_t need_len(const ubs* src, size_t srcLen) {
-        return srcLen;
-    }
-    static size_t convert(const ubs* src, size_t srcLen, u8s* dest) {
-        ch_traits<u8s>::copy(dest, (const u8s*)src, srcLen);
-        return srcLen;
-    }
 };
 
 /*!
@@ -769,16 +672,19 @@ protected:
     template<typename O>
         requires(!std::is_same_v<O, K>)
     void init_from_utf_convertible(simple_str<O> init) {
-        using worker = utf_convert_selector<O, K>;
+        using from_t = to_base_char_t<O>;
+        using to_t = to_base_char_t<K>;
+
+        using worker = utf_convert_selector<from_t, to_t>;
         Impl* d = static_cast<Impl*>(this);
         size_t len = init.length();
         if (!len)
             d->create_empty();
         else {
-            size_t need = worker::need_len(init.symbols(), len);
+            size_t need = worker::need_len((const from_t*)init.symbols(), len);
             K* str = d->init(need);
             str[need] = 0;
-            worker::convert(init.symbols(), len, str);
+            worker::convert((const from_t*)init.symbols(), len, (to_t*)str);
         }
     }
 };
@@ -794,17 +700,19 @@ protected:
 template<typename From, typename To> requires (!std::is_same_v<From, To>)
 struct expr_utf : expr_to_std_string<expr_utf<From, To>> {
     using symb_type = To;
-    using worker = utf_convert_selector<From, To>;
+    using from_t = to_base_char_t<From>;
+    using to_t = to_base_char_t<To>;
+    using worker = utf_convert_selector<from_t, to_t>;
 
     simple_str<From> source_;
 
     constexpr expr_utf(simple_str<From> source) : source_(source){}
 
     size_t length() const noexcept {
-        return worker::need_len(source_.symbols(), source_.length());
+        return worker::need_len((const from_t*)source_.symbols(), source_.length());
     }
     To* place(To* ptr) const noexcept {
-        return ptr + worker::convert(source_.symbols(), source_.length(), ptr);
+        return ptr + worker::convert((const from_t*)source_.symbols(), source_.length(), (to_t*)ptr);
     }
 };
 
@@ -1375,24 +1283,6 @@ struct printf_selector {
 inline size_t grow2(size_t ret, size_t currentCapacity) {
     return ret <= currentCapacity ? ret : ret * 2;
 }
-
-template<typename K>
-struct to_std_char_type : std::type_identity<K>{};
-
-template<>
-struct to_std_char_type<char8_t>{
-    using type = char;
-};
-
-template<>
-struct to_std_char_type<char16_t>{
-    using type = std::conditional_t<sizeof(char16_t) == sizeof(wchar_t), wchar_t, void>;
-};
-
-template<>
-struct to_std_char_type<char32_t>{
-    using type = std::conditional_t<sizeof(char32_t) == sizeof(wchar_t), wchar_t, void>;
-};
 
 /*!
  * @ru @brief Базовый класс работы с изменяемыми строками
@@ -2391,7 +2281,7 @@ public:
         writer& operator=(writer&&) noexcept = default;
         using difference_type = int;
     };
-    using fmt_type = typename to_std_char_type<K>::type;
+    using fmt_type = to_std_char_t<K>;
     /*!
      * @ru @brief Добавляет отформатированный с помощью std::format вывод, начиная с указанной позиции.
      * @param from - начальная позиция добавления.
@@ -2715,14 +2605,15 @@ protected:
     }
 
     constexpr K* init(size_t s) {
-        size_ = s;
-        if (size_ > LocalCapacity) {
-            s = calc_capacity(s);
-            data_ = alloc_place(s);
-            capacity_ = s;
+        size_t need_cap = s;
+        if (need_cap > LocalCapacity) {
+            need_cap = calc_capacity(s);
+            data_ = alloc_place(need_cap);
+            capacity_ = need_cap;
         } else {
             data_ = local_;
         }
+        size_ = s;
         return str();
     }
     // Методы для себя | Methods for yourself
@@ -2886,7 +2777,14 @@ public:
      */
     constexpr lstring(const my_type& other) : base_storable(other.allocator()) {
         if (other.size_) {
-            traits::copy(init(other.size_), other.symbols(), other.size_ + 1);
+            K* buf = init(other.size_);
+            const size_t short_str = 16 / sizeof(K);
+            if (LocalCapacity >= short_str - 1 && other.size_ < short_str) {
+                struct copy { char buf[16]; };
+                *reinterpret_cast<copy*>(buf) = *reinterpret_cast<const copy*>(other.symbols());
+            } else {
+                traits::copy(buf, other.symbols(), other.size_ + 1);
+            }
         }
     }
     /*!
@@ -2917,7 +2815,7 @@ public:
     constexpr lstring(T&& value, Args&&... args) : base_storable(std::forward<Args>(args)...) {
         if constexpr (I > 1) {
             K* ptr = init(I - 1);
-            traits::copy(ptr, value, I - 1);
+            traits::copy(ptr, (const K*)value, I - 1);
             ptr[I - 1] = 0;
         } else
             create_empty();
@@ -3057,7 +2955,7 @@ public:
      */
     template<typename T, size_t S = const_lit_for<K, T>::Count>
     my_type& operator=(T&& other) {
-        return assign(other, S - 1);
+        return assign((const K*)other, S - 1);
     }
     /*!
      * @ru @brief Оператор присваивания строкового выражения.
@@ -3636,7 +3534,7 @@ public:
     sstring(T&& s, Args&&... args) : base_storable(std::forward<Args>(args)...) {
         type_ = Constant;
         localRemain_ = 0;
-        cstr_ = s;
+        cstr_ = (const K*)s;
         bigLen_ = N - 1;
     }
 
@@ -3696,7 +3594,7 @@ public:
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     constexpr my_type& operator=(T&& other) {
-        return operator=(my_type{other, base_storable::allocator()});
+        return operator=(my_type{std::forward<T>(other), base_storable::allocator()});
     }
     /*!
      * @ru @brief Оператор присвоения другой строки типа lstring.
@@ -3790,7 +3688,7 @@ public:
      * @return my_type.
      */
     template<typename... T>
-    static my_type format(const FmtString<typename to_std_char_type<K>::type, T...>& fmtString, T&&... args) {
+    static my_type format(const FmtString<to_std_char_t<K>, T...>& fmtString, T&&... args) {
         return my_type{lstring<K, 256, true, Allocator>{}.format(fmtString, std::forward<T>(args)...)};
     }
     /*!
@@ -3964,7 +3862,7 @@ public:
      * @details In this case, we simply remember the pointer to the string and its length.
      */
     template<typename T, size_t M = const_lit_for<K, T>::Count>
-    constexpr cestring(T&& s) : base_storable(), cstr_(s), size_(M - 1), is_cstr_(true), local_{0} {}
+    constexpr cestring(T&& s) : base_storable(), cstr_((const K*)s), size_(M - 1), is_cstr_(true), local_{0} {}
 };
 
 template<typename K>

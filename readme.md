@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.6.5.
+Version 1.6.6.
 
 <h2>Speed up your work with strings by 2-10 times!</h2>
 
@@ -32,7 +32,8 @@ The library contains two parts:
   ```cpp
   #include "path/to file/strexpr.h"
   ```
-  This will allow you to use powerful and fast *"string expressions"* for concatenation and string construction for standard string types (`std::basic_string`, `std::basic_string_view`), as well as simplified versions of the `simple_str` and
+  This will allow you to use powerful and fast *"string expressions"* for concatenation and string construction for standard string types
+  (`std::basic_string`, `std::basic_string_view`), as well as simplified versions of the `simple_str` and
   `simple_str_nt` classes, which implement all those string algorithms of the library that do not require storing or modifying strings.
   Since this is a header-only part, it does not include working with UTF encodings and simplified Unicode.
 - The full version, requiring the connection of the entire library (`"include/simstr/sstring.h"`), adds its string types with
@@ -322,8 +323,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.6.5 # Specify the desired release
-        FIND_PACKAGE_ARGS NAMES simstr 1.6.5
+        GIT_TAG tags/rel1.6.6 # Specify the desired release
+        FIND_PACKAGE_ARGS NAMES simstr 1.6.6
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.5
+ * ver. 1.6.6
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -116,6 +116,43 @@ auto to_one_of_std_char(const From* from) {
     }
 }
 
+template<typename K>
+struct to_std_char_type : std::type_identity<K>{};
+
+template<>
+struct to_std_char_type<char8_t>{
+    using type = char;
+};
+
+template<>
+struct to_std_char_type<char16_t>{
+    using type = std::conditional_t<sizeof(char16_t) == sizeof(wchar_t), wchar_t, void>;
+};
+
+template<>
+struct to_std_char_type<char32_t>{
+    using type = std::conditional_t<sizeof(char32_t) == sizeof(wchar_t), wchar_t, void>;
+};
+
+template<typename K>
+using to_std_char_t = typename to_std_char_type<K>::type;
+
+template<typename K>
+struct to_base_char_type : std::type_identity<K>{};
+
+template<>
+struct to_base_char_type<char8_t>{
+    using type = char;
+};
+
+template<>
+struct to_base_char_type<wchar_t>{
+    using type = std::conditional_t<sizeof(char16_t) == sizeof(wchar_t), char16_t, char32_t>;
+};
+
+template<typename K>
+using to_base_char_t = typename to_base_char_type<K>::type;
+
 /*!
  * @ingroup StrExprs
  * @ru @brief Проверка, являются ли два типа совместимыми строковыми типами.
@@ -226,7 +263,7 @@ public:
 
     template<typename T, size_t M = const_lit_for<K, T>::Count> requires (M == N + 1)
     constexpr const_lit_to_array(T&& s)
-        : symbols_(s) {}
+        : symbols_((const K(&)[M])s) {}
 
     constexpr bool contain(K s) const {
         return exist<0>(s);
@@ -3569,7 +3606,7 @@ public:
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     constexpr bool operator==(T&& other) const noexcept {
-        return N - 1 == _len() && traits::compare(_str(), other, N - 1) == 0;
+        return N - 1 == _len() && traits::compare(_str(), (const K*)other, N - 1) == 0;
     }
     /*!
      * @ru @brief Оператор сравнения строки и строкового литерала.
@@ -3580,7 +3617,7 @@ public:
     template<typename T, size_t N = const_lit_for<K, T>::Count>
     constexpr auto operator<=>(T&& other) const noexcept {
         size_t myLen = _len();
-        int cmp = traits::compare(_str(), other, std::min(myLen, N - 1));
+        int cmp = traits::compare(_str(), (const K*)other, std::min(myLen, N - 1));
         int res = cmp == 0 ? (myLen > N - 1 ? 1 : myLen == N - 1 ? 0 : -1) : cmp;
         return res <=> 0;
     }
@@ -4799,7 +4836,7 @@ struct str_src : str_src_algs<K, str_src<K>, str_src<K>, false> {
      * @en @brief Constructor from a string literal.
      */
     template<typename T, size_t N = const_lit_for<K, T>::Count>
-    constexpr str_src(T&& v) noexcept : str(v), len(N - 1) {}
+    constexpr str_src(T&& v) noexcept : str((const K*)v), len(N - 1) {}
 
     /*!
      * @ru @brief Конструктор из указателя и длины.

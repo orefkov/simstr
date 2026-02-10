@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.5
+ * ver. 1.6.6
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -958,13 +958,23 @@ TEST(SimStr, LStringAssign) {
 
 TEST(SimStr, UtfConvert) {
     EXPECT_EQ(stringa{ssu{u"testпройден"}}, "testпройден");
+    EXPECT_EQ(stringa{ssb{u8"testпройден"}}, "testпройден");
     EXPECT_EQ(stringa{ssw{L"testпройден"}}, "testпройден");
     EXPECT_EQ(stringa{stringu{u"testпройден"}}, "testпройден");
     EXPECT_EQ(stringa{stringw{L"testпройден"}}, "testпройден");
     EXPECT_EQ(stringa{lstringu<40>{u"testпройден"}}, "testпройден");
     EXPECT_EQ(stringa{lstringw<40>{L"testпройден"}}, "testпройден");
 
+    EXPECT_EQ(stringb{ssu{u"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{ssa{u8"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{ssw{L"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{stringu{u"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{stringw{L"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{lstringu<40>{u"testпройден"}}, u8"testпройден");
+    EXPECT_EQ(stringb{lstringw<40>{L"testпройден"}}, u8"testпройден");
+
     EXPECT_EQ(stringu{ssa{"testпройден"}}, u"testпройден");
+    EXPECT_EQ(stringu{ssb{u8"testпройден"}}, u"testпройден");
     EXPECT_EQ(stringu{ssw{L"testпройден"}}, u"testпройден");
     EXPECT_EQ(stringu{stringa{"testпройден"}}, u"testпройден");
     EXPECT_EQ(stringu{stringw{L"testпройден"}}, u"testпройден");
@@ -1384,7 +1394,7 @@ TEST(SimStr, LStrJoinAndExpressions) {
 
     int k = 10;
     double d = 12.1;
-    lstringa<10> test = ">" + e_repl(buffer.to_str(), "<>", "-") + k + ", " + d;
+    lstringa<10> test = ">" + e_repl(buffer, "<>", "-") + k + ", " + d;
     EXPECT_EQ(test, ">asd-fgh-jkl10, 12.1");
 
     buffer.prepend(e_choice(test.length() > 2, eea + 99, eea + 12.1 + "asd"));

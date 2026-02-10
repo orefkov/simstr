@@ -1,96 +1,244 @@
 <!doctype html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>SimStr Bencjmarks</title>
-    <style>
-	body {
-	color: white;
-    background-color: black;
-	}
-	#output {
-	position: absolute;
-	left: 10px;
-	top: 80px;
-	right: 10px;
-	bottom: 10px;
-	  margin: 0 auto;
-	  border: 0;
-	  display: block;
-	  background-color: black;
-	  color: white;
-	  font-family: 'Cascadia Code', 'Consolas', 'Lucida Console', Monaco, monospace;
-	  outline: none;
-	}
-	.ctr {
-	text-align: center;
-	font-size: 16pt;
-	}
-    </style>
-  </head>
-  <body>
-  <div class="ctr" id="bs_name"></div><div class="ctr" id="b_name"></div>
-    <textarea class="emscripten" id="output" rows="20"></textarea>
-    <script type='text/javascript'>
-      var outputElement = document.getElementById('output');
-      var bsNameEl= document.getElementById('bs_name');
-      var bNameEl= document.getElementById('b_name');
-      if (outputElement) outputElement.value = ''; // clear browser cache
-      var Module = {
-        print(...args) {
-          console.log(...args);
-          if (outputElement) {
-            var text = args.join(' ').replace('_mean', '     ');
-			var rpt = text.indexOf("/repeats");
-			if (rpt != -1)
-				text = text.substr(0, rpt);
-			if (text.indexOf('_median ') == -1 && text.indexOf('_stddev ') == -1 && text.indexOf('_cv ') == -1) {
-				outputElement.value += text + "\n";
-				outputElement.scrollTop = outputElement.scrollHeight; // focus on bottom
-			}
-          }
-        },
-        setStatus(text) {
-          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
-          if (text === Module.setStatus.last.text) return;
-          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-          var now = Date.now();
-          if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
-          Module.setStatus.last.time = now;
-          Module.setStatus.last.text = text;
-          if (m) {
-            text = m[1];
-          } else {
-          }
-        },
-        totalDependencies: 0,
-        monitorRunDependencies(left) {
-          this.totalDependencies = Math.max(this.totalDependencies, left);
-          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
-        },
-      };
-      Module.setStatus('Downloading...');
-      window.onerror = () => {
-        Module.setStatus('Exception thrown, see JavaScript console');
-        Module.setStatus = (text) => {
-          if (text) console.error('[post-exception status] ' + text);
-        };
-      };
-	  function on_begin_benchmark(name) {
-		if (name.substr(0, 3) == "---") {
-			bsNameEl.innerText = name.match(/^[- ]+(.+?)[ -]+$/)[1];
-			bNameEl.innerText = "";
-		} else {
-			bNameEl.innerText = name;
-		}
-	  }
-	  function on_done() {
-		bsNameEl.innerText = "Done";
-		bNameEl.innerText = "";
-	  }
 
-    </script>
-    {{{ SCRIPT }}}
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>SimStr Benchmarks</title>
+  <style>
+    body {
+      margin: auto;
+      font-size: 12pt;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    table {
+      border: 1px black;
+      text-align: right;
+      margin: auto;
+    }
+
+    table tr:nth-child(odd) {
+      background: #fff;
+    }
+
+    table tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+
+    table th {
+      text-align: center;
+    }
+
+    .tooltip a:any-link {
+      text-decoration: none;
+    }
+
+    .tooltip a:link {
+      color: black;
+    }
+
+    .tooltip a:visited {
+      color: black;
+    }
+
+    .tooltip a:hover {
+      text-decoration: underline;
+    }
+
+    table tr:hover td {
+      background-color: lightcyan;
+    }
+
+    div.header {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    canvas {
+      max-width: 2000px;
+      margin: 0 auto;
+    }
+
+    .benchset {
+      max-width: 960px;
+      padding: 1px;
+      margin: 5px auto;
+      border-radius: 3px;
+      background-color: gainsboro;
+    }
+
+    .benchset h4 {
+      text-align: left;
+      padding-left: 20px;
+    }
+
+    .test_platforms {
+      margin: auto;
+    }
+
+    .test_platforms ul {
+      display: table;
+    }
+
+    .test_platforms li {
+      display: table-row;
+    }
+
+    .test_platforms li:before {
+      content: "\2022";
+      padding-right: 0.5em;
+    }
+
+    .test_platforms span.tooltip {
+      padding-left: 20px;
+      display: table-cell;
+    }
+
+    span.platform {
+      display: table-cell;
+    }
+
+    .info {
+      border-radius: 3px;
+      border: solid 1px lightgrey;
+      background-color: beige;
+      color: brown;
+    }
+
+    .code {
+      font-family: 'Cascadia Code', Consolas, 'Courier New', Courier, monospace;
+    }
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      background-color: beige;
+      color: black;
+      text-align: left;
+      border-radius: 6px;
+      padding: 15px;
+      position: absolute;
+      z-index: 1;
+      top: 35px;
+      right: 0;
+      white-space: pre;
+      border: 1px solid darkgray;
+      box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+      transform: translate(50%);
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    h4 {
+      text-align: center;
+    }
+
+    #output {
+      position: absolute;
+      left: 10px;
+      top: 50px;
+      right: 10px;
+      bottom: 60%;
+      margin: 0 auto;
+      border: 0;
+      display: block;
+      background-color: black;
+      color: white;
+      font-family: 'Cascadia Code', 'Consolas', 'Lucida Console', Monaco, monospace;
+      outline: none;
+    }
+
+    #results {
+      position: absolute;
+      left: 10px;
+      top: 42%;
+      right: 10px;
+      bottom: 10px;
+      margin: 0 auto;
+      border: 0;
+      overflow: auto;
+    }
+
+    div.head {
+      text-align: center;
+    }
+
+    div.head h3 {
+      margin: 0;
+    }
+
+    div.head span {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="head">
+    <h3>SimStr 1.6.6 Benchmark</h3>
+    <span><a href="https://orefkov.github.io/simstr/results.html" target="blank">All results</a></span>
+    <span><a href="https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp" target="blank">Sources for
+        benchmarks</a></span>
+    <textarea id="output"></textarea>
+  </div>
+  <div id="results"></div>
+  <script type='text/javascript'>
+    var outputElement = document.getElementById('output');
+    var resultEl = document.getElementById('results');
+    if (outputElement) outputElement.value = ''; // clear browser cache
+    var Module = {
+      print(...args) {
+        console.log(...args);
+        var text = args.join(' ')
+        try {
+          if (text.match(/^--+[^-]/)) {
+            add_benchset(text.match(/^-+ +(.+?) +-+\/repeats/)[1]);
+          } else {
+            var im = text.indexOf("_mean ");
+            if (im != -1) {
+              add_benchmark(text.substr(0, im), text.match(/ ([^ ]+?) ns/)[1]);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        if (outputElement) {
+          outputElement.value += text + "\n";
+          outputElement.scrollTop = outputElement.scrollHeight;
+        }
+      }
+    };
+    function on_done() {
+      resultEl.scrollTop = 0;
+    }
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    function add_benchset(bs_name) {
+      resultEl.insertAdjacentHTML("beforeend", `<div class="benchset"><h4>${escapeHtml(bs_name)}</h4><table width="100%"><thead><tr><th>Benchmark name</th><th width="8%">Time(ns)</th></tr></thead><tbody></tbody></table></div>`);
+      resultEl.scrollTop = resultEl.scrollHeight;
+    }
+    function add_benchmark(name, result) {
+      resultEl.querySelector("div:last-child table tbody").insertAdjacentHTML("beforeend", `<tr><td>${escapeHtml(name)}</td><td>${result}</td></tr>`);
+      resultEl.scrollTop = resultEl.scrollHeight;
+    }
+  </script>
+  {{{ SCRIPT }}}
+</body>
+
 </html>

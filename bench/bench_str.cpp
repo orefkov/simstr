@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.5
+ * ver. 1.6.6
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -14,15 +14,14 @@
 #include <fmt/format.h>
 #include <fmt/compile.h>
 
+using namespace simstr;
+using namespace std::literals;
+
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
 static void DoTeardown(const benchmark::State& state) {
-    emscripten_sleep(1);
-}
-static void DoSetup(const benchmark::State& state) {
-    EM_ASM({
-        on_begin_benchmark(UTF8ToString($0));
-    }, state.name().c_str());
+    // Это нужно чтобы интерфейс браузера обновился
+    // This is necessary for the browser interface to refresh.
     emscripten_sleep(1);
 }
 #undef BENCHMARK
@@ -31,11 +30,18 @@ static void DoSetup(const benchmark::State& state) {
       (::benchmark::internal::RegisterBenchmarkInternal(              \
           ::benchmark::internal::make_unique<                         \
               ::benchmark::internal::FunctionBenchmark>(#__VA_ARGS__, \
-        __VA_ARGS__)))->Setup(DoSetup)->Teardown(DoTeardown)
-#endif
+        __VA_ARGS__)))->Teardown(DoTeardown)
 
-using namespace simstr;
-using namespace std::literals;
+#undef BENCHMARK_CAPTURE
+#define BENCHMARK_CAPTURE(func, test_case_name, ...)     \
+  BENCHMARK_PRIVATE_DECLARE(_benchmark_) =               \
+      (::benchmark::internal::RegisterBenchmarkInternal( \
+          ::benchmark::internal::make_unique<            \
+              ::benchmark::internal::FunctionBenchmark>( \
+              #func "/" #test_case_name,                 \
+              [](::benchmark::State& st) { func(st, __VA_ARGS__); })))->Teardown(DoTeardown)
+
+#endif
 
 #define TEST_TEXT "Test text"
 #define LONG_TEXT "123456789012345678901234567890"
@@ -769,7 +775,6 @@ void ToIntNoOverflow(benchmark::State& state, ssa t, int c) {
         benchmark::DoNotOptimize(t);
     }
 }
-
 BENCHMARK(__)->Name("-----  Convert to int '1234567'  ---------")->Repetitions(1);
 BENCHMARK_CAPTURE(ToIntStr10, , std::string{"123456789"}, 123456789)                ->Name("std::string s = \"123456789\"; int res = std::strtol(s.c_str(), 0, 10);");
 BENCHMARK_CAPTURE(ToIntFromChars10, , std::string_view{"123456789"}, 123456789)     ->Name("std::string_view s = \"123456789\"; std::from_chars(s.data(), s.data() + s.size(), res, 10);");
@@ -2475,7 +2480,9 @@ int main(int argc, char** argv) {
     ::benchmark::RunSpecifiedBenchmarks();
     ::benchmark::Shutdown();
 #ifdef EMSCRIPTEN
+    std::cout << "Done!\n";
     EM_ASM({ on_done(); });
 #endif
+
     return 0;
 }
