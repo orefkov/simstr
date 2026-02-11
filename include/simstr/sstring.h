@@ -306,7 +306,7 @@ public:
         #ifdef __linux__
         if constexpr(sizeof(K) == 1) {
             double d{};
-            if (std::from_chars(ptr, ptr + len, d).ec == std::errc{}) {
+            if (std::from_chars((const u8s*)ptr, (const u8s*)ptr + len, d).ec == std::errc{}) {
                 return d;
             }
             return {};

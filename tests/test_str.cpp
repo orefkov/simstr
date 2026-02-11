@@ -484,6 +484,8 @@ TEST(SimStr, ToInt) {
 TEST(SimStr, to_double) {
     EXPECT_EQ(ssa{"  123"}.to_double(), 123.0);
     EXPECT_EQ(ssa{"  123.1"}.to_double(), 123.1);
+    EXPECT_EQ(ssb{u8"  123"}.to_double(), 123.0);
+    EXPECT_EQ(ssb{u8"  123.1"}.to_double(), 123.1);
     EXPECT_EQ(ssu{u"  123.13434"}.to_double(), 123.13434);
     EXPECT_EQ(ssuu{U"  123.13434"}.to_double(), 123.13434);
     EXPECT_EQ(ssw{L"  123.13434"}.to_double(), 123.13434);
