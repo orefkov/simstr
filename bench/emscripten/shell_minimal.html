@@ -185,7 +185,7 @@
 
 <body>
   <div class="head">
-    <h3>SimStr 1.6.6 Benchmark</h3>
+    <h3>SimStr 1.6.7 Benchmark</h3>
     <span><a href="https://orefkov.github.io/simstr/results.html" target="blank">All results</a></span>
     <span><a href="https://github.com/orefkov/simstr/blob/main/bench/bench_str.cpp" target="blank">Sources for
         benchmarks</a></span>
@@ -199,25 +199,28 @@
     var Module = {
       print(...args) {
         console.log(...args);
-        var text = args.join(' ')
         try {
-          if (text.match(/^--+[^-]/)) {
-            add_benchset(text.match(/^-+ +(.+?) +-+\/repeats/)[1]);
+          var text = args.join(' ')
+          var m = text.match(/^--+ +(.+?) +-+\/repeats/);
+          if (m) {
+            add_benchset(m[1]);
           } else {
             var im = text.indexOf("_mean ");
             if (im != -1) {
               add_benchmark(text.substr(0, im), text.match(/ ([^ ]+?) ns/)[1]);
             }
           }
+          outputElement.value += text + "\n";
+          outputElement.scrollTop = outputElement.scrollHeight;
         } catch (e) {
           console.error(e);
         }
-        if (outputElement) {
-          outputElement.value += text + "\n";
-          outputElement.scrollTop = outputElement.scrollHeight;
-        }
       }
     };
+    var sync = new URLSearchParams(window.location.search).get('sync');
+    if (sync)
+      Module.arguments = ["-sync"];
+
     function on_done() {
       resultEl.scrollTop = 0;
     }

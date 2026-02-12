@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.6
+ * ver. 1.6.7
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -19,10 +19,13 @@ using namespace std::literals;
 
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
+bool do_sync = false;
 static void DoTeardown(const benchmark::State& state) {
     // Это нужно чтобы интерфейс браузера обновился
     // This is necessary for the browser interface to refresh.
-    emscripten_sleep(1);
+    if (!do_sync) {
+        emscripten_sleep(1);
+    }
 }
 #undef BENCHMARK
 #define BENCHMARK(...)                                                \
@@ -2466,6 +2469,10 @@ int main(int argc, char** argv) {
 
 #ifdef EMSCRIPTEN
     EM_ASM({ console.log(navigator.userAgent); });
+    if (argc == 2 && stra{argv[1]} == "-sync") {
+        do_sync = true;
+        argc = 1;
+    }
 #endif
 
     char arg1[] = "--benchmark_repetitions=4", arg2[] = "--benchmark_report_aggregates_only=true";

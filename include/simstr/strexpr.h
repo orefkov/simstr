@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.6
+ * ver. 1.6.7
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com

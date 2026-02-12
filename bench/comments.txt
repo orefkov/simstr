@@ -147,7 +147,7 @@ However, Windows and Linux are clearly in different weight classes.
 - std::string copy{str_with_len_N};/16
 Явно виден скачок, где заканчивается SSO и начинается аллокация.
 Обратите внимание, что WASM - 32-битный, и там размер
-SSO у std::string меньше, насколько я помню, 11 символов + 0.
+SSO у std::string меньше, 10 символов + 0.
 The jump where SSO ends and allocation begins is clearly visible.
 Note that WASM is 32-bit, and the size of the SSO for std::string is
 smaller, as far as I remember: 11 characters + 0.

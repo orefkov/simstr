@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.6.6
+* ver. 1.6.7
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2661,7 +2661,13 @@ protected:
         size_ = newSize;
         data_[newSize] = 0;
     }
-
+    constexpr void copy_from_another(K* buf, const K* src, size_t size) {
+        // Реальный размер буфера всегда кратен sizeof(void*), поэтому копируя по sizeof(void*) байтов, мы не выйдем за пределы буфера
+        // The actual buffer size is always a multiple of sizeof(void*), so by copying sizeof(void*) bytes at a time, we won't go beyond the buffer's limits.
+        size_t need_copy_bytes = (size + 1) * sizeof(K);
+        size_t cnt = (need_copy_bytes + sizeof(void*) - 1) / sizeof(void*) * sizeof(void*);
+        traits::copy(buf, src, cnt / sizeof(K));
+    }
 public:
     /*!
      * @ru @brief Создать пустой объект.
@@ -2776,15 +2782,20 @@ public:
      * @param other - another string.
      */
     constexpr lstring(const my_type& other) : base_storable(other.allocator()) {
-        if (other.size_) {
-            K* buf = init(other.size_);
-            const size_t short_str = 16 / sizeof(K);
-            if (LocalCapacity >= short_str - 1 && other.size_ < short_str) {
-                struct copy { char buf[16]; };
-                *reinterpret_cast<copy*>(buf) = *reinterpret_cast<const copy*>(other.symbols());
-            } else {
-                traits::copy(buf, other.symbols(), other.size_ + 1);
+        struct copy{uint64_t p[2];};
+        constexpr size_t short_str = sizeof(copy) / sizeof(K);
+        if constexpr (LocalCapacity >= short_str - 1) {
+            if (other.size_ < short_str) {
+                data_ = local_;
+                size_ = other.size_;
+                *(copy*)local_ = *(const copy*)other.local_;
+                return;
             }
+        }
+        if (size_t size = other.size_) {
+            copy_from_another(init(size), other.symbols(), size);
+        } else {
+            create_empty();
         }
     }
     /*!
@@ -2799,7 +2810,9 @@ public:
         requires(sizeof...(Args) > 0 && std::is_convertible_v<allocator_t, Args...>)
     constexpr lstring(const my_type& other, Args&&... args) : base_storable(std::forward<Args>(args)...) {
         if (other.size_) {
-            traits::copy(init(other.size_), other.symbols(), other.size_ + 1);
+            copy_from_another(init(other.size_), other.symbols(), other.size_);
+        } else {
+            create_empty();
         }
     }
     /*!
@@ -2816,9 +2829,10 @@ public:
         if constexpr (I > 1) {
             K* ptr = init(I - 1);
             traits::copy(ptr, (const K*)value, I - 1);
-            ptr[I - 1] = 0;
-        } else
+            ptr[I - 1] = K{};
+        } else {
             create_empty();
+        }
     }
     /*!
      * @ru @brief Конструктор перемещения из строки такого же типа.
@@ -2831,14 +2845,16 @@ public:
             size_ = other.size_;
             if (other.is_alloced()) {
                 data_ = other.data_;
+                other.data_ = other.local_;
                 capacity_ = other.capacity_;
             } else {
                 data_ = local_;
-                traits::copy(local_, other.local_, size_ + 1);
+                copy_from_another(data_, other.local_, size_);
             }
-            other.data_ = other.local_;
             other.size_ = 0;
             other.local_[0] = 0;
+        } else {
+            create_empty();
         }
     }
     /*!
