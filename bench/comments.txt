@@ -8,11 +8,21 @@ holds 23 characters in SSO instead of 15, so
 at the end of the std::string test, memory has to be allocated,
 while in stringa , the entire test is included in SSO.
 
+- Concat email stringzilla concat
+В stringzilla тоже есть конкатенация строковыми выражениями, но не
+так удобна и развита, как в simstr.
+Stringzilla also has concatenation by expression templates,
+but it's not as convenient or advanced as simstr.
+
 - Find concat three simstr
 Если результат конкатенации меньше 207 символов,
 он собирается в буфере на стеке, без аллокации и деалокации.
 If the concatenation result is less than 207 characters,
 it is collected in a stack-based buffer, without allocation or deallocation.
+
+- sz::string::find;
+stringzilla более заточена на поиск больших строк в больших строках.
+stringzilla is more focused on searching large strings within large strings.
 
 - Concat with replace exp
 В simstr строковое выражение для замены подстрок

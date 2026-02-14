@@ -14,7 +14,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 
-target_link_libraries(benchStr fmt::fmt)
+FetchContent_Declare(
+    stringzilla
+    GIT_REPOSITORY https://github.com/ashvardanian/StringZilla.git
+    GIT_TAG main  # or specify a version tag
+)
+FetchContent_MakeAvailable(stringzilla)
+
+target_link_libraries(benchStr fmt::fmt stringzilla_header)
 
 add_executable(process_result process_result.cpp)
 target_link_libraries(process_result simstr_simstr)

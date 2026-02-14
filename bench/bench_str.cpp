@@ -5,6 +5,8 @@
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
  * Benchmarks
  */
+#include <stringzilla/stringzilla.h>
+#include <stringzilla/stringzilla.hpp>
 
 #include "bench.h"
 #include <sstream>
@@ -50,9 +52,131 @@ static void DoTeardown(const benchmark::State& state) {
 #define LONG_TEXT "123456789012345678901234567890"
 #define TEXT_16 "abbaabbaabbaabba"
 
-#define CHECK_RESULT
+//#define CHECK_RESULT
 
 void __(benchmark::State& state) { for (auto _: state) {} }
+namespace sz = ashvardanian::stringzilla;
+
+sz::string email_concat_stringzilla_app(sz::string name, sz::string_view domain, sz::string_view tld) {
+    return name.append("@").append(domain).append(".").append(tld);
+}
+
+//> sz::string email_concat_stringzilla_app(sz::string name, sz::string_view domain, sz::string_view tld) {
+void ConcatEmailSzApp(benchmark::State& state) {
+    sz::string name = "username";
+    sz::string_view domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_stringzilla_app(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+sz::string email_concat_stringzilla_exp(sz::string name, sz::string_view domain, sz::string_view tld) {
+    return sz::string{name | sz::string_view{"@"} | domain | sz::string_view{"."} | tld};
+}
+
+//> sz::string email_concat_stringzilla_exp(sz::string name, sz::string_view domain, sz::string_view tld) {
+void ConcatEmailSzExp(benchmark::State& state) {
+    sz::string name = "username";
+    sz::string_view domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_stringzilla_exp(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+std::string email_concat_format(std::string_view name, std::string_view domain, std::string_view tld) {
+    return std::format("{}@{}.{}", name, domain, tld);
+}
+//> std::string email_concat_format(std::string_view name, std::string_view domain, std::string_view tld) {
+void ConcatEmailFormat(benchmark::State& state) {
+    std::string_view name = "username", domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_format(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+std::string email_concat_stream(std::string_view name, std::string_view domain, std::string_view tld) {
+    std::stringstream s;
+    s << name << "@" << domain << "." << tld;
+    return s.str();
+}
+//> std::string email_concat_stream(std::string_view name, std::string_view domain, std::string_view tld) {
+void ConcatEmailStream(benchmark::State& state) {
+    std::string_view name = "username", domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_stream(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+std::string email_concat_std(std::string name, std::string_view domain, std::string_view tld) {
+    return name.append("@").append(domain).append(".").append(tld);
+}
+//> std::string email_concat_std(std::string name, std::string_view domain, std::string_view tld) {
+void ConcatEmailStd(benchmark::State& state) {
+    std::string name = "username";
+    std::string_view domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_std(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+std::string email_concat_std_expr(std::string_view name, std::string_view domain, std::string_view tld) {
+    return +name + "@" + domain + "." + tld;
+}
+//> std::string email_concat_std_expr(std::string_view name, std::string_view domain, std::string_view tld) {
+void ConcatEmailStdExp(benchmark::State& state) {
+    std::string_view name = "username", domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_std_expr(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+stringa email_concat_sim_expr(ssa name, ssa domain, ssa tld) {
+    return name + "@" + domain + "." + tld;
+}
+//> stringa email_concat_sim_expr(ssa name, ssa domain, ssa tld) {
+void ConcatEmailSimExp(benchmark::State& state) {
+    ssa name = "username", domain = "verybigdomain", tld = "tld";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(name);
+        benchmark::DoNotOptimize(domain);
+        benchmark::DoNotOptimize(tld);
+        auto email = email_concat_sim_expr(name, domain, tld);
+        benchmark::DoNotOptimize(email);
+    }
+}
+
+BENCHMARK(__)->Name("-----  Concatenate email ---------")->Repetitions(1);
+BENCHMARK(ConcatEmailFormat)->Name("Concat email std::format");
+BENCHMARK(ConcatEmailStream)->Name("Concat email std::stringstream");
+BENCHMARK(ConcatEmailSzApp) ->Name("Concat email stringzilla append");
+BENCHMARK(ConcatEmailSzExp) ->Name("Concat email stringzilla concat");
+BENCHMARK(ConcatEmailStd)   ->Name("Concat email std::string append");
+BENCHMARK(ConcatEmailStdExp)->Name("Concat email std::string by strexpr");
+BENCHMARK(ConcatEmailSimExp)->Name("Concat email stringa");
 
 void ConcatStdToStd(benchmark::State& state) {
     std::string s1 = "start ";
@@ -355,6 +479,10 @@ size_t find_pos_sim(ssa src, ssa name) {
     return src.find(lstringa<200>{"\n- " + name + " -\n"});
 }
 
+size_t find_pos_sz(sz::string_view src, sz::string_view name) {
+    return src.find(sz::string{"\n- "}.append(name).append(" -\n"));
+}
+
 //> size_t find_pos_str(std::string_view src, std::string_view name) {
 void FindConcatThreeStr(benchmark::State& state) {
     std::string_view src = "sdfsdf\n- testtesttesttesttesttesttestte -\nsfrgdgfsg";
@@ -405,11 +533,27 @@ void FindConcatThreeSim(benchmark::State& state) {
         #endif
     }
 }
-
+//> size_t find_pos_sz(sz::string_view src, sz::string_view name) {
+void FindConcatThreeSz(benchmark::State& state) {
+    sz::string_view src = "sdfsdf\n- testtesttesttesttesttesttestte -\nsfrgdgfsg";
+    sz::string_view fnd = "testtesttesttesttesttesttestte";
+    for (auto _: state) {
+        benchmark::DoNotOptimize(src);
+        benchmark::DoNotOptimize(fnd);
+        size_t pos = find_pos_sz(src, fnd);
+        benchmark::DoNotOptimize(pos);
+        #ifdef CHECK_RESULT
+        if (pos != 6) {
+            state.SkipWithError("fail");
+        }
+        #endif
+    }
+}
 BENCHMARK(__)->Name("-----  Find three concatenated string in string_view -----")->Repetitions(1);
 BENCHMARK(FindConcatThreeStr)->Name("Find concat three std::string");
 BENCHMARK(FindConcatThreeExp)->Name("Find concat three strexpr");
 BENCHMARK(FindConcatThreeSim)->Name("Find concat three simstr");
+BENCHMARK(FindConcatThreeSz) ->Name("Find concat three stringzilla string");
 
 std::string buildTypeNameStr(std::string_view type_name, size_t prec, size_t scale) {
     std::string res{type_name};
@@ -631,6 +775,7 @@ void Find(benchmark::State& state) {
     }
 }
 BENCHMARK(__)->Name("-----  Find 9 symbols text in end of 99 symbols text ---------")->Repetitions(1);
+BENCHMARK(Find<sz::string>)->Name("sz::string::find;");
 BENCHMARK(Find<std::string>)        ->Name("std::string::find;");
 BENCHMARK(Find<std::string_view>)   ->Name("std::string_view::find;");
 BENCHMARK(Find<ssa>)                ->Name("ssa::find;");
@@ -1811,7 +1956,7 @@ void ReplaceAllLongerSimStringExpr(benchmark::State& state) {
     lstringa<2048> big_source{Count, source}, big_sample{Count, sample};
 
     for (auto _: state) {
-        stringa result = e_repl(big_source.to_str(), "bb", "----");
+        stringa result = e_repl(big_source, "bb", "----");
 
 #ifdef CHECK_RESULT
         if (result.to_str() != big_sample) {

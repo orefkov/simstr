@@ -1328,9 +1328,9 @@ TEST(SimStr, LStrFormat) {
     }
 #else
     {
-        // char32_t в Windows совместим по размеру с wchar_t, поэтому для его форматирования можно использовать
+        // char32_t в Linux совместим по размеру с wchar_t, поэтому для его форматирования можно использовать
         // L"format_string", и передавать char32_t строковые объекты
-        // char32_t on Windows is compatible in size with wchar_t, so you can use L"format_string" to format it
+        // char32_t on Linux is compatible in size with wchar_t, so you can use L"format_string" to format it
         // and pass char32_t string objects
         lstringuu<2> text;
         text.format(L"{}{}", 'a', 'b');
@@ -2081,6 +2081,7 @@ TEST(SimStr, ConstEval) {
 #endif
 
 } // namespace simstr::tests
+
 TEST(SimStr, StrNoNamespace) {
     std::string str = "test";
     std::string test = +str + " = " + 10;
