@@ -7267,6 +7267,10 @@ std::basic_string<K, std::char_traits<K>, A>& make_ascii_lower(std::basic_string
 
 } // namespace simstr
 
+/*!
+ * @ru @brief Некоторые методы для работы с стандартными строками.
+ * @en @brief Some methods for working with standard strings.
+ */
 namespace std {
 /*!
  * @ingroup StrExprs
@@ -7293,7 +7297,7 @@ simstr::expr_stdstr<typename T::value_type, T> operator+(const T& str) {
 }
 
 /*!
- * @brief Оператор для добавления строкового выражения к стандартной строке.
+ * @ru @brief Оператор для добавления строкового выражения к стандартной строке.
  * @tparam K - тип символов.
  * @tparam A - тип аллокатора.
  * @tparam E - тип строкового выражения.
@@ -7318,7 +7322,6 @@ simstr::expr_stdstr<typename T::value_type, T> operator+(const T& str) {
  *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
  *
  * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
- *
  */
 template<typename K, typename A, simstr::StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& operator |=(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
@@ -7351,7 +7354,6 @@ std::basic_string<K, std::char_traits<K>, A>& operator |=(std::basic_string<K, s
  *  Before C++23, resize was used; since C++23, resize_and_overwrite was used.
  *
  * IMPORTANT!!! Parts of a string expression must not reference the string itself, otherwise the result is undefined!!!
- *
  */
 template<typename K, typename A, simstr::StrExprForType<K> E>
 std::basic_string<K, std::char_traits<K>, A>& operator ^=(std::basic_string<K, std::char_traits<K>, A>& str, const E& expr) {
