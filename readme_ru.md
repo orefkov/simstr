@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.6.7.
+Версия 1.7.0.
 
 <h2>Ускорь работу со строками в 2-10 раз!</h2>
 
@@ -26,7 +26,7 @@
 и пригодится другим людям, либо напрямую, либо как источник идей.
 
 Библиотека содержит две части:
-- Реализация [*"Строковых выражений"*](https://orefkov.github.io/simstr/docs_ru/overview.html#autotoc_md27) и алгоритмов работы
+- Реализация [*"Строковых выражений"*](https://orefkov.github.io/simstr/articles/fast_concat_ru.html) и алгоритмов работы
   с константными строками.\
   Для использования этой части достаточно просто взять файл `"include/simstr/strexpr.h"` и написать в своём коде
   ```cpp
@@ -70,11 +70,13 @@
   - Слияние (join) контейнеров строк в единую строку, с заданием разделителей и опций - "пропускать пустые", "разделитель после последней".
   - Разбиение (split) строк на части по заданному разделителю. Разбиение возможно сразу в контейнер со строками, либо вызовом функтора для
     каждой подстроки, либо путем итерации с помощью итератора `Splitter`.
+  - Создании копии со сменой регистра ASCII символов.
 - Функции модификации стандартных строк строковыми выражениями:
   - str::append, str::prepend, str::insert, str::change - меняют str::string строковыми выражениями,
     например `str::append(text, "count = "_ss + count)`.
   - str::replace - заменяет вхождения искомой подстроки на строку замены или строковое выражение.
     Если подстрока не найдена, строковое выражение даже не вычисляется.
+  - str::make_ascii_upper, str::make_ascii_lower - смена регистра ASCII символов.
 - Парсинг целых чисел с возможностью "тонкой" настройки при компиляции - можно задавать опции проверки переполнения,
   пропуск пробельных символов, конкретное основание счисления либо автовыбор по префиксам `0x`, `0`, `0b`, `0o`,
   допустимость знака `+`. Парсинг реализован для всех видов строк и символов.
@@ -323,8 +325,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.6.7 # Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 1.6.7
+        GIT_TAG tags/rel1.7.0 # Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 1.7.0
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.7
+ * ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -404,6 +404,27 @@ TEST(StrExpr, EIntFmt) {
     EXPECT_EQ(test, "'0x0000000A' _______A");
     test = 100 / 0x2a010_fmt;
     EXPECT_EQ(test, "0b01100100");
+}
+
+TEST(StrExpr, ChangeCase) {
+    std::string res = e_ascii_upper("teSt");
+    EXPECT_EQ(res, "TEST");
+    res = "/" + e_ascii_lower(res) + "/";
+    EXPECT_EQ(res, "/test/");
+
+    EXPECT_EQ(str::make_ascii_upper(res), "/TEST/");
+
+    str::make_ascii_lower(res, 1, 3);
+    EXPECT_EQ(res, "/teST/");
+
+    std::wstring wres = e_ascii_lower(L"TeSt"_ss);
+    EXPECT_EQ(wres, L"test");
+
+    std::u16string ures = u"/test/";
+    EXPECT_EQ(str::make_ascii_upper(ures), u"/TEST/");
+
+    str::make_ascii_lower(ures, 1, 3);
+    EXPECT_EQ(ures, u"/teST/");
 }
 
 } // namespace simstr::tests

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.7
+ * ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -6648,6 +6648,77 @@ struct e_vsubst : expr_to_std_string<e_vsubst<K, Args...>> {
 template<StrSourceNoLiteral T, typename...Args> requires (sizeof...(Args) > 0)
 e_vsubst(T&&, Args&&...) -> e_vsubst<symb_type_from_src_t<T>, Args...>;
 
+template<is_one_of_char_v K, bool upper>
+struct expr_change_case_ascii : expr_to_std_string<expr_change_case_ascii<K, upper>>{
+    using symb_type = K;
+
+    str_src<K> src_;
+
+    template<StrSource S>
+    expr_change_case_ascii(S&& s) : src_(std::forward<S>(s)){}
+
+    constexpr size_t length() const noexcept {
+        return src_.length();
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        const K* read = src_.str;
+        for (size_t l = src_.len; l--;) {
+            if constexpr (upper) {
+                *ptr++ = makeAsciiUpper(*read++);
+            } else {
+                *ptr++ = makeAsciiLower(*read++);
+            }
+        }
+        return ptr;
+    }
+};
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все ASCII строчные буквы (a-z) на прописные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя ASCII строчные буквы (a-z) на прописные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @en @brief Generate a string based on the original one, replacing all ASCII lowercase letters (a-z) with uppercase ones.
+ * @tparam K - character type, deduced on the source string.
+ * @details Takes the original string and copies it, replacing the ASCII lowercase letters (a-z) with uppercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa upper = "Upper case version is: '" + e_ascii_upper(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_ascii_upper : expr_change_case_ascii<K, true> {
+    using base = expr_change_case_ascii<K, true>;
+    using base::base;
+};
+
+template<StrSource S>
+e_ascii_upper(S&&) -> e_ascii_upper<symb_type_from_src_t<S>>;
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все ASCII прописные буквы (A-Z) на строчные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя ASCII прописные буквы (A-Z) на строчные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @en @brief Generate a string based on the original one, replacing all ASCII uppercase letters (A-Z) with lowercase ones.
+ * @tparam K - character type, deduced on the source string.
+ * @details Takes the original string and copies it, replacing the ASCII uppercase letters (A-Z) with lowercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa lower = "Lower case version is: '" + e_ascii_lower(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_ascii_lower : expr_change_case_ascii<K, false> {
+    using base = expr_change_case_ascii<K, false>;
+    using base::base;
+};
+
+template<StrSource S>
+e_ascii_lower(S&&) -> e_ascii_lower<symb_type_from_src_t<S>>;
+
 /*!
  * @ru @brief Небольшое пространство для методов работы со стандартными строками.
  * @en @brief Small namespace for standard string methods.
@@ -7144,6 +7215,52 @@ template<typename K, typename A, typename T, typename M>
 requires (std::is_constructible_v<str_src<K>, T> && std::is_constructible_v<str_src<K>, M>)
 std::basic_string<K, std::char_traits<K>, A>& replace(std::basic_string<K, std::char_traits<K>, A>& str, T&& pattern, M&& repl, size_t offset = 0, size_t max_count = -1) {
     return replace(str, str_src<K>{std::forward<T>(pattern)}, str_src<K>{std::forward<M>(repl)}, offset, max_count);
+}
+
+/*!
+ * @ru @brief Изменить строчные ASCII символы строки (a-z) на прописные.
+ * @param str - стандартная строка
+ * @param from - позиция начала замены, по умолчанию 0.
+ * @param to - по какую позицию (не включительно) заменять (по умолчанию до каонца строки).
+ * @return переданную строку
+ * @en @brief Change lowercase ASCII string characters (a-z) to uppercase.
+ * @param str - standard string
+ * @param from - replacement start position, default 0.
+ * @param to - at what position (not inclusive) to replace (by default until the end of the line).
+ * @return the passed string
+ */
+template<typename K, typename A>
+std::basic_string<K, std::char_traits<K>, A>& make_ascii_upper(std::basic_string<K, std::char_traits<K>, A>& str, size_t from = 0, size_t to = -1) {
+    for (K *ptr = str.data() + std::min(from, str.length()), *end = str.data() + std::min(to, str.length()); ptr < end; ptr++) {
+        K s = *ptr;
+        if (isAsciiLower(s)) {
+            *ptr = s & ~0x20;
+        }
+    }
+    return str;
+}
+
+/*!
+ * @ru @brief Изменить прописные ASCII символы строки (A-Z) на строчные.
+ * @param str - стандартная строка
+ * @param from - позиция начала замены, по умолчанию 0.
+ * @param to - по какую позицию (не включительно) заменять (по умолчанию до каонца строки).
+ * @return переданную строку
+ * @en @brief Change uppercase ASCII string characters (A-Z) to lowercase.
+ * @param str - standard string
+ * @param from - replacement start position, default 0.
+ * @param to - at what position (not inclusive) to replace (by default until the end of the line).
+ * @return the passed string
+ */
+template<typename K, typename A>
+std::basic_string<K, std::char_traits<K>, A>& make_ascii_lower(std::basic_string<K, std::char_traits<K>, A>& str, size_t from = 0, size_t to = -1) {
+    for (K *ptr = str.data() + std::min(from, str.length()), *end = str.data() + std::min(to, str.length()); ptr < end; ptr++) {
+        K s = *ptr;
+        if (isAsciiUpper(s)) {
+            *ptr = s | 0x20;
+        }
+    }
+    return str;
 }
 
 } // namespace str

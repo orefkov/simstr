@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 1.6.7.
+Version 1.7.0.
 
 <h2>Speed up your work with strings by 2-10 times!</h2>
 
@@ -26,7 +26,7 @@ use in my work, trying to do it in the most efficient way, and I modestly hope t
 and will be useful to other people, either directly or as a source of ideas.
 
 The library contains two parts:
-- Implementation of [*"String Expressions"*](https://orefkov.github.io/simstr/docs_ru/overview.html#autotoc_md27) and algorithms for working
+- Implementation of [*"String Expressions"*](https://orefkov.github.io/simstr/articles/fast_concat.html) and algorithms for working
   with constant strings.\
   To use this part, just take the file `"include/simstr/strexpr.h"` and write in your code
   ```cpp
@@ -75,6 +75,7 @@ When using only `#include "simstr/strexpr.h"`:
     for example `str::append(text, "count = "_ss + count)`.
   - str::replace - replaces occurrences of the search substring with a replacement string or string expression.
     If the substring is not found, the string expression is not even evaluated.
+  - str::make_ascii_upper, str::make_ascii_lower - change the case of ASCII characters.
 - Parsing integers with the possibility of "fine" tuning at compile time - you can set options for checking overflow,
   skipping whitespace characters, a specific radix or auto-selection by prefixes `0x`, `0`, `0b`, `0o`,
   the admissibility of the `+` sign. Parsing is implemented for all types of strings and characters.
@@ -323,8 +324,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.6.7 # Specify the desired release
-        FIND_PACKAGE_ARGS NAMES simstr 1.6.7
+        GIT_TAG tags/rel1.7.0 # Specify the desired release
+        FIND_PACKAGE_ARGS NAMES simstr 1.7.0
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.7
+ * ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2606,6 +2606,46 @@ BENCHMARK(BuildFuncNameStdStr1)        ->Name("Build func full name std::string 
 BENCHMARK(BuildFuncNameStream)         ->Name("Build func full name std::stream;");
 BENCHMARK(BuildFuncNameSimStr)         ->Name("Build func full name stringa;");
 BENCHMARK(BuildFuncNameSimStr1)        ->Name("Build func full name stringa 1;");
+
+void UpperCaseStd(benchmark::State& state) {
+    static const auto& loc =  std::locale("en_US.utf8");
+
+    for (auto _: state) {
+        std::wstring test = L"TestПриветTest";
+        benchmark::DoNotOptimize(test);
+
+        std::transform(test.begin(), test.end(), test.begin(), [](wchar_t s) {
+            return std::toupper(s, loc);
+        });
+
+        benchmark::DoNotOptimize(test);
+        #ifdef CHECK_RESULT
+        if (test != L"TESTПРИВЕТTEST") {
+            state.SkipWithError("Bad upper case");
+        }
+        #endif
+    }
+}
+
+void UpperCaseSim(benchmark::State& state) {
+    for (auto _: state) {
+        lstringw<15> test = L"TestПриветTest";
+        benchmark::DoNotOptimize(test);
+
+        test.upper();
+
+        benchmark::DoNotOptimize(test);
+        #ifdef CHECK_RESULT
+        if (test != L"TESTПРИВЕТTEST") {
+            state.SkipWithError("Bad upper case");
+        }
+        #endif
+    }
+}
+
+BENCHMARK(__)->Name("-----  Make Upper  ---------")->Repetitions(1);
+BENCHMARK(UpperCaseStd)->Name("To upper case std::wstring");
+BENCHMARK(UpperCaseSim)->Name("To upper case lstringw<15>");
 
 int main(int argc, char** argv) {
     std::cout << "Benchmarks of simstr, version " SIMSTR_VERSION << "\n"

@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.7
+ * ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Реализация строковых функций
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -187,9 +187,11 @@ inline u32s makeFoldU(u32s s) {
 /*
 * Поиск utf-8 symbols, которые меняют свою длину при upper/lower преобразовании
 * вот они нашлись
+* Search for utf-8 codepoints that change their code units length during upper/lower conversion
+* here they are found
 * "İiıIſSȺⱥȾⱦɐⱯɑⱭɫⱢɱⱮɽⱤẞßιΙΩωKkÅåⱢɫⱤɽⱥȺⱦȾⱭɑⱮɱⱯɐ"
-   l2u ıIſSɐⱯɑⱭɫⱢɱⱮɽⱤιΙⱥȺⱦȾ
-   u2l İiȺⱥȾⱦẞßΩωKkÅåⱢɫⱤɽⱭɑⱮɱⱯɐ
+   l2u ıI ſS ɐⱯ ɑⱭ ɫⱢ ɱⱮ ɽⱤ ιΙ ⱥȺ ⱦȾ
+   u2l İi Ⱥⱥ Ⱦⱦ ẞß Ωω Kk Åå Ɫɫ Ɽɽ Ɑɑ Ɱɱ Ɐɐ
 void findStrange() {
     u16s badsL2U[100], * pBadslu = badsL2U;
     u16s badsU2L[100], * pBadsul = badsU2L;
@@ -384,6 +386,32 @@ SIMSTR_API size_t unicode_traits<u8s>::upper(const u8s*& src, size_t len, u8s*& 
 
 SIMSTR_API size_t unicode_traits<u8s>::lower(const u8s*& src, size_t len, u8s*& dest, size_t lenBuffer) {
     return utf8_case_change<makeLowerU>(src, len, dest, lenBuffer);
+}
+
+SIMSTR_API size_t unicode_traits<u8s>::upper_len(const u8s* src, size_t len) {
+    size_t l = 0;
+    for (const uu8s *ptr = (const uu8s*)src, *start = ptr, *end = ptr + len; ptr < end; start = ptr) {
+        u32s s = readUtf8Symbol(ptr, end), su = makeUpperU(s);
+        if (s == su) {
+            l += ptr - start;
+        } else {
+            l += utf8len(su);
+        }
+    }
+    return l;
+}
+
+SIMSTR_API size_t unicode_traits<u8s>::lower_len(const u8s* src, size_t len) {
+    size_t l = 0;
+    for (const uu8s *ptr = (const uu8s*)src, *start = ptr, *end = ptr + len; ptr < end; start = ptr) {
+        u32s s = readUtf8Symbol(ptr, end), su = makeLowerU(s);
+        if (s == su) {
+            l += ptr - start;
+        } else {
+            l += utf8len(su);
+        }
+    }
+    return l;
 }
 
 template<auto Op>

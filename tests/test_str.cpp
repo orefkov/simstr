@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.6.7
+ * ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -2023,7 +2023,28 @@ TEST(SimStr, EIntFmt) {
     EXPECT_EQ(textu, u"val = 0x0000012A");
 }
 
-#ifndef _MSC_VER
+TEST(SimStr, EChangeCase) {
+    stringa test = e_upper("teSt");
+    EXPECT_EQ(test, "TEST");
+    test = e_lower(test);
+    EXPECT_EQ(test, "test");
+    test = e_upper("ɐ ɑ ı ſ");
+    EXPECT_EQ(test, "Ɐ Ɑ I S");
+    test = "-" + e_lower("İ Ⱥ Ⱦ ẞ") + "-";
+    EXPECT_EQ(test, "-i ⱥ ⱦ ß-");
+
+
+    stringu utest = e_upper(u"teSt");
+    EXPECT_EQ(utest, u"TEST");
+    utest = e_lower(utest);
+    EXPECT_EQ(utest, u"test");
+    utest = e_upper(u"ı ſ ɐ ɑ");
+    EXPECT_EQ(utest, u"I S Ɐ Ɑ");
+    utest = u"-" + e_lower(u"İ Ⱥ Ⱦ ẞ") + u"-";
+    EXPECT_EQ(utest, u"-i ⱥ ⱦ ß-");
+}
+
+    #ifndef _MSC_VER
 void check_equal(stra a, stra b) {
     EXPECT_EQ(a, b);
 }

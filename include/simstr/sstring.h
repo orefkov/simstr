@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.6.7
+* ver. 1.7.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -86,8 +86,10 @@ struct unicode_traits<u8s> {
     // If the resulting string does not fit into the allocated buffer, pointers are set to the last
     // processed characters to resume work again,
     // and for the remaining characters the required buffer size is calculated.
-    static SIMSTR_API size_t upper(const u8s*& src, size_t lenStr, u8s*& dest, size_t lenBuf);
+    static SIMSTR_API size_t upper(const u8s*& src, size_t len, u8s*& dest, size_t lenBuf);
     static SIMSTR_API size_t lower(const u8s*& src, size_t len, u8s*& dest, size_t lenBuf);
+    static SIMSTR_API size_t upper_len(const u8s* src, size_t len);
+    static SIMSTR_API size_t lower_len(const u8s* src, size_t len);
 
     static SIMSTR_API int compareiu(const u8s* text1, size_t len1, const u8s* text2, size_t len2);
 
@@ -135,6 +137,31 @@ struct unicode_traits<wchar_t> {
     }
 };
 
+template<>
+struct unicode_traits<char8_t> {
+    static size_t upper(const ubs*& src, size_t lenStr, ubs*& dest, size_t lenBuf) {
+        return unicode_traits<char>::upper((const u8s*&)src, lenStr, (u8s*&)dest, lenBuf);
+    }
+    static size_t lower(const ubs*& src, size_t len, ubs*& dest, size_t lenBuf) {
+        return unicode_traits<char>::lower((const u8s*&)src, len, (u8s*&)dest, lenBuf);
+    }
+    static size_t upper_len(const ubs* src, size_t len) {
+        return unicode_traits<char>::upper_len((const u8s*)src, len);
+    }
+    static size_t lower_len(const ubs* src, size_t len) {
+        return unicode_traits<char>::lower_len((const u8s*)src, len);
+    }
+
+    static int compareiu(const char8_t* text1, size_t len1, const char8_t* text2, size_t len2) {
+        return unicode_traits<char>::compareiu((const char*)text1, len1, (const char*)text2, len2);
+    }
+    static size_t hashia(const char8_t* src, size_t s) {
+        return unicode_traits<char>::hashia((const char*)src, s);
+    }
+    static size_t hashiu(const char8_t* src, size_t s) {
+        return unicode_traits<char>::hashiu((const char*)src, s);
+    }
+};
 
 #if defined(_MSC_VER) && _MSC_VER <= 1933
 template<typename K, typename... Args>
@@ -4883,6 +4910,94 @@ inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
     return HashKeyIU<uws>{{ptr, l}, strhashiu<uws>{}(simple_str<uws>{ptr, l})};
 }
 } // namespace literals
+
+template<is_one_of_char_v K, bool upper>
+struct expr_change_case : expr_to_std_string<expr_change_case<K, upper>>{
+    using symb_type = K;
+
+    str_src<K> src_;
+    mutable size_t len_{};
+
+    template<StrSource S>
+    expr_change_case(S&& s) : src_(std::forward<S>(s)){}
+
+    constexpr size_t length() const noexcept {
+        if constexpr (sizeof(K) > 1) {
+            return src_.length();
+        } else {
+            if constexpr (upper) {
+                len_ = unicode_traits<K>::upper_len(src_.str, src_.len);
+            } else {
+                len_ = unicode_traits<K>::lower_len(src_.str, src_.len);
+            }
+            return len_;
+        }
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        if constexpr (sizeof(K) > 1) {
+            if constexpr (upper) {
+                unicode_traits<K>::upper(src_.str, src_.len, ptr);
+            } else {
+                unicode_traits<K>::lower(src_.str, src_.len, ptr);
+            }
+            return ptr + src_.len;
+        } else {
+            const K* src = src_.str;
+            if constexpr (upper) {
+                unicode_traits<K>::upper(src, src_.len, ptr, len_);
+            } else {
+                unicode_traits<K>::lower(src, src_.len, ptr, len_);
+            }
+            return ptr;
+        }
+    }
+};
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все строчные буквы первой плоскости Юникода на прописные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя строчные буквы первой плоскости Юникода на прописные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @en @brief Generates a string based on the original one, replacing all lowercase letters of the first Unicode plane with uppercase ones.
+ * @tparam K - character type, inferred based on the source string.
+ * @details Takes the original string and copies it, replacing the lowercase letters of the first Unicode plane with uppercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa upper = "Upper case version is: '" + e_upper(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_upper : expr_change_case<K, true> {
+    using base = expr_change_case<K, true>;
+    using base::base;
+};
+
+template<StrSource S>
+e_upper(S&&) -> e_upper<symb_type_from_src_t<S>>;
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все прописные буквы первой плоскости Юникода на строчные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя прописные буквы первой плоскости Юникода на строчные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @ru @brief Generate a string from the original one, replacing all uppercase letters of the first Unicode plane with lowercase ones.
+ * @tparam K - character type, inferred based on the source string.
+ * @details Takes the original string and copies it, replacing the uppercase letters of the first Unicode plane with lowercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa lower = "Lower case version is: '" + e_lower(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_lower : expr_change_case<K, false> {
+    using base = expr_change_case<K, false>;
+    using base::base;
+};
+
+template<StrSource S>
+e_lower(S&&) -> e_lower<symb_type_from_src_t<S>>;
 
 /*!
  * @ru @brief Оператор вывода в поток simple_str.
