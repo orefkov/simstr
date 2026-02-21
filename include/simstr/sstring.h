@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.7.0
+* ver. 1.7.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -998,6 +998,7 @@ protected:
             for (size_t l = 0; l < len; l++) {
                 destination[l] = opMakeNeedCase(source[l]);
             }
+            destination[len] = 0;
         }
         return result;
     }
@@ -3924,7 +3925,7 @@ consteval simple_str_nt<K> select_str(simple_str_nt<u8s> s8, simple_str_nt<ubs> 
 
 #define uni_string(K, p) select_str<K>(p, u8##p, L##p, u##p, U##p)
 
-template<typename K, typename H>
+template<typename K, template<typename C> typename H>
 struct StoreType {
     simple_str<K> str;
     size_t hash;
@@ -3935,6 +3936,9 @@ struct StoreType {
     }
     const sstring<K>& to_str() const noexcept {
         return *reinterpret_cast<const sstring<K>*>(node);
+    }
+    bool operator==(const StoreType& other) const {
+        return hash == other.hash && typename H<K>::eql{}(*this, other);
     }
 };
 
@@ -4000,12 +4004,24 @@ inline consteval size_t fnv_hash_ia_compile(const K* ptr, size_t l) {
     return fnv_hash_ia(ptr, l);
 };
 
-static_assert(std::is_trivially_copyable_v<StoreType<u8s, int>>, "Store type must be trivially copyable");
+template<typename K>
+struct str_exact;
 
-template<typename K>
-struct streql;
-template<typename K>
-struct strhash;
+static_assert(std::is_trivially_copyable_v<StoreType<u8s, str_exact>>, "Store type must be trivially copyable");
+
+
+template<typename K, typename V>
+std::allocator<std::pair<K, V>> default_hashstrmap_allocator_selector(...);
+// Если вы хотите задать свой дефолтный аллокатор для hashStrmap, перед включение sstring.h
+// объявите функцию
+// template<typename K, typename V>
+// ваш_тип_аллокатора default_hashstrmap_allocator_selector(int);
+// If you want to set your default allocator for hashStrMap, before including sstring.h
+// declare a function
+// template<typename K, typename V>
+// your_allocator_type default_hashstrmap_allocator_selector(int);
+template<typename K, template<typename C> typename H, typename V>
+using allocator_hashstrmap = decltype(default_hashstrmap_allocator_selector<const StoreType<K, H>, V>(int(0)));
 
 /*!
  * @ru @brief Контейнер для более эффективного поиска по строковым ключам.
@@ -4101,15 +4117,16 @@ struct strhash;
  * The fact that performance may improve is not the goal, but a side effect - pleasant, if there is one,
  * but not fatal if it is not there.
  */
-template<typename K, typename T, typename H = strhash<K>, typename E = streql<K>>
-class hashStrMap : public std::unordered_map<StoreType<K, H>, T, H, E> {
+template<typename K, typename T, template<typename C> typename HE = str_exact, typename A = allocator_hashstrmap<K, HE, T>>
+class hashStrMap : public std::unordered_map<StoreType<K, HE>, T, typename HE<K>::hash, typename HE<K>::eql, A> {
 protected:
-    using InStore = StoreType<K, H>;
+    using InStore = StoreType<K, HE>;
 
 public:
-    using my_type = hashStrMap<K, T, H, E>;
-    using hash_t = std::unordered_map<InStore, T, H, E>;
-    using hasher = H;
+    using hasher = typename HE<K>::hash;
+    using comparator = typename HE<K>::eql;
+    using my_type = hashStrMap<K, T, HE, A>;
+    using hash_t = std::unordered_map<StoreType<K, HE>, T, hasher, comparator, A>;
 
     hashStrMap() = default;
     hashStrMap(const my_type& other) : hash_t(other) {
@@ -4165,7 +4182,7 @@ public:
     }
 
     static InStore toStoreType(simple_str<K> key) {
-        return {key, H{}(key)};
+        return {key, hasher{}(key)};
     }
 
     template<typename Key, typename... ValArgs>
@@ -4284,57 +4301,55 @@ public:
 };
 
 template<typename K>
-struct streql {
-    template<typename H>
-    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
-        return _Left.hash == _Right.hash && _Left.str == _Right.str;
-    }
+struct str_exact {
+    struct eql {
+        bool operator()(const StoreType<K, str_exact>& _Left, const StoreType<K, str_exact>& _Right) const {
+            return _Left.hash == _Right.hash && _Left.str == _Right.str;
+        }
+    };
+    struct hash { // hash functor for basic_string
+        size_t operator()(simple_str<K> _Keyval) const {
+            return fnv_hash(_Keyval.symbols(), _Keyval.length());
+        }
+        size_t operator()(const StoreType<K, str_exact>& _Keyval) const {
+            return _Keyval.hash;
+        }
+    };
 };
 
 template<typename K>
-struct strhash { // hash functor for basic_string
-    size_t operator()(simple_str<K> _Keyval) const {
-        return fnv_hash(_Keyval.symbols(), _Keyval.length());
-    }
-    size_t operator()(const StoreType<K, strhash<K>>& _Keyval) const {
-        return _Keyval.hash;
-    }
+struct str_eqlia {
+    struct eql {
+        bool operator()(const StoreType<K, str_eqlia>& _Left, const StoreType<K, str_eqlia>& _Right) const {
+            return _Left.hash == _Right.hash && _Left.str.equal_ia(_Right.str);
+        }
+    };
+    struct hash {
+        size_t operator()(simple_str<K> _Keyval) const {
+            return fnv_hash_ia(_Keyval.symbols(), _Keyval.length());
+        }
+        size_t operator()(const StoreType<K, str_eqlia>& _Keyval) const {
+            return _Keyval.hash;
+        }
+    };
 };
 
 template<typename K>
-struct streqlia {
-    template<typename H>
-    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
-        return _Left.hash == _Right.hash && _Left.str.equal_ia(_Right.str);
-    }
-};
-
-template<typename K>
-struct strhashia {
-    size_t operator()(simple_str<K> _Keyval) const {
-        return fnv_hash_ia(_Keyval.symbols(), _Keyval.length());
-    }
-    size_t operator()(const StoreType<K, strhashia<K>>& _Keyval) const {
-        return _Keyval.hash;
-    }
-};
-
-template<typename K>
-struct streqliu {
-    template<typename H>
-    bool operator()(const StoreType<K, H>& _Left, const StoreType<K, H>& _Right) const {
-        return _Left.hash == _Right.hash && _Left.str.equal_iu(_Right.str);
-    }
-};
-
-template<typename K>
-struct strhashiu {
-    size_t operator()(simple_str<K> _Keyval) const {
-        return unicode_traits<K>::hashiu(_Keyval.symbols(), _Keyval.length());
-    }
-    size_t operator()(const StoreType<K, strhashiu<K>>& _Keyval) const {
-        return _Keyval.hash;
-    }
+struct str_eqliu {
+    struct eql {
+        bool operator()(const StoreType<K, str_eqliu>& _Left, const StoreType<K, str_eqliu>& _Right) const {
+            return _Left.hash == _Right.hash && _Left.str.equal_iu(_Right.str);
+        }
+    };
+    struct hash {
+        size_t operator()(simple_str<K> _Keyval) const {
+            using bc = to_base_char_t<K>;
+            return unicode_traits<bc>::hashiu((const bc*)_Keyval.symbols(), _Keyval.length());
+        }
+        size_t operator()(const StoreType<K, str_eqliu>& _Keyval) const {
+            return _Keyval.hash;
+        }
+    };
 };
 
 /*!
@@ -4593,79 +4608,98 @@ static_assert(sizeof(stringa) == (sizeof(void*) == 8 ? 24 : 16), "Bad size of ss
  * @ru @brief Тип хеш-словаря для char строк, регистрозависимый поиск.
  * @en @brief Type of hash dictionary for char strings, case sensitive search.
  */
-template<typename T>
-using hashStrMapA = hashStrMap<u8s, T, strhash<u8s>, streql<u8s>>;
+template<typename T, typename A = allocator_hashstrmap<u8s, str_exact, T>>
+using hashStrMapA = hashStrMap<u8s, T, str_exact, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char строк, регистронезависимый поиск для ASCII символов.
  * @en @brief Type of hash dictionary for char strings, case-insensitive lookup for ASCII characters.
  */
-template<typename T>
-using hashStrMapAIA = hashStrMap<u8s, T, strhashia<u8s>, streqlia<u8s>>;
+template<typename T, typename A = allocator_hashstrmap<u8s, str_eqlia, T>>
+using hashStrMapAIA = hashStrMap<u8s, T, str_eqlia, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
  * @en @brief Hash dictionary type for char strings, case-insensitive search for Unicode characters up to 0xFFFF.
  */
-template<typename T>
-using hashStrMapAIU = hashStrMap<u8s, T, strhashiu<u8s>, streqliu<u8s>>;
+template<typename T, typename A = allocator_hashstrmap<u8s, str_eqliu, T>>
+using hashStrMapAIU = hashStrMap<u8s, T, str_eqliu, A>;
+
+/*!
+ * @ru @brief Тип хеш-словаря для char8_t строк, регистрозависимый поиск.
+ * @en @brief Type of hash dictionary for char8_t strings, case sensitive search.
+ */
+template<typename T, typename A = allocator_hashstrmap<ubs, str_exact, T>>
+using hashStrMapB = hashStrMap<ubs, T, str_exact, A>;
+/*!
+ * @ru @brief Тип хеш-словаря для char8_t строк, регистронезависимый поиск для ASCII символов.
+ * @en @brief Type of hash dictionary for char8_t strings, case-insensitive lookup for ASCII characters.
+ */
+template<typename T, typename A = allocator_hashstrmap<ubs, str_eqlia, T>>
+using hashStrMapBIA = hashStrMap<ubs, T, str_eqlia, A>;
+/*!
+ * @ru @brief Тип хеш-словаря для char8_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
+ * @en @brief Hash dictionary type for char8_t strings, case-insensitive search for Unicode characters up to 0xFFFF.
+ */
+template<typename T, typename A = allocator_hashstrmap<ubs, str_eqliu, T>>
+using hashStrMapBIU = hashStrMap<ubs, T, str_eqliu, A>;
 
 /*!
  * @ru @brief Тип хеш-словаря для wchar_t строк, регистрозависимый поиск.
  * @en @brief Hash dictionary type for wchar_t strings, case sensitive search.
  */
-template<typename T>
-using hashStrMapW = hashStrMap<wchar_t, T, strhash<wchar_t>, streql<wchar_t>>;
+template<typename T, typename A = allocator_hashstrmap<wchar_t, str_exact, T>>
+using hashStrMapW = hashStrMap<wchar_t, T, str_exact, A>;
 
 /*!
  * @ru @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для ASCII символов.
  * @en @brief Hash dictionary type for wchar_t strings, case-insensitive lookup for ASCII characters.
  */
-template<typename T>
-using hashStrMapWIA = hashStrMap<wchar_t, T, strhashia<wchar_t>, streqlia<wchar_t>>;
+template<typename T, typename A = allocator_hashstrmap<wchar_t, str_eqlia, T>>
+using hashStrMapWIA = hashStrMap<wchar_t, T, str_eqlia, A>;
 
 /*!
  * @ru @brief Тип хеш-словаря для wchar_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
  * @en @brief Hash dictionary type for wchar_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
-template<typename T>
-using hashStrMapWIU = hashStrMap<wchar_t, T, strhashiu<wchar_t>, streqliu<wchar_t>>;
+template<typename T, typename A = allocator_hashstrmap<wchar_t, str_eqliu, T>>
+using hashStrMapWIU = hashStrMap<wchar_t, T, str_eqliu, A>;
 
 /*!
  * @ru @brief Тип хеш-словаря для char16_t строк, регистрозависимый поиск.
  * @en @brief Hash dictionary type for char16_t strings, case sensitive search.
  */
-template<typename T>
-using hashStrMapU = hashStrMap<u16s, T, strhash<u16s>, streql<u16s>>;
-template<typename T>
+template<typename T, typename A = allocator_hashstrmap<u16s, str_exact, T>>
+using hashStrMapU = hashStrMap<u16s, T, str_exact, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для ASCII символов.
  * @en @brief Hash dictionary type for char16_t strings, case-insensitive lookup for ASCII characters.
  */
-using hashStrMapUIA = hashStrMap<u16s, T, strhashia<u16s>, streqlia<u16s>>;
+template<typename T, typename A = allocator_hashstrmap<u16s, str_eqlia, T>>
+using hashStrMapUIA = hashStrMap<u16s, T, str_eqlia, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char16_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
  * @en @brief Hash dictionary type for char16_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
-template<typename T>
-using hashStrMapUIU = hashStrMap<u16s, T, strhashiu<u16s>, streqliu<u16s>>;
+template<typename T, typename A = allocator_hashstrmap<u16s, str_eqliu, T>>
+using hashStrMapUIU = hashStrMap<u16s, T, str_eqliu, A>;
 
 /*!
  * @ru @brief Тип хеш-словаря для char32_t строк, регистрозависимый поиск.
  * @en @brief Hash dictionary type for char32_t strings, case sensitive search.
  */
-template<typename T>
-using hashStrMapUU = hashStrMap<u32s, T, strhash<u32s>, streql<u32s>>;
+template<typename T, typename A = allocator_hashstrmap<u32s, str_exact, T>>
+using hashStrMapUU = hashStrMap<u32s, T, str_exact, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для ASCII символов.
  * @en @brief Hash dictionary type for char32_t strings, case-insensitive lookup for ASCII characters.
  */
-template<typename T>
-using hashStrMapUUIA = hashStrMap<u32s, T, strhashia<u32s>, streqlia<u32s>>;
+template<typename T, typename A = allocator_hashstrmap<u32s, str_eqlia, T>>
+using hashStrMapUUIA = hashStrMap<u32s, T, str_eqlia, A>;
 /*!
  * @ru @brief Тип хеш-словаря для char32_t строк, регистронезависимый поиск для Unicode символов до 0xFFFF.
  * @en @brief Hash dictionary type for char32_t strings, case insensitive search for Unicode characters up to 0xFFFF.
  */
-template<typename T>
-using hashStrMapUUIU = hashStrMap<u32s, T, strhashiu<u32s>, streqliu<u32s>>;
+template<typename T, typename A = allocator_hashstrmap<u32s, str_eqliu, T>>
+using hashStrMapUUIU = hashStrMap<u32s, T, str_eqliu, A>;
 
 inline constexpr simple_str_nt<u8s> utf8_bom{"\xEF\xBB\xBF", 3}; // NOLINT
 
@@ -4738,9 +4772,9 @@ SS_CONSTEVAL simple_str_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
     return simple_str_nt<u32s>{ptr, l};
 }
 
-template<typename K> using HashKey = StoreType<K, strhash<K>>;
-template<typename K> using HashKeyIA = StoreType<K, strhashia<K>>;
-template<typename K> using HashKeyIU = StoreType<K, strhashiu<K>>;
+template<typename K> using HashKey = StoreType<K, str_exact>;
+template<typename K> using HashKeyIA = StoreType<K, str_eqlia>;
+template<typename K> using HashKeyIU = StoreType<K, str_eqliu>;
 
 /*!
  * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
@@ -4781,7 +4815,49 @@ consteval HashKeyIA<u8s> operator""_ia(const u8s* ptr, size_t l) {
  * @return StoreType.
  */
 inline HashKeyIU<u8s> operator""_iu(const u8s* ptr, size_t l) {
-    return HashKeyIU<u8s>{{ptr, l}, strhashiu<u8s>{}(simple_str<u8s>{ptr, l})};
+    return HashKeyIU<u8s>{{ptr, l}, str_eqliu<u8s>::hash{}(simple_str<u8s>{ptr, l})};
+}
+
+/*!
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем с учётом регистра.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-sensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
+ */
+consteval HashKey<ubs> operator""_h(const ubs* ptr, size_t l) {
+    return HashKey<ubs>{{ptr, l}, fnv_hash_compile(ptr, l)};
+}
+
+/*!
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра ASCII.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a case-insensitive ASCII hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
+ */
+consteval HashKeyIA<ubs> operator""_ia(const ubs* ptr, size_t l) {
+    return HashKeyIA<ubs>{{ptr, l}, fnv_hash_ia_compile(ptr, l)};
+}
+
+/*!
+ * @ru @brief Оператор литерал в ключ для hashStrMap с посчитанным в compile time хешем без учёта регистра simple unicode.
+ * @param ptr - указатель на строку.
+ * @param l - длина строки.
+ * @return StoreType.
+ * @en @brief Key literal operator for hashStrMap with a simple unicode case-insensitive hash calculated at compile time.
+ * @param ptr - pointer to a string.
+ * @param l - string length.
+ * @return StoreType.
+ */
+inline HashKeyIU<ubs> operator""_iu(const ubs* ptr, size_t l) {
+    return HashKeyIU<ubs>{{ptr, l}, str_eqliu<u8s>::hash{}(simple_str<u8s>{(const u8s*)ptr, l})};
 }
 
 /*!
@@ -4823,7 +4899,7 @@ consteval HashKeyIA<u16s> operator""_ia(const u16s* ptr, size_t l) {
  * @return StoreType.
  */
 inline HashKeyIU<u16s> operator""_iu(const u16s* ptr, size_t l) {
-    return HashKeyIU<u16s>{{ptr, l}, strhashiu<u16s>{}(simple_str<u16s>{ptr, l})};
+    return HashKeyIU<u16s>{{ptr, l}, str_eqliu<u16s>::hash{}(simple_str<u16s>{ptr, l})};
 }
 
 /*!
@@ -4865,7 +4941,7 @@ consteval HashKeyIA<u32s> operator""_ia(const u32s* ptr, size_t l) {
  * @return StoreType.
  */
 inline HashKeyIU<u32s> operator""_iu(const u32s* ptr, size_t l) {
-    return HashKeyIU<u32s>{{ptr, l}, strhashiu<u32s>{}(simple_str<u32s>{ptr, l})};
+    return HashKeyIU<u32s>{{ptr, l}, str_eqliu<u32s>::hash{}(simple_str<u32s>{ptr, l})};
 }
 
 /*!
@@ -4907,7 +4983,7 @@ consteval HashKeyIA<uws> operator""_ia(const uws* ptr, size_t l) {
  * @return StoreType.
  */
 inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
-    return HashKeyIU<uws>{{ptr, l}, strhashiu<uws>{}(simple_str<uws>{ptr, l})};
+    return HashKeyIU<uws>{{ptr, l}, str_eqliu<uws>::hash{}(simple_str<uws>{ptr, l})};
 }
 } // namespace literals
 

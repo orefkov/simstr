@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.0
+ * ver. 1.7.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1602,7 +1602,10 @@ constexpr const size_t npos = static_cast<size_t>(-1); //NOLINT
 } // namespace str
 
 template<typename K>
-struct ch_traits : std::char_traits<K>{};
+std::char_traits<K> char_traits_selector(...);
+
+template<typename K>
+using ch_traits = decltype(char_traits_selector<K>(int(0)));
 
 template<typename T>
 concept FromIntNumber =
@@ -6768,7 +6771,7 @@ std::basic_string<K, std::char_traits<K>, A>& change(std::basic_string<K, std::c
     if (from > str_length) {
         from = str_length;
     }
-    if (from + count > str_length) {
+    if (count > str_length || from + count > str_length) {
         count = str_length - from;
     }
     size_t new_length = str_length - count + expr_length;
@@ -7221,7 +7224,7 @@ std::basic_string<K, std::char_traits<K>, A>& replace(std::basic_string<K, std::
  * @ru @brief Изменить строчные ASCII символы строки (a-z) на прописные.
  * @param str - стандартная строка
  * @param from - позиция начала замены, по умолчанию 0.
- * @param to - по какую позицию (не включительно) заменять (по умолчанию до каонца строки).
+ * @param to - по какую позицию (не включительно) заменять (по умолчанию до конца строки).
  * @return переданную строку
  * @en @brief Change lowercase ASCII string characters (a-z) to uppercase.
  * @param str - standard string
@@ -7244,7 +7247,7 @@ std::basic_string<K, std::char_traits<K>, A>& make_ascii_upper(std::basic_string
  * @ru @brief Изменить прописные ASCII символы строки (A-Z) на строчные.
  * @param str - стандартная строка
  * @param from - позиция начала замены, по умолчанию 0.
- * @param to - по какую позицию (не включительно) заменять (по умолчанию до каонца строки).
+ * @param to - по какую позицию (не включительно) заменять (по умолчанию до конца строки).
  * @return переданную строку
  * @en @brief Change uppercase ASCII string characters (A-Z) to lowercase.
  * @param str - standard string
