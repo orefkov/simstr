@@ -224,7 +224,7 @@ public:
      * @param text - другая строка.
      * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
      * @en @brief Compare strings character by character without taking into account the case of Unicode characters of the first plane (<0xFFFF).
-     * @param text - another line.
+     * @param text - another string.
      * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     int compare_iu(str_piece text) const noexcept { // NOLINT
@@ -235,7 +235,7 @@ public:
      * @param text - другая строка.
      * @return равны ли строки.
      * @en @brief Whether a string is equal to another string, character-by-character-insensitive, of the Unicode characters of the first plane (<0xFFFF).
-     * @param text - another line.
+     * @param text - another string.
      * @return whether the strings are equal.
      */
     bool equal_iu(str_piece text) const noexcept { // NOLINT
@@ -246,7 +246,7 @@ public:
      * @param text - другая строка.
      * @return меньше ли строка.
      * @en @brief Whether a string is smaller than another string, character-by-character-insensitive, of the Unicode characters of the first plane (<0xFFFF).
-     * @param text - another line.
+     * @param text - another string.
      * @return whether the string is smaller.
      */
     bool less_iu(str_piece text) const noexcept { // NOLINT
@@ -484,7 +484,7 @@ struct simple_str : str_algs<K, simple_str<K>, simple_str<K>, false> {
      * @ru @brief Сдвигает начало строки на заданное количество символов.
      * @param delta - количество символов.
      * @return my_type&.
-     * @en @brief Shifts the start of a line by the specified number of characters.
+     * @en @brief Shifts the start of a string by the specified number of characters.
      * @param delta - number of characters.
      * @return my_type&.
      */
@@ -593,7 +593,7 @@ struct simple_str_nt : simple_str<K>, null_terminated<K, simple_str_nt<K>> {
      * @param from - на сколько символов сдвинуть начало строки.
      * @return my_type.
      * @en @brief Get a null-terminated string by shifting the start by the specified number of characters.
-     * @param from - by how many characters to shift the beginning of the line.
+     * @param from - by how many characters to shift the beginning of the string.
      * @return my_type.
      */
     constexpr my_type to_nts(size_t from) {
@@ -816,11 +816,11 @@ concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
  * is being created and no data sharing has yet taken place.
  *
  * These methods must be implemented by the descendant class and are called only when an object is created
- *  - `K* init(size_t size)`       - allocate space for a line of the specified size, return the address
+ *  - `K* init(size_t size)`       - allocate space for a string of the specified size, return the address
  *  - `void create_empty()`        - create an empty object
- *  - `K* set_size(size_t size)`   - re-allocate space for the line if you didn’t guess correctly when creating
+ *  - `K* set_size(size_t size)`   - re-allocate space for the string if you didn’t guess correctly when creating
  *                                   the size you need and the space you need is larger or smaller.
- *                                   The contents of the line must be left.
+ *                                   The contents of the string must be left.
  * Although the allocator type is specified by the template parameter, this is done only for forwarding
  * of its type in constructors, allocator methods are not called. If the heir does not use
  * an allocator, and in `init` and `set_size` it somehow allocates space, can indicate the type of the allocator
@@ -885,7 +885,7 @@ protected:
      * @param pattern - строка, которую надо повторить.
      * @en @brief String repetition initialization.
      * @param repeat - number of repetitions.
-     * @param pattern - the line to be repeated.
+     * @param pattern - the string to be repeated.
      */
     constexpr void init_str_repeat(size_t repeat, s_str pattern) {
         size_t l = pattern.length(), allLen = l * repeat;
@@ -995,10 +995,10 @@ protected:
         if (len) {
             const K* source = f.symbols();
             K* destination = result.init(len);
-            for (size_t l = 0; l < len; l++) {
-                destination[l] = opMakeNeedCase(source[l]);
+            while(len--) {
+                *destination++ = opMakeNeedCase(*source++);
             }
-            destination[len] = 0;
+            *destination = 0;
         }
         return result;
     }
@@ -1042,7 +1042,7 @@ protected:
                     result.set_size(newLen);
                 } else if (newLen > len) {
                     // Строка не влезла в буфер.
-                    // The line did not fit into the buffer.
+                    // The string did not fit into the buffer.
                     size_t readed = static_cast<size_t>(source - ptr);
                     size_t writed = static_cast<size_t>(dest - pWrite);
                     pWrite = result.set_size(newLen);
@@ -1062,7 +1062,7 @@ public:
      * @ru @brief Оператор преобразования в нуль-терминированную C-строку.
      * @return const K* - указатель на начало строки.
      * @en @brief Conversion operator to a null-terminated C string.
-     * @return const K* - pointer to the beginning of the line.
+     * @return const K* - pointer to the beginning of the string.
      */
     constexpr operator const K*() const noexcept {
         return d().symbols();
@@ -1113,7 +1113,7 @@ public:
      * @en @brief Concatenate strings from the container into one string.
      * @param strings - container with strings.
      * @param delimiter - delimiter added between lines.
-     * @param tail - add a separator after the last line.
+     * @param tail - add a separator after the last string.
      * @param skip_empty - skip empty lines without adding a separator.
      * @param ...args - parameters for initializing the allocator.
      * @details The function is used to merge a container of strings into one delimited string.
@@ -1342,7 +1342,7 @@ inline size_t grow2(size_t ret, size_t currentCapacity) {
  *  - `bool is_empty() const noexcept`      - checks whether the string is empty
  *  - `K* str() noexcept`                   - Non-const pointer to the beginning of the string
  *  - `K* set_size(size_t size)`            - Change the size of the string, either larger or smaller.
- *                                            The contents of the line must be left.
+ *                                            The contents of the string must be left.
  *  - `K* reserve_no_preserve(size_t size)` - allocate space for a line, you don’t have to save the old one
  *  - `K* alloc_for_copy(size_t size)`      - allocate space for a copy of a string of a given size, without changing it yet
  *                                            the string itself, you can return the current buffer if space allows.
@@ -1421,7 +1421,7 @@ private:
                 d().set_size(newLen);
             } else if (newLen > len) {
                 // Строка не влезла в буфер.
-                // The line did not fit into the buffer.
+                // The string did not fit into the buffer.
                 size_t readed = static_cast<size_t>(readPos - startData);
                 size_t writed = static_cast<size_t>(writePos - startData);
                 d().set_size(newLen);
@@ -1475,7 +1475,7 @@ public:
     /*!
      * @ru @brief Удалить пробельные символы в начале и в конце строки.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove whitespace from the beginning and end of a line.
+     * @en @brief Remove whitespace from the beginning and end of a string.
      * @return Impl& - a reference to yourself.
      */
     Impl& trim() {
@@ -1484,7 +1484,7 @@ public:
     /*!
      * @ru @brief Удалить пробельные символы в начале строки.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove whitespace at the beginning of a line.
+     * @en @brief Remove whitespace at the beginning of a string.
      * @return Impl& - a reference to yourself.
      */
     Impl& trim_left() {
@@ -1493,7 +1493,7 @@ public:
     /*!
      * @ru @brief Удалить пробельные символы в конце строки.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove whitespace from the end of a line.
+     * @en @brief Remove whitespace from the end of a string.
      * @return Impl& - a reference to yourself.
      */
     Impl& trim_right() {
@@ -1503,7 +1503,7 @@ public:
      * @ru @brief Удалить символы, входящие в строковый литерал, в начале и в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove characters included in a string literal at the beginning and end of the line.
+     * @en @brief Remove characters included in a string literal at the beginning and end of the string.
      * @param pattern is a string literal containing the characters to be removed.
      * @return Impl& - a reference to yourself.
      */
@@ -1516,7 +1516,7 @@ public:
      * @ru @brief Удалить символы, входящие в строковый литерал, в начале строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove characters included in a string literal at the beginning of the line.
+     * @en @brief Remove characters included in a string literal at the beginning of the string.
      * @param pattern is a string literal containing the characters to be removed.
      * @return Impl& - a reference to yourself.
      */
@@ -1529,7 +1529,7 @@ public:
      * @ru @brief Удалить символы, входящие в строковый литерал, в конце строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove characters included in a string literal at the end of the line.
+     * @en @brief Remove characters included in a string literal at the end of the string.
      * @param pattern is a string literal containing the characters to be removed.
      * @return Impl& - a reference to yourself.
      */
@@ -1555,7 +1555,7 @@ public:
      * @ru @brief Удалить символы, входящие в строковый литерал, а также пробельные символы, в начале строки.
      * @param pattern - строковый литерал, содержащий символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
-     * @en @brief Remove characters included in a string literal, as well as whitespace, at the beginning of a line.
+     * @en @brief Remove characters included in a string literal, as well as whitespace, at the beginning of a string.
      * @param pattern is a string literal containing the characters to be removed.
      * @en @brief* @return Impl& - a reference to yourself.
      */
@@ -1581,7 +1581,7 @@ public:
      * @ru @brief Удалить символы, входящие в переданную строку, в начале и в конце строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
-     * @en @brief Remove characters included in the passed string at the beginning and end of the line.
+     * @en @brief Remove characters included in the passed string at the beginning and end of the string.
      * @param pattern - a string containing the characters to be removed.
      * @return Impl& - a reference to yourself.
      */
@@ -1592,7 +1592,7 @@ public:
      * @ru @brief Удалить символы, входящие в переданную строку, в начале строки.
      * @param pattern - строка, содержащая символы, которые надо удалить.
      * @return Impl& - ссылку на себя же
-     * @en @brief Remove characters included in the passed string at the beginning of the line.
+     * @en @brief Remove characters included in the passed string at the beginning of the string.
      * @param pattern - a string containing the characters to be removed.
      * @return Impl& - a reference to yourself.
      */
@@ -1759,7 +1759,7 @@ public:
      * @ru @brief Добавить другую строку в конец строки.
      * @param other - другая строка.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add another line to the end of the line.
+     * @en @brief Add another string to the end of the string.
      * @param other - another string.
      * @return Impl& - a reference to yourself.
      */
@@ -1770,7 +1770,7 @@ public:
      * @ru @brief Добавить строковое выражение в конец строки.
      * @param expr - строковое выражение.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add a string expression to the end of the line.
+     * @en @brief Add a string expression to the end of the string.
      * @param expr - string expression.
      * @return Impl& - a reference to yourself.
      */
@@ -1782,8 +1782,8 @@ public:
      * @ru @brief Добавить другую строку в конец строки.
      * @param other - другая строка.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add another line to the end of the line.
-     * @param other - another line.
+     * @en @brief Add another string to the end of the string.
+     * @param other - another string.
      * @return Impl& - a reference to yourself.
      */
     Impl& operator+=(str_piece other) {
@@ -1793,7 +1793,7 @@ public:
      * @ru @brief Добавить строковое выражение в конец строки.
      * @param expr - строковое выражение.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add a string expression to the end of the line.
+     * @en @brief Add a string expression to the end of the string.
      * @param expr - string expression.
      * @return Impl& - a reference to yourself.
      */
@@ -1808,9 +1808,9 @@ public:
      * @param other - другая строка.
      * @return Impl& - ссылку на себя же.
      * @details Если строка длиинее`pos`, то она укорачивается до этого размера, а потом добавляется `other`.
-     * @en @brief Add another line starting at the given position.
+     * @en @brief Add another string starting at the given position.
      * @param pos - the position from which to add. First, the string is shortened to the specified value
-     *      size, and then another line is added.
+     *      size, and then another string is added.
      * @param other - another string.
      * @return Impl& - a reference to yourself.
      * @details If the string is longer than `pos`, then it is shortened to this size, and then `other` is added.
@@ -1872,7 +1872,7 @@ public:
      * @param to - позиция для вставки.
      * @param other - вставляемая строка.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Insert a line at the specified position.
+     * @en @brief Insert a string at the specified position.
      * @param to - insertion position.
      * @param other - the string to be inserted.
      * @return Impl& - a reference to yourself.
@@ -1899,7 +1899,7 @@ public:
      * @param from - позиция, с которой удалить.
      * @param len - длина удаляемой части.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Remove part of a line.
+     * @en @brief Remove part of a string.
      * @param from - the position from which to delete.
      * @param len - length of the part to be deleted.
      * @return Impl& - a reference to yourself.
@@ -1911,7 +1911,7 @@ public:
      * @ru @brief Добавить другую строку в начало строки.
      * @param other - другая строка.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add another line to the beginning of the line.
+     * @en @brief Add another string to the beginning of the string.
      * @param other - another string.
      * @return Impl& - a reference to yourself.
      */
@@ -1922,7 +1922,7 @@ public:
      * @ru @brief Добавить строковое выражение в начало строки.
      * @param expr - строковое выражение.
      * @return Impl& - ссылку на себя же.
-     * @en @brief Add a string expression to the beginning of a line.
+     * @en @brief Add a string expression to the beginning of a string.
      * @param expr - string expression.
      * @return Impl& - a reference to yourself.
      */
@@ -2121,7 +2121,7 @@ public:
      *    As long as the returned size is larger than capacity (i.e. the string cannot fit into the buffer),
      *    memory of at least the returned size is allocated and the functor is called again.
      *    Until the returned size fits into the string buffer.
-     *    This size becomes the length of the line.
+     *    This size becomes the length of the string.
      */
     template<typename Op>
     Impl& fill(size_t from, const Op& fillFunction) {
@@ -2260,7 +2260,7 @@ public:
      * @param ...args - аргументы для sprintf.
      * @return Impl& - ссылку на себя же.
      * @details При необходимости автоматически увеличивает размер буфера строки.
-     * @en @brief Appends sprintf formatted output to the end of the line.
+     * @en @brief Appends sprintf formatted output to the end of the string.
      * @param format - format string.
      * @param ...args - arguments for sprintf.
      * @return Impl& - a reference to yourself.
@@ -2398,7 +2398,7 @@ public:
      * @param ...args - аргументы для std::format.
      * @return Impl& - ссылку на себя же.
      * @details При необходимости автоматически увеличивает размер буфера строки.
-     * @en @brief Appends std::format-formatted output to the end of the line.
+     * @en @brief Appends std::format-formatted output to the end of the string.
      * @param format - format string, constant.
      * @param ...args - arguments for std::format.
      * @return Impl& - a reference to yourself.
@@ -2430,7 +2430,7 @@ public:
      * @param ... - аргументы для std::vformat.
      * @return Impl& - ссылку на себя же.
      * @details При необходимости автоматически увеличивает размер буфера строки.
-     * @en @brief Appends std::vformat-formatted output to the end of the line.
+     * @en @brief Appends std::vformat-formatted output to the end of the string.
      * @param format - format string.
      * @param ... - arguments for std::vformat.
      * @return Impl& - a reference to yourself.
@@ -2730,7 +2730,7 @@ public:
      * @param ...args - параметры для инициализации аллокатора.
      * @en @brief String repetition constructor.
      * @param repeat - number of repetitions.
-     * @param pattern - the line to be repeated.
+     * @param pattern - the string to be repeated.
      * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
@@ -3125,7 +3125,7 @@ public:
      * @ru @brief Определить длину строки.
      * Ищет символ 0 в буфере строки до его ёмкости, после чего устаналивает длину строки по найденному 0.
      * @en @brief Determine the length of the string.
-     * Searches for the character 0 in the string buffer to its capacity, and then sets the length of the line to the found 0.
+     * Searches for the character 0 in the string buffer to its capacity, and then sets the length of the string to the found 0.
      */
     constexpr void define_size() {
         size_t cap = capacity();
@@ -3301,11 +3301,11 @@ protected:
         // возможное место, то localRemain становится 0, type в этом случае тоже 0,
         // и в итоге после символов строки получается 0, как и надо!
         // When we have a short string, it lies in the object itself, and in localRemain
-        // writes how many more characters can be entered. When a line takes up everything
+        // writes how many more characters can be entered. When a string takes up everything
         // possible location, then localRemain becomes 0, type in this case is also 0,
-        // and as a result, after the characters of the line we get 0, as it should!
+        // and as a result, after the characters of the string we get 0, as it should!
         struct {
-            K buf_[LocalCount]; // Локальный буфер строки | Local line buffer
+            K buf_[LocalCount]; // Локальный буфер строки | Local string buffer
             uns_type localRemain_ : sizeof(uns_type) * CHAR_BIT - 2;
             uns_type type_ : 2;
         };
@@ -3422,7 +3422,7 @@ public:
      * @param ...args - параметры для инициализации аллокатора.
      * @en @brief String repetition constructor.
      * @param repeat - number of repetitions.
-     * @param pattern - the line to be repeated.
+     * @param pattern - the string to be repeated.
      * @param ...args - parameters for initializing the allocator.
      */
     template<typename... Args>
@@ -3693,7 +3693,7 @@ public:
     constexpr const K* symbols() const noexcept {
         return type_ == Local ? buf_ : cstr_;
     }
-    /// @ru Длина строки. @en Line length.
+    /// @ru Длина строки. @en string length.
     constexpr size_t length() const noexcept {
         return type_ == Local ? LocalCount - localRemain_ : bigLen_;
     }
@@ -3843,7 +3843,7 @@ public:
      * @param pattern - строка, которую надо повторить.
      * @en @brief String repetition constructor.
      * @param repeat - number of repetitions.
-     * @param pattern - the line to be repeated.
+     * @param pattern - the string to be repeated.
      */
     constexpr cestring(size_t repeat, s_str pattern) : base_storable() {
         base_storable::init_str_repeat(repeat, pattern);
@@ -4361,7 +4361,7 @@ struct str_eqliu {
  * Сам является строковым выражением.
  * @en @brief For constructing long dynamic strings by concatenating small pieces.
  * @details Selects individual blocks of a given size (or a multiple of it for large inserts) as needed.
- * to avoid relocation of long strings. After construction, you can merge it into one line.
+ * to avoid relocation of long strings. After construction, you can merge it into one string.
  * As measurements have shown, if you then merge it into one line, it works slower than lstring +=,
  * but more economical in memory. If you don't merge it into one line, and then iterate through buffers, it's faster.
  * Itself is a string expression.

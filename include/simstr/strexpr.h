@@ -2795,7 +2795,7 @@ struct expr_join : expr_to_std_string<expr_join<K, T, I, tail, skip_empty>> {
  * @param s - контейнер со строками, должен поддерживать `range for`.
  * @param d - разделитель, строковый литерал.
  * @en @brief Get a string expression concatenating the strings in the container into a single string with the given delimiter.limiter.limiter.
- * @tparam tail - whether to add a separator after the last line.
+ * @tparam tail - whether to add a separator after the last string.
  * @tparam skip_empty - skip empty lines without adding a separator.
  * @param s - container with strings, must support `range for`.
  * @param d - delimiter, string literal.
@@ -3143,7 +3143,7 @@ public:
      * @ru @brief  Указатель на константный символ после после последнего символа строки.
      * @return const K* - конец строки.
      * @en @brief  Pointer to a constant character after the last character of the string.
-     * @return const K* - end of line.
+     * @return const K* - end of string.
      */
     constexpr const K* end() const   { return d().symbols() + d().length(); }
     /*!
@@ -3157,7 +3157,7 @@ public:
      * @ru @brief  Указатель на константный символ после после последнего символа строки.
      * @return const K* - конец строки.
      * @en @brief  Pointer to a constant character after the last character of the string.
-     * @return const K* - end of line.
+     * @return const K* - end of string.
      */
     constexpr const K* cend() const   { return d().symbols() + d().length(); }
 };
@@ -3185,7 +3185,7 @@ public:
      * @ru @brief  Указатель на константный символ после после последнего символа строки.
      * @return const K* - конец строки.
      * @en @brief  Pointer to a constant character after the last character of the string.
-     * @return const K* - end of line.
+     * @return const K* - end of string.
      */
     constexpr const K* end() const   { return base::end(); }
     /*!
@@ -3199,7 +3199,7 @@ public:
      * @ru @brief  Указатель на константный символ после после последнего символа строки.
      * @return const K* - конец строки.
      * @en @brief  Pointer to a constant character after the last character of the string.
-     * @return const K* - end of line.
+     * @return const K* - end of string.
      */
     constexpr const K* cend() const   { return base::cend(); }
     /*!
@@ -3220,7 +3220,7 @@ public:
      * @ru @brief  Указатель на символ после после последнего символа строки.
      * @return K* - конец строки.
      * @en @brief  Pointer to the character after the last character of the string.
-     * @return K* - end of line.
+     * @return K* - end of string.
      */
     constexpr K* end()   { return d().str() + d().length(); }
 };
@@ -3293,7 +3293,7 @@ public:
  * only with a pointer to a string and its length.
  * To work, the descendant class must implement the following methods:
  *   - size_t length() const noexcept - returns the length of the string.
- *   - const K* symbols() const noexcept - returns a pointer to the beginning of the line.
+ *   - const K* symbols() const noexcept - returns a pointer to the beginning of the string.
  *   - bool is_empty() const noexcept - checks whether the string is empty.
  * @tparam K - character type.
  * @tparam StrRef - storage type for the string chunk.
@@ -3431,10 +3431,10 @@ public:
      * @details  Если `from` меньше нуля, то отсчитывается `-from` символов от конца строки в сторону начала.
      *           Если `len` меньше или равно нулю, то отсчитать `-len` символов от конца строки
      * @en @brief Get part of a string as "str_src".
-     * @param from - number of characters from the beginning of the line.
+     * @param from - number of characters from the beginning of the string.
      * @param len - the number of characters in the resulting "chunk".
      * @return Substring, str_src.
-     * @details If `from` is less than zero, then `-from` characters are counted from the end of the line towards the beginning.
+     * @details If `from` is less than zero, then `-from` characters are counted from the end of the string towards the beginning.
      * If `len` is less than or equal to zero, then count `-len` characters from the end of the line
      * @~
      *  ```cpp
@@ -3461,8 +3461,8 @@ public:
      * @param len - количество символов в получаемом "куске". При выходе за пределы строки вернёт всё до конца строки.
      * @return Подстроку, str_src.
      * @en @brief Get part of a string as "string chunk".
-     * @param from - number of characters from the beginning of the line. If the string size is exceeded, it will return an empty string.
-     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the line.
+     * @param from - number of characters from the beginning of the string. If the string size is exceeded, it will return an empty string.
+     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the string.
      * @return Substring, str_src.
      */
     constexpr str_piece mid(size_t from, size_t len = -1) const noexcept {
@@ -3481,8 +3481,8 @@ public:
      * @param to - конечная позиция (не входит в результат).
      * @return Подстроку, str_src.
      * @en @brief Get the substring str_src from position from to position to (not including it).
-     * @details For performance reasons, the method does not check for line boundaries in any way, use
-     * in scenarios when you know for sure that these are positions inside the line and to >= from.
+     * @details For performance reasons, the method does not check for string boundaries in any way, use
+     * in scenarios when you know for sure that these are positions inside the string and to >= from.
      * @param from - starting position.
      * @param to - final position (not included in the result).
      * @return Substring, str_src.
@@ -3516,9 +3516,9 @@ public:
      * @return K - символ.
      * @details Не производит проверку на выход за границы строки.
      * @en @brief Get the character at the given position.
-     * @param idx - symbol index. For negative values, it is counted from the end of the line.
+     * @param idx - symbol index. For negative values, it is counted from the end of the string.
      * @return K - character.
-     * @details Does not check for line boundaries.
+     * @details Does not check for string boundaries.
      */
     constexpr K at(ptrdiff_t idx) const {
         return _str()[idx >= 0 ? idx : _len() + idx];
@@ -3535,7 +3535,7 @@ public:
      * @param o - другая строка.
      * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
      * @en @brief Compare strings character by character.
-     * @param o - another line.
+     * @param o - another string.
      * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     constexpr int compare(str_piece o) const {
@@ -3546,7 +3546,7 @@ public:
      * @param text - другая строка.
      * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
      * @en @brief Compare with C-string character by character.
-     * @param text - another line.
+     * @param text - another string.
      * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     constexpr int strcmp(const K* text) const {
@@ -3575,7 +3575,7 @@ public:
      * @param other - другая строка.
      * @return равны ли строки.
      * @en @brief String comparison for equality.
-     * @param other - another line.
+     * @param other - another string.
      * @return whether the strings are equal.
      */
     constexpr bool equal(str_piece other) const noexcept {
@@ -3586,7 +3586,7 @@ public:
      * @param other - другая строка.
      * @return равны ли строки.
      * @en @brief Operator comparing strings for equality.
-     * @param other - another line.
+     * @param other - another string.
      * @return whether the strings are equal.
      */
     constexpr bool operator==(const base& other) const noexcept {
@@ -3596,7 +3596,7 @@ public:
      * @ru @brief Оператор сравнения строк.
      * @param other - другая строка.
      * @en @brief String comparison operator.
-     * @param other - another line.
+     * @param other - another string.
      */
     constexpr auto operator<=>(const base& other) const noexcept {
         return compare(other._str(), other._len()) <=> 0;
@@ -3650,7 +3650,7 @@ public:
      * @param text - другая строка.
      * @return <0 эта строка меньше, ==0 - строки равны, >0 - эта строка больше.
      * @en @brief Compare strings character by character and not case sensitive ASCII characters.
-     * @param text - another line.
+     * @param text - another string.
      * @return <0 this string is less, ==0 - strings are equal, >0 - this string is greater.
      */
     constexpr int compare_ia(str_piece text) const noexcept { // NOLINT
@@ -3662,7 +3662,7 @@ public:
      * @param text - другая строка.
      * @return равны ли строки.
      * @en @brief Whether a string is equal to another string, character-by-character-insensitive, of ASCII characters.
-     * @param text - another line.
+     * @param text - another string.
      * @return whether the strings are equal.
      */
     constexpr bool equal_ia(str_piece text) const noexcept { // NOLINT
@@ -3673,7 +3673,7 @@ public:
      * @param text - другая строка.
      * @return меньше ли строка.
      * @en @brief Whether a string is smaller than another string, character-by-character-insensitive, ASCII characters.
-     * @param text - another line.
+     * @param text - another string.
      * @return whether the string is smaller.
      */
     constexpr bool less_ia(str_piece text) const noexcept { // NOLINT
@@ -3683,7 +3683,7 @@ public:
     constexpr size_t find(const K* pattern, size_t lenPattern, size_t offset) const noexcept {
         size_t lenText = _len();
         // Образец, не вмещающийся в строку и пустой образец не находим
-        // We don't look for an empty line or a line longer than the text.
+        // We don't look for an empty string or a string longer than the text.
         if (!lenPattern || offset >= lenText || offset + lenPattern > lenText)
             return str::npos;
         lenPattern--;
@@ -3781,7 +3781,7 @@ public:
             return find_last(pattern[0], offset);
         size_t lenText = std::min(_len(), offset);
         // Образец, не вмещающийся в строку и пустой образец не находим
-        // We don't look for an empty line or a line longer than the text.
+        // We don't look for an empty string or a string longer than the text.
         if (!lenPattern || lenPattern > lenText)
             return str::npos;
 
@@ -4068,8 +4068,8 @@ public:
      * @param len - количество символов в получаемом "куске". Если меньше или равно нулю, то отсчитать len символов от конца строки.
      * @return my_type - подстроку, объект того же типа, к которому применён метод.
      * @en @brief Get a substring. Works similarly to operator(), only the result is the same type as the method applied to.
-     * @param from - number of characters from the beginning of the line. If less than zero, it is counted from the end of the line towards the beginning.
-     * @param len - the number of characters in the resulting "chunk". If less than or equal to zero, then count len ​​characters from the end of the line.
+     * @param from - number of characters from the beginning of the string. If less than zero, it is counted from the end of the string towards the beginning.
+     * @param len - the number of characters in the resulting "chunk". If less than or equal to zero, then count len ​​characters from the end of the string.
      * @return my_type - a substring, an object of the same type to which the method is applied.
      */
     constexpr my_type substr(ptrdiff_t from, ptrdiff_t len = 0) const { // индексация в code units | indexing in code units
@@ -4081,8 +4081,8 @@ public:
      * @param len - количество символов в получаемом "куске". При выходе за пределы строки вернёт всё до конца строки.
      * @return Строку того же типа, к которому применён метод.
      * @en @brief Get part of a string with an object of the same type to which the method is applied, similar to mid.
-     * @param from - number of characters from the beginning of the line. If the string size is exceeded, it will return an empty string.
-     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the line.
+     * @param from - number of characters from the beginning of the string. If the string size is exceeded, it will return an empty string.
+     * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the string.
      * @return A string of the same type to which the method is applied.
      */
     constexpr my_type str_mid(size_t from, size_t len = -1) const { // индексация в code units | indexing in code units
@@ -4112,7 +4112,7 @@ public:
      *            - 0[bB]: 2
      *            - 0[xX]: 16
      *         - in other cases 10.
-     * @tparam SkipWs - skip whitespace characters at the beginning of the line.
+     * @tparam SkipWs - skip whitespace characters at the beginning of the string.
      * @tparam AllowSign - whether the '+' sign is allowed before a number.
      * @return T - a number, the result of the transformation, how much it turned out, or 0 if it overflows.
      */
@@ -4145,7 +4145,7 @@ public:
      *            - 0[bB]: 2
      *            - 0[xX]: 16
      *        - in other cases 10.
-     * @tparam SkipWs - skip whitespace characters at the beginning of the line. All characters with ASCII codes <= 32 are skipped.
+     * @tparam SkipWs - skip whitespace characters at the beginning of the string. All characters with ASCII codes <= 32 are skipped.
      * @tparam AllowSign - whether the '+' sign is allowed before a number.
      * @return convert_result<T> - a tuple of the received number, the success of the conversion and the number of characters processed.
      */
@@ -4916,7 +4916,7 @@ struct str_src : str_src_algs<K, str_src<K>, str_src<K>, false> {
      * @ru @brief Сдвигает начало строки на заданное количество символов.
      * @param delta - количество символов.
      * @return my_type&.
-     * @en @brief Shifts the start of a line by the specified number of characters.
+     * @en @brief Shifts the start of a string by the specified number of characters.
      * @param delta - number of characters.
      * @return my_type&.
      */
@@ -5022,7 +5022,7 @@ struct str_src_nt : str_src<K>, null_terminated<K, str_src_nt<K>> {
      * @param from - на сколько символов сдвинуть начало строки.
      * @return my_type.
      * @en @brief Get a null-terminated string by shifting the start by the specified number of characters.
-     * @param from - by how many characters to shift the beginning of the line.
+     * @param from - by how many characters to shift the beginning of the string.
      * @return my_type.
      */
     constexpr my_type to_nts(size_t from) {
@@ -7010,7 +7010,7 @@ struct replace_grow_helper {
             total_length = end_of_piece + all_delta;
             my_type* dst_str{};
             if (total_length <= str.capacity()) {
-                // Строка поместится в старое место | The line will be placed in the old location.
+                // Строка поместится в старое место | The string will be placed in the old location.
                 dst_str = &str;
             } else {
                 // Будем создавать в другом буфере | We will create in another buffer.
