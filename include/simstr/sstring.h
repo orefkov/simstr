@@ -2132,7 +2132,7 @@ public:
         K* ptr = str();
         capacity -= from;
         for (;;) {
-            size_t needSize = (size_t)fillFunction(ptr + from, capacity);
+            size_t needSize = static_cast<size_t>(fillFunction(ptr + from, capacity));
             if (capacity >= needSize) {
                 d().set_size(from + needSize);
                 break;

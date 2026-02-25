@@ -1676,11 +1676,11 @@ struct expr_num : expr_to_std_string<expr_num<K, T>> {
     constexpr expr_num(expr_num&& t) noexcept : value(t.value) {}
 
     constexpr size_t length() const noexcept {
-        value = (T)fromInt(buf + bufSize, value);
-        return (size_t)value;
+        value = static_cast<T>(fromInt(buf + bufSize, value));
+        return static_cast<size_t>(value);
     }
     constexpr K* place(K* ptr) const noexcept {
-        size_t len = (size_t)value;
+        size_t len = static_cast<size_t>(value);
         ch_traits<K>::copy(ptr, buf + bufSize - len, len);
         return ptr + len;
     }
@@ -2064,7 +2064,6 @@ template<is_one_of_char_v K, FromIntNumber T, unsigned Radix, f::FmtParamSet FP>
 requires (Radix > 1 && Radix <= 36)
 struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
     using symb_type = K;
-    using my_type = expr_num<K, T>;
 
     enum { bufSize = 64 };
     mutable K buf[bufSize];
@@ -2118,7 +2117,7 @@ struct expr_integer : expr_to_std_string<expr_integer<K, T, Radix, FP>> {
         }
     }
     constexpr K* place(K* ptr) const noexcept {
-        size_t len = (size_t)value_, all_len = len;
+        size_t len = static_cast<size_t>(value_), all_len = len;
         if constexpr (std::is_signed_v<T>) {
             if constexpr (FP::sign != f::int_plus_sign::none) {
                 all_len++;
@@ -3017,7 +3016,7 @@ struct int_convert { // NOLINT
             result = negate ? 0 - number : number;
             if constexpr (CheckOverflow) {
                 if (error != IntConvertResult::Overflow) {
-                    if (number > std::numeric_limits<T>::max() + (negate ? 1 : 0)) {
+                    if (number > (u_type)std::numeric_limits<T>::max() + (negate ? 1 : 0)) {
                         error = IntConvertResult::Overflow;
                     }
                 }
@@ -3447,8 +3446,8 @@ public:
      *  ```
      */
     constexpr str_piece operator()(ptrdiff_t from, ptrdiff_t len = 0) const noexcept {
-        size_t myLen = _len(), idxStart = from >= 0 ? from : myLen > -from ? myLen + from : 0,
-            idxEnd = len > 0 ? idxStart + len : myLen > -len ? myLen + len : 0;
+        size_t myLen = _len(), idxStart = from >= 0 ? from : (ptrdiff_t)myLen > -from ? myLen + from : 0,
+            idxEnd = len > 0 ? idxStart + len : (ptrdiff_t)myLen > -len ? myLen + len : 0;
         if (idxEnd > myLen)
             idxEnd = myLen;
         if (idxStart > idxEnd)
@@ -4226,7 +4225,7 @@ public:
         size_t mylen = _len();
         std::conditional_t<std::is_same_v<T, void>, char, T> results;
         str_piece me{_str(), mylen};
-        for (int i = 0;; i++) {
+        for (size_t i = 0;; i++) {
             size_t beginOfDelim = find(delimiter, lendelimiter, offset);
             if (beginOfDelim == str::npos) {
                 str_piece last{me.symbols() + offset, me.length() - offset};
@@ -5377,7 +5376,7 @@ struct expr_replaces : expr_to_std_string<expr_replaces<K, N, L>> {
         }
         if (matches_.added_ == 0) {
             return what.place(ptr);
-        } else if (matches_.added_ == -1) {
+        } else if (matches_.added_ == size_t(-1)) {
             // after replaces text become empty
             return ptr;
         }
