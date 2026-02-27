@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.1
+ * ver. 1.7.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -418,6 +418,17 @@ void FmtFormat(benchmark::State& state) {
 
 }
 
+void StdFormatSize(benchmark::State& state) {
+    for (auto _: state) {
+        for (unsigned i = 1; i <= 100'000; i *= 10) {
+            size_t len = std::formatted_size("abcdefghihklmopqr {:#010o} end", i);
+            std::string str(len, 0);
+            std::format_to_n(str.data(), len, "abcdefghihklmopqr {:#010o} end", i);
+            benchmark::DoNotOptimize(str);
+        }
+    }
+}
+
 BENCHMARK(__)->Name("---- format/vformat and subst/vsubst octal number to 32 symbols result ----")->Repetitions(1);
 BENCHMARK(ConcatSimToSimOct)    ->Name("\"abcdefghihklmopqr \"_ss + i / 0x8a010_fmt + \" end\"");
 BENCHMARK(SubstSimToSimOct)     ->Name("e_subst(\"abcdefghihklmopqr {} end\", i / 0x8a010_fmt)");
@@ -426,6 +437,7 @@ BENCHMARK(FmtFormatComp)        ->Name("fmt::format(FMT_COMPILE(\"abcdefghihklmo
 BENCHMARK(FmtFormat)            ->Name("fmt::format(\"abcdefghihklmopqr {:#010o} end\", i)");
 BENCHMARK(FormatStdToStdOct)    ->Name("std::format(\"abcdefghihklmopqr {:#010o} end\", i)");
 BENCHMARK(VFormatStdToStdOct)   ->Name("std::vformat(pattern, std::make_format_args(i))");
+BENCHMARK(StdFormatSize)        ->Name("std::format with std::formatted_size");
 BENCHMARK(StreamStdToStdOct)    ->Name("strm << \"abcdefghihklmopqr 0\" << std::oct << std::setw(9) << std::setfill('0') << i << \" end\"");
 
 void ConcatStdToStdS(benchmark::State& state) {
@@ -957,11 +969,16 @@ void ToDoubleStr(benchmark::State& state, const std::string& s, double c) {
     }
 }
 
+template<typename K = char>
 void ToDoubleFromChars(benchmark::State& state, const std::string_view& s, double c) {
     for (auto _: state) {
         double res = 0;
-        if (std::from_chars(s.data(), s.data() + s.size(), res).ec != std::errc{}) {
-            state.SkipWithError("not equal");
+        if constexpr (requires { std::from_chars(std::declval<K*>(), std::declval<K*>(), std::declval<double&>()); }) {
+            if (std::from_chars((const K*)s.data(), (const K*)s.data() + s.size(), res).ec != std::errc{}) {
+                state.SkipWithError("not equal");
+            }
+        } else {
+            state.SkipWithError("not implemented");
         }
     #ifdef CHECK_RESULT
         if (res != c) {
@@ -2650,7 +2667,12 @@ BENCHMARK(UpperCaseSim)->Name("To upper case lstringw<15>");
 int main(int argc, char** argv) {
     std::cout << "Benchmarks of simstr, version " SIMSTR_VERSION << "\n"
         << "Sources: https://github.com/orefkov/simstr\n"
-        << "Results: https://orefkov.github.io/simstr/results.html\n" << std::endl;
+        << "Results: https://orefkov.github.io/simstr/results.html\n"
+        << "Compiler " << CXX_COMPILER_ID << " " << CXX_COMPILER_VERSION
+#ifdef _LIBCPP_VERSION
+        << ", use libc++"
+#endif
+        << std::endl;
 
 #ifdef EMSCRIPTEN
     EM_ASM({ console.log(navigator.userAgent); });

@@ -1,0 +1,989 @@
+Benchmarks of simstr, version 1.7.2
+Sources: https://github.com/orefkov/simstr
+Results: https://orefkov.github.io/simstr/results.html
+Compiler Clang 22.0.0, use libc++
+2026-02-27T22:45:08+03:00
+Running ./benchStr
+Run on (32 X 2494.22 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 32 KiB (x16)
+  L2 Unified 256 KiB (x16)
+  L3 Unified 40960 KiB (x1)
+Load Average: 0.03, 0.45, 0.43
+***WARNING*** ASLR is enabled, the results may have unreproducible noise in them.
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+Benchmark                                                                                                              Time             CPU   Iterations
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+-----  Concatenate email ---------/repeats:1                                                                       0.000 ns        0.000 ns   1000000000000
+Concat email std::format_mean                                                                                        167 ns          167 ns            4
+Concat email std::format_median                                                                                      165 ns          165 ns            4
+Concat email std::format_stddev                                                                                     6.31 ns         6.31 ns            4
+Concat email std::format_cv                                                                                         3.78 %          3.78 %             4
+Concat email std::stringstream_mean                                                                                  268 ns          268 ns            4
+Concat email std::stringstream_median                                                                                264 ns          264 ns            4
+Concat email std::stringstream_stddev                                                                               10.9 ns         10.9 ns            4
+Concat email std::stringstream_cv                                                                                   4.05 %          4.05 %             4
+Concat email stringzilla append_mean                                                                                 141 ns          141 ns            4
+Concat email stringzilla append_median                                                                               141 ns          141 ns            4
+Concat email stringzilla append_stddev                                                                              2.96 ns         2.96 ns            4
+Concat email stringzilla append_cv                                                                                  2.10 %          2.10 %             4
+Concat email stringzilla concat_mean                                                                                58.3 ns         58.3 ns            4
+Concat email stringzilla concat_median                                                                              59.0 ns         59.0 ns            4
+Concat email stringzilla concat_stddev                                                                              2.06 ns         2.06 ns            4
+Concat email stringzilla concat_cv                                                                                  3.54 %          3.54 %             4
+Concat email std::string append_mean                                                                                94.9 ns         94.9 ns            4
+Concat email std::string append_median                                                                              92.7 ns         92.7 ns            4
+Concat email std::string append_stddev                                                                              7.48 ns         7.48 ns            4
+Concat email std::string append_cv                                                                                  7.88 %          7.88 %             4
+Concat email std::string by strexpr_mean                                                                            45.2 ns         45.2 ns            4
+Concat email std::string by strexpr_median                                                                          45.1 ns         45.1 ns            4
+Concat email std::string by strexpr_stddev                                                                         0.338 ns        0.338 ns            4
+Concat email std::string by strexpr_cv                                                                              0.75 %          0.75 %             4
+Concat email stringa_mean                                                                                           39.3 ns         39.3 ns            4
+Concat email stringa_median                                                                                         38.8 ns         38.8 ns            4
+Concat email stringa_stddev                                                                                         1.26 ns         1.26 ns            4
+Concat email stringa_cv                                                                                             3.21 %          3.21 %             4
+-----  Concatenate string + Number + "Literal" ---------/repeats:1                                                 0.000 ns        0.000 ns   1000000000000
+Concat std::string and number by std to std::string_mean                                                             239 ns          239 ns            4
+Concat std::string and number by std to std::string_median                                                           240 ns          240 ns            4
+Concat std::string and number by std to std::string_stddev                                                          5.24 ns         5.24 ns            4
+Concat std::string and number by std to std::string_cv                                                              2.19 %          2.19 %             4
+Concat std::string and number by StrExpr to std::string_mean                                                         100 ns          100 ns            4
+Concat std::string and number by StrExpr to std::string_median                                                     100.0 ns        100.0 ns            4
+Concat std::string and number by StrExpr to std::string_stddev                                                      1.43 ns         1.43 ns            4
+Concat std::string and number by StrExpr to std::string_cv                                                          1.42 %          1.42 %             4
+Concat stringa and number by StrExpr to simstr::stringa_mean                                                        65.1 ns         65.1 ns            4
+Concat stringa and number by StrExpr to simstr::stringa_median                                                      64.5 ns         64.5 ns            4
+Concat stringa and number by StrExpr to simstr::stringa_stddev                                                      2.41 ns         2.41 ns            4
+Concat stringa and number by StrExpr to simstr::stringa_cv                                                          3.69 %          3.69 %             4
+Concat stringa and number by e_concat to simstr::stringa_mean                                                       67.8 ns         67.8 ns            4
+Concat stringa and number by e_concat to simstr::stringa_median                                                     67.9 ns         67.9 ns            4
+Concat stringa and number by e_concat to simstr::stringa_stddev                                                    0.788 ns        0.788 ns            4
+Concat stringa and number by e_concat to simstr::stringa_cv                                                         1.16 %          1.16 %             4
+-----  Concatenate string + Hex Number + "Literal" ---------/repeats:1                                             0.000 ns        0.000 ns   1000000000000
+Concat std::string and format hex number and literal to std::string_mean                                             703 ns          703 ns            4
+Concat std::string and format hex number and literal to std::string_median                                           697 ns          697 ns            4
+Concat std::string and format hex number and literal to std::string_stddev                                          18.7 ns         18.7 ns            4
+Concat std::string and format hex number and literal to std::string_cv                                              2.65 %          2.65 %             4
+std::format std::string and hex number by literal to std::string_mean                                                804 ns          804 ns            4
+std::format std::string and hex number by literal to std::string_median                                              787 ns          787 ns            4
+std::format std::string and hex number by literal to std::string_stddev                                             47.4 ns         47.4 ns            4
+std::format std::string and hex number by literal to std::string_cv                                                 5.89 %          5.89 %             4
+Concat std::string and std::to_chars and string to std::string_mean                                                  218 ns          218 ns            4
+Concat std::string and std::to_chars and string to std::string_median                                                218 ns          218 ns            4
+Concat std::string and std::to_chars and string to std::string_stddev                                               5.87 ns         5.87 ns            4
+Concat std::string and std::to_chars and string to std::string_cv                                                   2.69 %          2.69 %             4
+Concat std::string and hex number and literal by StrExpr to std::string_mean                                         145 ns          145 ns            4
+Concat std::string and hex number and literal by StrExpr to std::string_median                                       145 ns          145 ns            4
+Concat std::string and hex number and literal by StrExpr to std::string_stddev                                     0.874 ns        0.874 ns            4
+Concat std::string and hex number and literal by StrExpr to std::string_cv                                          0.60 %          0.60 %             4
+Concat stringa and hex number and literal by StrExpr to simstr::stringa_mean                                         115 ns          115 ns            4
+Concat stringa and hex number and literal by StrExpr to simstr::stringa_median                                       115 ns          115 ns            4
+Concat stringa and hex number and literal by StrExpr to simstr::stringa_stddev                                      2.04 ns         2.04 ns            4
+Concat stringa and hex number and literal by StrExpr to simstr::stringa_cv                                          1.77 %          1.77 %             4
+Concat stringa and hex number and literal by e_concat to simstr::stringa_mean                                        123 ns          123 ns            4
+Concat stringa and hex number and literal by e_concat to simstr::stringa_median                                      123 ns          123 ns            4
+Concat stringa and hex number and literal by e_concat to simstr::stringa_stddev                                     3.43 ns         3.43 ns            4
+Concat stringa and hex number and literal by e_concat to simstr::stringa_cv                                         2.79 %          2.79 %             4
+Subst stringa and hex number by e_subst literal to simstr::stringa_mean                                              183 ns          183 ns            4
+Subst stringa and hex number by e_subst literal to simstr::stringa_median                                            184 ns          184 ns            4
+Subst stringa and hex number by e_subst literal to simstr::stringa_stddev                                           4.96 ns         4.96 ns            4
+Subst stringa and hex number by e_subst literal to simstr::stringa_cv                                               2.71 %          2.71 %             4
+Subst stringa and hex number by e_vsubst stra to simstr::stringa_mean                                                320 ns          320 ns            4
+Subst stringa and hex number by e_vsubst stra to simstr::stringa_median                                              319 ns          319 ns            4
+Subst stringa and hex number by e_vsubst stra to simstr::stringa_stddev                                             6.95 ns         6.95 ns            4
+Subst stringa and hex number by e_vsubst stra to simstr::stringa_cv                                                 2.17 %          2.17 %             4
+---- format/vformat and subst/vsubst octal number to 32 symbols result ----/repeats:1                              0.000 ns        0.000 ns   1000000000000
+"abcdefghihklmopqr "_ss + i / 0x8a010_fmt + " end"_mean                                                              278 ns          278 ns            4
+"abcdefghihklmopqr "_ss + i / 0x8a010_fmt + " end"_median                                                            281 ns          281 ns            4
+"abcdefghihklmopqr "_ss + i / 0x8a010_fmt + " end"_stddev                                                           8.53 ns         8.53 ns            4
+"abcdefghihklmopqr "_ss + i / 0x8a010_fmt + " end"_cv                                                               3.08 %          3.08 %             4
+e_subst("abcdefghihklmopqr {} end", i / 0x8a010_fmt)_mean                                                            357 ns          357 ns            4
+e_subst("abcdefghihklmopqr {} end", i / 0x8a010_fmt)_median                                                          361 ns          361 ns            4
+e_subst("abcdefghihklmopqr {} end", i / 0x8a010_fmt)_stddev                                                         7.17 ns         7.17 ns            4
+e_subst("abcdefghihklmopqr {} end", i / 0x8a010_fmt)_cv                                                             2.01 %          2.01 %             4
+e_vsubst(pattern, i / 0x8a010_fmt)_mean                                                                              640 ns          640 ns            4
+e_vsubst(pattern, i / 0x8a010_fmt)_median                                                                            645 ns          645 ns            4
+e_vsubst(pattern, i / 0x8a010_fmt)_stddev                                                                           21.4 ns         21.5 ns            4
+e_vsubst(pattern, i / 0x8a010_fmt)_cv                                                                               3.35 %          3.35 %             4
+fmt::format(FMT_COMPILE("abcdefghihklmopqr {:#010o} end"), i)_mean                                                   668 ns          668 ns            4
+fmt::format(FMT_COMPILE("abcdefghihklmopqr {:#010o} end"), i)_median                                                 660 ns          660 ns            4
+fmt::format(FMT_COMPILE("abcdefghihklmopqr {:#010o} end"), i)_stddev                                                25.8 ns         25.8 ns            4
+fmt::format(FMT_COMPILE("abcdefghihklmopqr {:#010o} end"), i)_cv                                                    3.87 %          3.87 %             4
+fmt::format("abcdefghihklmopqr {:#010o} end", i)_mean                                                                795 ns          795 ns            4
+fmt::format("abcdefghihklmopqr {:#010o} end", i)_median                                                              788 ns          788 ns            4
+fmt::format("abcdefghihklmopqr {:#010o} end", i)_stddev                                                             21.0 ns         21.0 ns            4
+fmt::format("abcdefghihklmopqr {:#010o} end", i)_cv                                                                 2.65 %          2.65 %             4
+std::format("abcdefghihklmopqr {:#010o} end", i)_mean                                                               1216 ns         1216 ns            4
+std::format("abcdefghihklmopqr {:#010o} end", i)_median                                                             1209 ns         1209 ns            4
+std::format("abcdefghihklmopqr {:#010o} end", i)_stddev                                                             22.3 ns         22.3 ns            4
+std::format("abcdefghihklmopqr {:#010o} end", i)_cv                                                                 1.83 %          1.83 %             4
+std::vformat(pattern, std::make_format_args(i))_mean                                                                1243 ns         1243 ns            4
+std::vformat(pattern, std::make_format_args(i))_median                                                              1238 ns         1238 ns            4
+std::vformat(pattern, std::make_format_args(i))_stddev                                                              48.6 ns         48.6 ns            4
+std::vformat(pattern, std::make_format_args(i))_cv                                                                  3.91 %          3.91 %             4
+std::format with std::formatted_size_mean                                                                           2159 ns         2159 ns            4
+std::format with std::formatted_size_median                                                                         2144 ns         2144 ns            4
+std::format with std::formatted_size_stddev                                                                         65.1 ns         65.1 ns            4
+std::format with std::formatted_size_cv                                                                             3.01 %          3.01 %             4
+strm << "abcdefghihklmopqr 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end"_mean                  2594 ns         2594 ns            4
+strm << "abcdefghihklmopqr 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end"_median                2601 ns         2601 ns            4
+strm << "abcdefghihklmopqr 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end"_stddev                95.5 ns         95.5 ns            4
+strm << "abcdefghihklmopqr 0" << std::oct << std::setw(9) << std::setfill('0') << i << " end"_cv                    3.68 %          3.68 %             4
+-----  Concatenate string + "Literal" ---------/repeats:1                                                          0.000 ns        0.000 ns   1000000000000
+Concat std::string by std to std::string_mean                                                                       34.0 ns         34.0 ns            4
+Concat std::string by std to std::string_median                                                                     34.1 ns         34.1 ns            4
+Concat std::string by std to std::string_stddev                                                                    0.814 ns        0.814 ns            4
+Concat std::string by std to std::string_cv                                                                         2.39 %          2.39 %             4
+Concat std::string by StrExpr to std::string_mean                                                                   36.0 ns         36.0 ns            4
+Concat std::string by StrExpr to std::string_median                                                                 35.9 ns         35.9 ns            4
+Concat std::string by StrExpr to std::string_stddev                                                                 1.27 ns         1.27 ns            4
+Concat std::string by StrExpr to std::string_cv                                                                     3.52 %          3.52 %             4
+Concat stringa by StrExpr to stringa_mean                                                                           29.4 ns         29.4 ns            4
+Concat stringa by StrExpr to stringa_median                                                                         29.3 ns         29.3 ns            4
+Concat stringa by StrExpr to stringa_stddev                                                                        0.424 ns        0.424 ns            4
+Concat stringa by StrExpr to stringa_cv                                                                             1.44 %          1.44 %             4
+-----  Find three concatenated string in string_view -----/repeats:1                                               0.000 ns        0.000 ns   1000000000000
+Find concat three std::string_mean                                                                                  90.6 ns         90.6 ns            4
+Find concat three std::string_median                                                                                89.4 ns         89.4 ns            4
+Find concat three std::string_stddev                                                                                3.87 ns         3.87 ns            4
+Find concat three std::string_cv                                                                                    4.28 %          4.28 %             4
+Find concat three strexpr_mean                                                                                      43.1 ns         43.1 ns            4
+Find concat three strexpr_median                                                                                    43.0 ns         43.0 ns            4
+Find concat three strexpr_stddev                                                                                    1.13 ns         1.13 ns            4
+Find concat three strexpr_cv                                                                                        2.62 %          2.62 %             4
+Find concat three simstr_mean                                                                                       16.6 ns         16.6 ns            4
+Find concat three simstr_median                                                                                     16.5 ns         16.5 ns            4
+Find concat three simstr_stddev                                                                                    0.696 ns        0.696 ns            4
+Find concat three simstr_cv                                                                                         4.20 %          4.20 %             4
+Find concat three stringzilla string_mean                                                                            135 ns          135 ns            4
+Find concat three stringzilla string_median                                                                          134 ns          134 ns            4
+Find concat three stringzilla string_stddev                                                                         4.57 ns         4.57 ns            4
+Find concat three stringzilla string_cv                                                                             3.39 %          3.39 %             4
+-----  Build Type Name ---------/repeats:1                                                                         0.000 ns        0.000 ns   1000000000000
+BuildTypeNameStr 0/0_mean                                                                                           6.79 ns         6.79 ns            4
+BuildTypeNameStr 0/0_median                                                                                         6.77 ns         6.77 ns            4
+BuildTypeNameStr 0/0_stddev                                                                                        0.070 ns        0.070 ns            4
+BuildTypeNameStr 0/0_cv                                                                                             1.04 %          1.04 %             4
+BuildTypeNameExp 0/0_mean                                                                                           5.99 ns         5.99 ns            4
+BuildTypeNameExp 0/0_median                                                                                         5.99 ns         5.99 ns            4
+BuildTypeNameExp 0/0_stddev                                                                                        0.136 ns        0.136 ns            4
+BuildTypeNameExp 0/0_cv                                                                                             2.28 %          2.28 %             4
+BuildTypeNameSim 0/0_mean                                                                                           4.28 ns         4.28 ns            4
+BuildTypeNameSim 0/0_median                                                                                         4.27 ns         4.27 ns            4
+BuildTypeNameSim 0/0_stddev                                                                                        0.141 ns        0.141 ns            4
+BuildTypeNameSim 0/0_cv                                                                                             3.29 %          3.29 %             4
+BuildTypeNameStr 10/10_mean                                                                                         88.9 ns         88.9 ns            4
+BuildTypeNameStr 10/10_median                                                                                       88.9 ns         88.9 ns            4
+BuildTypeNameStr 10/10_stddev                                                                                       2.17 ns         2.17 ns            4
+BuildTypeNameStr 10/10_cv                                                                                           2.44 %          2.44 %             4
+BuildTypeNameExp 10/10_mean                                                                                         38.8 ns         38.8 ns            4
+BuildTypeNameExp 10/10_median                                                                                       38.5 ns         38.5 ns            4
+BuildTypeNameExp 10/10_stddev                                                                                      0.836 ns        0.836 ns            4
+BuildTypeNameExp 10/10_cv                                                                                           2.15 %          2.15 %             4
+BuildTypeNameSim 10/10_mean                                                                                         23.5 ns         23.5 ns            4
+BuildTypeNameSim 10/10_median                                                                                       23.4 ns         23.4 ns            4
+BuildTypeNameSim 10/10_stddev                                                                                      0.549 ns        0.549 ns            4
+BuildTypeNameSim 10/10_cv                                                                                           2.34 %          2.34 %             4
+-----  Replace string by copy -----/repeats:1                                                                      0.000 ns        0.000 ns   1000000000000
+Concat with replace str_mean                                                                                         233 ns          233 ns            4
+Concat with replace str_median                                                                                       233 ns          233 ns            4
+Concat with replace str_stddev                                                                                      1.09 ns         1.09 ns            4
+Concat with replace str_cv                                                                                          0.47 %          0.47 %             4
+Concat with replace exp_mean                                                                                         140 ns          140 ns            4
+Concat with replace exp_median                                                                                       139 ns          139 ns            4
+Concat with replace exp_stddev                                                                                      4.92 ns         4.92 ns            4
+Concat with replace exp_cv                                                                                          3.51 %          3.51 %             4
+-----  Create Empty Str ---------/repeats:1                                                                        0.000 ns        0.000 ns   1000000000000
+std::string e;_mean                                                                                                0.742 ns        0.742 ns            4
+std::string e;_median                                                                                              0.738 ns        0.738 ns            4
+std::string e;_stddev                                                                                              0.013 ns        0.013 ns            4
+std::string e;_cv                                                                                                   1.70 %          1.70 %             4
+std::string_view e;_mean                                                                                           0.373 ns        0.373 ns            4
+std::string_view e;_median                                                                                         0.372 ns        0.372 ns            4
+std::string_view e;_stddev                                                                                         0.009 ns        0.009 ns            4
+std::string_view e;_cv                                                                                              2.50 %          2.50 %             4
+ssa e;_mean                                                                                                        0.375 ns        0.375 ns            4
+ssa e;_median                                                                                                      0.374 ns        0.374 ns            4
+ssa e;_stddev                                                                                                      0.010 ns        0.010 ns            4
+ssa e;_cv                                                                                                           2.55 %          2.55 %             4
+stringa e;_mean                                                                                                    0.763 ns        0.763 ns            4
+stringa e;_median                                                                                                  0.771 ns        0.771 ns            4
+stringa e;_stddev                                                                                                  0.022 ns        0.022 ns            4
+stringa e;_cv                                                                                                       2.83 %          2.83 %             4
+lstringa<20> e;_mean                                                                                                1.10 ns         1.10 ns            4
+lstringa<20> e;_median                                                                                              1.10 ns         1.10 ns            4
+lstringa<20> e;_stddev                                                                                             0.009 ns        0.009 ns            4
+lstringa<20> e;_cv                                                                                                  0.79 %          0.79 %             4
+lstringa<40> e;_mean                                                                                                1.10 ns         1.10 ns            4
+lstringa<40> e;_median                                                                                              1.10 ns         1.10 ns            4
+lstringa<40> e;_stddev                                                                                             0.015 ns        0.015 ns            4
+lstringa<40> e;_cv                                                                                                  1.38 %          1.38 %             4
+-----  Create Str from short literal (9 symbols) --------/repeats:1                                                0.000 ns        0.000 ns   1000000000000
+std::string e      = "Test text";_mean                                                                              1.46 ns         1.46 ns            4
+std::string e      = "Test text";_median                                                                            1.46 ns         1.46 ns            4
+std::string e      = "Test text";_stddev                                                                           0.009 ns        0.009 ns            4
+std::string e      = "Test text";_cv                                                                                0.61 %          0.61 %             4
+std::string_view e = "Test text";_mean                                                                             0.741 ns        0.741 ns            4
+std::string_view e = "Test text";_median                                                                           0.737 ns        0.737 ns            4
+std::string_view e = "Test text";_stddev                                                                           0.020 ns        0.020 ns            4
+std::string_view e = "Test text";_cv                                                                                2.73 %          2.73 %             4
+ssa e              = "Test text";_mean                                                                             0.370 ns        0.370 ns            4
+ssa e              = "Test text";_median                                                                           0.370 ns        0.370 ns            4
+ssa e              = "Test text";_stddev                                                                           0.006 ns        0.006 ns            4
+ssa e              = "Test text";_cv                                                                                1.66 %          1.66 %             4
+stringa e          = "Test text";_mean                                                                              1.12 ns         1.12 ns            4
+stringa e          = "Test text";_median                                                                            1.11 ns         1.11 ns            4
+stringa e          = "Test text";_stddev                                                                           0.023 ns        0.023 ns            4
+stringa e          = "Test text";_cv                                                                                2.09 %          2.09 %             4
+lstringa<20> e     = "Test text";_mean                                                                              1.86 ns         1.86 ns            4
+lstringa<20> e     = "Test text";_median                                                                            1.84 ns         1.84 ns            4
+lstringa<20> e     = "Test text";_stddev                                                                           0.053 ns        0.053 ns            4
+lstringa<20> e     = "Test text";_cv                                                                                2.83 %          2.83 %             4
+lstringa<40> e     = "Test text";_mean                                                                              1.87 ns         1.87 ns            4
+lstringa<40> e     = "Test text";_median                                                                            1.87 ns         1.87 ns            4
+lstringa<40> e     = "Test text";_stddev                                                                           0.045 ns        0.045 ns            4
+lstringa<40> e     = "Test text";_cv                                                                                2.42 %          2.42 %             4
+-----  Create Str from long literal (30 symbols) ---------/repeats:1                                               0.000 ns        0.000 ns   1000000000000
+std::string e      = "123456789012345678901234567890";_mean                                                         18.8 ns         18.8 ns            4
+std::string e      = "123456789012345678901234567890";_median                                                       18.8 ns         18.8 ns            4
+std::string e      = "123456789012345678901234567890";_stddev                                                      0.184 ns        0.184 ns            4
+std::string e      = "123456789012345678901234567890";_cv                                                           0.97 %          0.97 %             4
+std::string_view e = "123456789012345678901234567890";_mean                                                        0.732 ns        0.732 ns            4
+std::string_view e = "123456789012345678901234567890";_median                                                      0.733 ns        0.733 ns            4
+std::string_view e = "123456789012345678901234567890";_stddev                                                      0.005 ns        0.005 ns            4
+std::string_view e = "123456789012345678901234567890";_cv                                                           0.68 %          0.68 %             4
+ssa e              = "123456789012345678901234567890";_mean                                                        0.371 ns        0.371 ns            4
+ssa e              = "123456789012345678901234567890";_median                                                      0.370 ns        0.370 ns            4
+ssa e              = "123456789012345678901234567890";_stddev                                                      0.006 ns        0.006 ns            4
+ssa e              = "123456789012345678901234567890";_cv                                                           1.69 %          1.69 %             4
+stringa e          = "123456789012345678901234567890";_mean                                                         1.11 ns         1.11 ns            4
+stringa e          = "123456789012345678901234567890";_median                                                       1.09 ns         1.09 ns            4
+stringa e          = "123456789012345678901234567890";_stddev                                                      0.039 ns        0.039 ns            4
+stringa e          = "123456789012345678901234567890";_cv                                                           3.56 %          3.56 %             4
+lstringa<20> e     = "123456789012345678901234567890";_mean                                                         19.2 ns         19.2 ns            4
+lstringa<20> e     = "123456789012345678901234567890";_median                                                       19.1 ns         19.1 ns            4
+lstringa<20> e     = "123456789012345678901234567890";_stddev                                                      0.311 ns        0.311 ns            4
+lstringa<20> e     = "123456789012345678901234567890";_cv                                                           1.62 %          1.62 %             4
+lstringa<40> e     = "123456789012345678901234567890";_mean                                                         1.84 ns         1.84 ns            4
+lstringa<40> e     = "123456789012345678901234567890";_median                                                       1.84 ns         1.84 ns            4
+lstringa<40> e     = "123456789012345678901234567890";_stddev                                                      0.031 ns        0.031 ns            4
+lstringa<40> e     = "123456789012345678901234567890";_cv                                                           1.69 %          1.69 %             4
+-----  Create copy of Str with 9 symbols ---------/repeats:1                                                       0.000 ns        0.000 ns   1000000000000
+std::string e      = "Test text"; auto c{e};_mean                                                                   1.12 ns         1.12 ns            4
+std::string e      = "Test text"; auto c{e};_median                                                                 1.12 ns         1.12 ns            4
+std::string e      = "Test text"; auto c{e};_stddev                                                                0.016 ns        0.016 ns            4
+std::string e      = "Test text"; auto c{e};_cv                                                                     1.42 %          1.42 %             4
+std::string_view e = "Test text"; auto c{e};_mean                                                                  0.373 ns        0.373 ns            4
+std::string_view e = "Test text"; auto c{e};_median                                                                0.372 ns        0.372 ns            4
+std::string_view e = "Test text"; auto c{e};_stddev                                                                0.009 ns        0.009 ns            4
+std::string_view e = "Test text"; auto c{e};_cv                                                                     2.47 %          2.47 %             4
+ssa e              = "Test text"; auto c{e};_mean                                                                  0.368 ns        0.369 ns            4
+ssa e              = "Test text"; auto c{e};_median                                                                0.368 ns        0.368 ns            4
+ssa e              = "Test text"; auto c{e};_stddev                                                                0.005 ns        0.005 ns            4
+ssa e              = "Test text"; auto c{e};_cv                                                                     1.26 %          1.26 %             4
+stringa e          = "Test text"; auto c{e};_mean                                                                   1.10 ns         1.10 ns            4
+stringa e          = "Test text"; auto c{e};_median                                                                 1.09 ns         1.09 ns            4
+stringa e          = "Test text"; auto c{e};_stddev                                                                0.017 ns        0.017 ns            4
+stringa e          = "Test text"; auto c{e};_cv                                                                     1.57 %          1.57 %             4
+lstringa<20> e     = "Test text"; auto c{e};_mean                                                                   1.11 ns         1.11 ns            4
+lstringa<20> e     = "Test text"; auto c{e};_median                                                                 1.10 ns         1.10 ns            4
+lstringa<20> e     = "Test text"; auto c{e};_stddev                                                                0.026 ns        0.026 ns            4
+lstringa<20> e     = "Test text"; auto c{e};_cv                                                                     2.39 %          2.39 %             4
+lstringa<40> e     = "Test text"; auto c{e};_mean                                                                   1.82 ns         1.82 ns            4
+lstringa<40> e     = "Test text"; auto c{e};_median                                                                 1.81 ns         1.81 ns            4
+lstringa<40> e     = "Test text"; auto c{e};_stddev                                                                0.033 ns        0.033 ns            4
+lstringa<40> e     = "Test text"; auto c{e};_cv                                                                     1.83 %          1.84 %             4
+-----  Create copy of Str with 30 symbols ---------/repeats:1                                                      0.000 ns        0.000 ns   1000000000000
+std::string e      = "123456789012345678901234567890"; auto c{e};_mean                                              24.0 ns         24.0 ns            4
+std::string e      = "123456789012345678901234567890"; auto c{e};_median                                            23.3 ns         23.3 ns            4
+std::string e      = "123456789012345678901234567890"; auto c{e};_stddev                                            1.44 ns         1.44 ns            4
+std::string e      = "123456789012345678901234567890"; auto c{e};_cv                                                6.01 %          6.01 %             4
+std::string_view e = "123456789012345678901234567890"; auto c{e};_mean                                             0.737 ns        0.737 ns            4
+std::string_view e = "123456789012345678901234567890"; auto c{e};_median                                           0.736 ns        0.736 ns            4
+std::string_view e = "123456789012345678901234567890"; auto c{e};_stddev                                           0.015 ns        0.015 ns            4
+std::string_view e = "123456789012345678901234567890"; auto c{e};_cv                                                1.99 %          1.99 %             4
+ssa e              = "123456789012345678901234567890"; auto c{e};_mean                                             0.372 ns        0.372 ns            4
+ssa e              = "123456789012345678901234567890"; auto c{e};_median                                           0.368 ns        0.368 ns            4
+ssa e              = "123456789012345678901234567890"; auto c{e};_stddev                                           0.012 ns        0.012 ns            4
+ssa e              = "123456789012345678901234567890"; auto c{e};_cv                                                3.33 %          3.33 %             4
+stringa e          = "123456789012345678901234567890"; auto c{e};_mean                                              1.12 ns         1.12 ns            4
+stringa e          = "123456789012345678901234567890"; auto c{e};_median                                            1.10 ns         1.10 ns            4
+stringa e          = "123456789012345678901234567890"; auto c{e};_stddev                                           0.049 ns        0.049 ns            4
+stringa e          = "123456789012345678901234567890"; auto c{e};_cv                                                4.33 %          4.33 %             4
+lstringa<20> e     = "123456789012345678901234567890"; auto c{e};_mean                                              18.2 ns         18.2 ns            4
+lstringa<20> e     = "123456789012345678901234567890"; auto c{e};_median                                            18.2 ns         18.2 ns            4
+lstringa<20> e     = "123456789012345678901234567890"; auto c{e};_stddev                                           0.408 ns        0.408 ns            4
+lstringa<20> e     = "123456789012345678901234567890"; auto c{e};_cv                                                2.24 %          2.24 %             4
+lstringa<40> e     = "123456789012345678901234567890"; auto c{e};_mean                                              5.02 ns         5.02 ns            4
+lstringa<40> e     = "123456789012345678901234567890"; auto c{e};_median                                            5.00 ns         5.00 ns            4
+lstringa<40> e     = "123456789012345678901234567890"; auto c{e};_stddev                                           0.037 ns        0.037 ns            4
+lstringa<40> e     = "123456789012345678901234567890"; auto c{e};_cv                                                0.74 %          0.74 %             4
+-----  Find 9 symbols text in end of 99 symbols text ---------/repeats:1                                           0.000 ns        0.000 ns   1000000000000
+sz::string::find;_mean                                                                                              96.2 ns         96.2 ns            4
+sz::string::find;_median                                                                                            95.5 ns         95.5 ns            4
+sz::string::find;_stddev                                                                                            2.34 ns         2.34 ns            4
+sz::string::find;_cv                                                                                                2.44 %          2.44 %             4
+std::string::find;_mean                                                                                             7.46 ns         7.46 ns            4
+std::string::find;_median                                                                                           7.45 ns         7.45 ns            4
+std::string::find;_stddev                                                                                          0.118 ns        0.118 ns            4
+std::string::find;_cv                                                                                               1.58 %          1.58 %             4
+std::string_view::find;_mean                                                                                        7.13 ns         7.13 ns            4
+std::string_view::find;_median                                                                                      7.09 ns         7.09 ns            4
+std::string_view::find;_stddev                                                                                     0.140 ns        0.140 ns            4
+std::string_view::find;_cv                                                                                          1.96 %          1.96 %             4
+ssa::find;_mean                                                                                                     6.97 ns         6.97 ns            4
+ssa::find;_median                                                                                                   6.95 ns         6.96 ns            4
+ssa::find;_stddev                                                                                                  0.101 ns        0.101 ns            4
+ssa::find;_cv                                                                                                       1.45 %          1.45 %             4
+stringa::find;_mean                                                                                                 7.88 ns         7.88 ns            4
+stringa::find;_median                                                                                               7.88 ns         7.88 ns            4
+stringa::find;_stddev                                                                                              0.069 ns        0.069 ns            4
+stringa::find;_cv                                                                                                   0.88 %          0.88 %             4
+lstringa<20>::find;_mean                                                                                            6.73 ns         6.73 ns            4
+lstringa<20>::find;_median                                                                                          6.72 ns         6.72 ns            4
+lstringa<20>::find;_stddev                                                                                         0.117 ns        0.117 ns            4
+lstringa<20>::find;_cv                                                                                              1.74 %          1.74 %             4
+lstringa<40>::find;_mean                                                                                            6.79 ns         6.79 ns            4
+lstringa<40>::find;_median                                                                                          6.79 ns         6.79 ns            4
+lstringa<40>::find;_stddev                                                                                         0.155 ns        0.155 ns            4
+lstringa<40>::find;_cv                                                                                              2.28 %          2.28 %             4
+-------  Copy not literal Str with N symbols ---------/repeats:1                                                   0.000 ns        0.000 ns   1000000000000
+std::string copy{str_with_len_N};/15_mean                                                                           1.17 ns         1.17 ns            4
+std::string copy{str_with_len_N};/15_median                                                                         1.17 ns         1.17 ns            4
+std::string copy{str_with_len_N};/15_stddev                                                                        0.050 ns        0.050 ns            4
+std::string copy{str_with_len_N};/15_cv                                                                             4.28 %          4.28 %             4
+std::string copy{str_with_len_N};/16_mean                                                                           1.22 ns         1.22 ns            4
+std::string copy{str_with_len_N};/16_median                                                                         1.20 ns         1.20 ns            4
+std::string copy{str_with_len_N};/16_stddev                                                                        0.091 ns        0.091 ns            4
+std::string copy{str_with_len_N};/16_cv                                                                             7.42 %          7.42 %             4
+std::string copy{str_with_len_N};/23_mean                                                                           23.9 ns         23.9 ns            4
+std::string copy{str_with_len_N};/23_median                                                                         23.9 ns         23.9 ns            4
+std::string copy{str_with_len_N};/23_stddev                                                                        0.073 ns        0.073 ns            4
+std::string copy{str_with_len_N};/23_cv                                                                             0.31 %          0.31 %             4
+std::string copy{str_with_len_N};/24_mean                                                                           24.6 ns         24.6 ns            4
+std::string copy{str_with_len_N};/24_median                                                                         24.7 ns         24.7 ns            4
+std::string copy{str_with_len_N};/24_stddev                                                                        0.974 ns        0.974 ns            4
+std::string copy{str_with_len_N};/24_cv                                                                             3.96 %          3.96 %             4
+std::string copy{str_with_len_N};/32_mean                                                                           23.8 ns         23.8 ns            4
+std::string copy{str_with_len_N};/32_median                                                                         23.8 ns         23.8 ns            4
+std::string copy{str_with_len_N};/32_stddev                                                                        0.382 ns        0.382 ns            4
+std::string copy{str_with_len_N};/32_cv                                                                             1.61 %          1.61 %             4
+std::string copy{str_with_len_N};/64_mean                                                                           25.7 ns         25.7 ns            4
+std::string copy{str_with_len_N};/64_median                                                                         25.2 ns         25.2 ns            4
+std::string copy{str_with_len_N};/64_stddev                                                                         1.35 ns         1.35 ns            4
+std::string copy{str_with_len_N};/64_cv                                                                             5.25 %          5.25 %             4
+std::string copy{str_with_len_N};/128_mean                                                                          26.5 ns         26.5 ns            4
+std::string copy{str_with_len_N};/128_median                                                                        26.7 ns         26.7 ns            4
+std::string copy{str_with_len_N};/128_stddev                                                                        1.17 ns         1.17 ns            4
+std::string copy{str_with_len_N};/128_cv                                                                            4.40 %          4.40 %             4
+std::string copy{str_with_len_N};/256_mean                                                                          27.7 ns         27.7 ns            4
+std::string copy{str_with_len_N};/256_median                                                                        27.4 ns         27.4 ns            4
+std::string copy{str_with_len_N};/256_stddev                                                                        1.18 ns         1.18 ns            4
+std::string copy{str_with_len_N};/256_cv                                                                            4.25 %          4.25 %             4
+std::string copy{str_with_len_N};/512_mean                                                                          31.2 ns         31.2 ns            4
+std::string copy{str_with_len_N};/512_median                                                                        30.9 ns         30.9 ns            4
+std::string copy{str_with_len_N};/512_stddev                                                                        1.01 ns         1.01 ns            4
+std::string copy{str_with_len_N};/512_cv                                                                            3.24 %          3.24 %             4
+std::string copy{str_with_len_N};/1024_mean                                                                         38.2 ns         38.2 ns            4
+std::string copy{str_with_len_N};/1024_median                                                                       38.0 ns         38.0 ns            4
+std::string copy{str_with_len_N};/1024_stddev                                                                       1.44 ns         1.44 ns            4
+std::string copy{str_with_len_N};/1024_cv                                                                           3.76 %          3.76 %             4
+std::string copy{str_with_len_N};/2048_mean                                                                         86.4 ns         86.4 ns            4
+std::string copy{str_with_len_N};/2048_median                                                                       88.6 ns         88.6 ns            4
+std::string copy{str_with_len_N};/2048_stddev                                                                       4.83 ns         4.83 ns            4
+std::string copy{str_with_len_N};/2048_cv                                                                           5.59 %          5.59 %             4
+std::string copy{str_with_len_N};/4096_mean                                                                          115 ns          115 ns            4
+std::string copy{str_with_len_N};/4096_median                                                                        116 ns          116 ns            4
+std::string copy{str_with_len_N};/4096_stddev                                                                       3.08 ns         3.08 ns            4
+std::string copy{str_with_len_N};/4096_cv                                                                           2.67 %          2.67 %             4
+stringa copy{str_with_len_N};/15_mean                                                                               1.10 ns         1.10 ns            4
+stringa copy{str_with_len_N};/15_median                                                                             1.10 ns         1.10 ns            4
+stringa copy{str_with_len_N};/15_stddev                                                                            0.024 ns        0.024 ns            4
+stringa copy{str_with_len_N};/15_cv                                                                                 2.13 %          2.13 %             4
+stringa copy{str_with_len_N};/16_mean                                                                               1.14 ns         1.14 ns            4
+stringa copy{str_with_len_N};/16_median                                                                             1.13 ns         1.13 ns            4
+stringa copy{str_with_len_N};/16_stddev                                                                            0.036 ns        0.036 ns            4
+stringa copy{str_with_len_N};/16_cv                                                                                 3.18 %          3.18 %             4
+stringa copy{str_with_len_N};/23_mean                                                                               1.11 ns         1.11 ns            4
+stringa copy{str_with_len_N};/23_median                                                                             1.11 ns         1.11 ns            4
+stringa copy{str_with_len_N};/23_stddev                                                                            0.015 ns        0.015 ns            4
+stringa copy{str_with_len_N};/23_cv                                                                                 1.38 %          1.38 %             4
+stringa copy{str_with_len_N};/24_mean                                                                               16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/24_median                                                                             16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/24_stddev                                                                            0.057 ns        0.057 ns            4
+stringa copy{str_with_len_N};/24_cv                                                                                 0.35 %          0.35 %             4
+stringa copy{str_with_len_N};/32_mean                                                                               16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/32_median                                                                             16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/32_stddev                                                                            0.039 ns        0.039 ns            4
+stringa copy{str_with_len_N};/32_cv                                                                                 0.24 %          0.24 %             4
+stringa copy{str_with_len_N};/64_mean                                                                               16.1 ns         16.1 ns            4
+stringa copy{str_with_len_N};/64_median                                                                             16.1 ns         16.1 ns            4
+stringa copy{str_with_len_N};/64_stddev                                                                            0.256 ns        0.256 ns            4
+stringa copy{str_with_len_N};/64_cv                                                                                 1.58 %          1.58 %             4
+stringa copy{str_with_len_N};/128_mean                                                                              16.2 ns         16.2 ns            4
+stringa copy{str_with_len_N};/128_median                                                                            16.1 ns         16.1 ns            4
+stringa copy{str_with_len_N};/128_stddev                                                                           0.237 ns        0.237 ns            4
+stringa copy{str_with_len_N};/128_cv                                                                                1.47 %          1.47 %             4
+stringa copy{str_with_len_N};/256_mean                                                                              16.3 ns         16.3 ns            4
+stringa copy{str_with_len_N};/256_median                                                                            16.2 ns         16.2 ns            4
+stringa copy{str_with_len_N};/256_stddev                                                                           0.443 ns        0.443 ns            4
+stringa copy{str_with_len_N};/256_cv                                                                                2.72 %          2.72 %             4
+stringa copy{str_with_len_N};/512_mean                                                                              16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/512_median                                                                            16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/512_stddev                                                                           0.033 ns        0.033 ns            4
+stringa copy{str_with_len_N};/512_cv                                                                                0.21 %          0.21 %             4
+stringa copy{str_with_len_N};/1024_mean                                                                             16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/1024_median                                                                           16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/1024_stddev                                                                          0.059 ns        0.059 ns            4
+stringa copy{str_with_len_N};/1024_cv                                                                               0.37 %          0.37 %             4
+stringa copy{str_with_len_N};/2048_mean                                                                             16.2 ns         16.2 ns            4
+stringa copy{str_with_len_N};/2048_median                                                                           16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/2048_stddev                                                                          0.282 ns        0.282 ns            4
+stringa copy{str_with_len_N};/2048_cv                                                                               1.75 %          1.75 %             4
+stringa copy{str_with_len_N};/4096_mean                                                                             16.0 ns         16.0 ns            4
+stringa copy{str_with_len_N};/4096_median                                                                           16.1 ns         16.1 ns            4
+stringa copy{str_with_len_N};/4096_stddev                                                                          0.042 ns        0.042 ns            4
+stringa copy{str_with_len_N};/4096_cv                                                                               0.26 %          0.26 %             4
+lstringa<16> copy{str_with_len_N};/15_mean                                                                          1.13 ns         1.13 ns            4
+lstringa<16> copy{str_with_len_N};/15_median                                                                        1.13 ns         1.13 ns            4
+lstringa<16> copy{str_with_len_N};/15_stddev                                                                       0.032 ns        0.032 ns            4
+lstringa<16> copy{str_with_len_N};/15_cv                                                                            2.84 %          2.84 %             4
+lstringa<16> copy{str_with_len_N};/16_mean                                                                          5.27 ns         5.27 ns            4
+lstringa<16> copy{str_with_len_N};/16_median                                                                        5.25 ns         5.25 ns            4
+lstringa<16> copy{str_with_len_N};/16_stddev                                                                       0.172 ns        0.172 ns            4
+lstringa<16> copy{str_with_len_N};/16_cv                                                                            3.26 %          3.26 %             4
+lstringa<16> copy{str_with_len_N};/23_mean                                                                          5.22 ns         5.22 ns            4
+lstringa<16> copy{str_with_len_N};/23_median                                                                        5.19 ns         5.19 ns            4
+lstringa<16> copy{str_with_len_N};/23_stddev                                                                       0.160 ns        0.160 ns            4
+lstringa<16> copy{str_with_len_N};/23_cv                                                                            3.06 %          3.06 %             4
+lstringa<16> copy{str_with_len_N};/24_mean                                                                          23.1 ns         23.1 ns            4
+lstringa<16> copy{str_with_len_N};/24_median                                                                        23.0 ns         23.0 ns            4
+lstringa<16> copy{str_with_len_N};/24_stddev                                                                       0.960 ns        0.960 ns            4
+lstringa<16> copy{str_with_len_N};/24_cv                                                                            4.15 %          4.15 %             4
+lstringa<16> copy{str_with_len_N};/32_mean                                                                          22.8 ns         22.8 ns            4
+lstringa<16> copy{str_with_len_N};/32_median                                                                        22.7 ns         22.7 ns            4
+lstringa<16> copy{str_with_len_N};/32_stddev                                                                       0.628 ns        0.628 ns            4
+lstringa<16> copy{str_with_len_N};/32_cv                                                                            2.75 %          2.75 %             4
+lstringa<16> copy{str_with_len_N};/64_mean                                                                          24.2 ns         24.2 ns            4
+lstringa<16> copy{str_with_len_N};/64_median                                                                        24.2 ns         24.2 ns            4
+lstringa<16> copy{str_with_len_N};/64_stddev                                                                       0.661 ns        0.661 ns            4
+lstringa<16> copy{str_with_len_N};/64_cv                                                                            2.73 %          2.73 %             4
+lstringa<16> copy{str_with_len_N};/128_mean                                                                         23.9 ns         23.9 ns            4
+lstringa<16> copy{str_with_len_N};/128_median                                                                       23.8 ns         23.8 ns            4
+lstringa<16> copy{str_with_len_N};/128_stddev                                                                      0.313 ns        0.313 ns            4
+lstringa<16> copy{str_with_len_N};/128_cv                                                                           1.31 %          1.31 %             4
+lstringa<16> copy{str_with_len_N};/256_mean                                                                         26.8 ns         26.8 ns            4
+lstringa<16> copy{str_with_len_N};/256_median                                                                       26.8 ns         26.8 ns            4
+lstringa<16> copy{str_with_len_N};/256_stddev                                                                      0.562 ns        0.562 ns            4
+lstringa<16> copy{str_with_len_N};/256_cv                                                                           2.10 %          2.10 %             4
+lstringa<16> copy{str_with_len_N};/512_mean                                                                         29.0 ns         29.0 ns            4
+lstringa<16> copy{str_with_len_N};/512_median                                                                       29.0 ns         29.0 ns            4
+lstringa<16> copy{str_with_len_N};/512_stddev                                                                       1.21 ns         1.21 ns            4
+lstringa<16> copy{str_with_len_N};/512_cv                                                                           4.19 %          4.19 %             4
+lstringa<16> copy{str_with_len_N};/1024_mean                                                                        78.3 ns         78.3 ns            4
+lstringa<16> copy{str_with_len_N};/1024_median                                                                      84.9 ns         84.9 ns            4
+lstringa<16> copy{str_with_len_N};/1024_stddev                                                                      17.1 ns         17.1 ns            4
+lstringa<16> copy{str_with_len_N};/1024_cv                                                                         21.87 %         21.87 %             4
+lstringa<16> copy{str_with_len_N};/2048_mean                                                                        74.6 ns         74.6 ns            4
+lstringa<16> copy{str_with_len_N};/2048_median                                                                      76.2 ns         76.2 ns            4
+lstringa<16> copy{str_with_len_N};/2048_stddev                                                                      7.81 ns         7.81 ns            4
+lstringa<16> copy{str_with_len_N};/2048_cv                                                                         10.47 %         10.47 %             4
+lstringa<16> copy{str_with_len_N};/4096_mean                                                                        89.5 ns         89.5 ns            4
+lstringa<16> copy{str_with_len_N};/4096_median                                                                      89.9 ns         89.9 ns            4
+lstringa<16> copy{str_with_len_N};/4096_stddev                                                                      3.44 ns         3.44 ns            4
+lstringa<16> copy{str_with_len_N};/4096_cv                                                                          3.84 %          3.84 %             4
+lstringa<512> copy{str_with_len_N};/15_mean                                                                         1.14 ns         1.14 ns            4
+lstringa<512> copy{str_with_len_N};/15_median                                                                       1.14 ns         1.14 ns            4
+lstringa<512> copy{str_with_len_N};/15_stddev                                                                      0.050 ns        0.050 ns            4
+lstringa<512> copy{str_with_len_N};/15_cv                                                                           4.37 %          4.37 %             4
+lstringa<512> copy{str_with_len_N};/16_mean                                                                         4.80 ns         4.80 ns            4
+lstringa<512> copy{str_with_len_N};/16_median                                                                       4.80 ns         4.80 ns            4
+lstringa<512> copy{str_with_len_N};/16_stddev                                                                      0.066 ns        0.066 ns            4
+lstringa<512> copy{str_with_len_N};/16_cv                                                                           1.37 %          1.37 %             4
+lstringa<512> copy{str_with_len_N};/23_mean                                                                         4.97 ns         4.97 ns            4
+lstringa<512> copy{str_with_len_N};/23_median                                                                       4.94 ns         4.94 ns            4
+lstringa<512> copy{str_with_len_N};/23_stddev                                                                      0.189 ns        0.189 ns            4
+lstringa<512> copy{str_with_len_N};/23_cv                                                                           3.80 %          3.80 %             4
+lstringa<512> copy{str_with_len_N};/24_mean                                                                         4.42 ns         4.42 ns            4
+lstringa<512> copy{str_with_len_N};/24_median                                                                       4.38 ns         4.38 ns            4
+lstringa<512> copy{str_with_len_N};/24_stddev                                                                      0.122 ns        0.122 ns            4
+lstringa<512> copy{str_with_len_N};/24_cv                                                                           2.75 %          2.75 %             4
+lstringa<512> copy{str_with_len_N};/32_mean                                                                         4.72 ns         4.72 ns            4
+lstringa<512> copy{str_with_len_N};/32_median                                                                       4.67 ns         4.67 ns            4
+lstringa<512> copy{str_with_len_N};/32_stddev                                                                      0.243 ns        0.243 ns            4
+lstringa<512> copy{str_with_len_N};/32_cv                                                                           5.15 %          5.15 %             4
+lstringa<512> copy{str_with_len_N};/64_mean                                                                         6.10 ns         6.10 ns            4
+lstringa<512> copy{str_with_len_N};/64_median                                                                       6.08 ns         6.08 ns            4
+lstringa<512> copy{str_with_len_N};/64_stddev                                                                      0.223 ns        0.223 ns            4
+lstringa<512> copy{str_with_len_N};/64_cv                                                                           3.65 %          3.65 %             4
+lstringa<512> copy{str_with_len_N};/128_mean                                                                        6.39 ns         6.39 ns            4
+lstringa<512> copy{str_with_len_N};/128_median                                                                      6.34 ns         6.34 ns            4
+lstringa<512> copy{str_with_len_N};/128_stddev                                                                     0.156 ns        0.156 ns            4
+lstringa<512> copy{str_with_len_N};/128_cv                                                                          2.45 %          2.45 %             4
+lstringa<512> copy{str_with_len_N};/256_mean                                                                        8.09 ns         8.09 ns            4
+lstringa<512> copy{str_with_len_N};/256_median                                                                      8.15 ns         8.15 ns            4
+lstringa<512> copy{str_with_len_N};/256_stddev                                                                     0.300 ns        0.300 ns            4
+lstringa<512> copy{str_with_len_N};/256_cv                                                                          3.71 %          3.71 %             4
+lstringa<512> copy{str_with_len_N};/512_mean                                                                        10.5 ns         10.5 ns            4
+lstringa<512> copy{str_with_len_N};/512_median                                                                      10.3 ns         10.3 ns            4
+lstringa<512> copy{str_with_len_N};/512_stddev                                                                     0.608 ns        0.608 ns            4
+lstringa<512> copy{str_with_len_N};/512_cv                                                                          5.80 %          5.80 %             4
+lstringa<512> copy{str_with_len_N};/1024_mean                                                                       51.8 ns         51.8 ns            4
+lstringa<512> copy{str_with_len_N};/1024_median                                                                     51.7 ns         51.7 ns            4
+lstringa<512> copy{str_with_len_N};/1024_stddev                                                                    0.810 ns        0.810 ns            4
+lstringa<512> copy{str_with_len_N};/1024_cv                                                                         1.56 %          1.56 %             4
+lstringa<512> copy{str_with_len_N};/2048_mean                                                                       73.1 ns         73.1 ns            4
+lstringa<512> copy{str_with_len_N};/2048_median                                                                     76.7 ns         76.7 ns            4
+lstringa<512> copy{str_with_len_N};/2048_stddev                                                                     8.49 ns         8.49 ns            4
+lstringa<512> copy{str_with_len_N};/2048_cv                                                                        11.61 %         11.61 %             4
+lstringa<512> copy{str_with_len_N};/4096_mean                                                                       86.2 ns         86.2 ns            4
+lstringa<512> copy{str_with_len_N};/4096_median                                                                     86.4 ns         86.4 ns            4
+lstringa<512> copy{str_with_len_N};/4096_stddev                                                                     1.26 ns         1.26 ns            4
+lstringa<512> copy{str_with_len_N};/4096_cv                                                                         1.46 %          1.46 %             4
+-----  Convert to int '1234567'  ---------/repeats:1                                                               0.000 ns        0.000 ns   1000000000000
+std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);_mean                                          27.0 ns         27.0 ns            4
+std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);_median                                        27.1 ns         27.1 ns            4
+std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);_stddev                                       0.278 ns        0.278 ns            4
+std::string s = "123456789"; int res = std::strtol(s.c_str(), 0, 10);_cv                                            1.03 %          1.03 %             4
+std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);_mean                     17.0 ns         17.0 ns            4
+std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);_median                   17.0 ns         17.0 ns            4
+std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);_stddev                  0.191 ns        0.191 ns            4
+std::string_view s = "123456789"; std::from_chars(s.data(), s.data() + s.size(), res, 10);_cv                       1.12 %          1.12 %             4
+stringa s = "123456789"; int res = s.to_int<int, true, 10, false>_mean                                              9.41 ns         9.41 ns            4
+stringa s = "123456789"; int res = s.to_int<int, true, 10, false>_median                                            9.32 ns         9.32 ns            4
+stringa s = "123456789"; int res = s.to_int<int, true, 10, false>_stddev                                           0.221 ns        0.221 ns            4
+stringa s = "123456789"; int res = s.to_int<int, true, 10, false>_cv                                                2.35 %          2.35 %             4
+ssa s = "123456789"; int res = s.to_int<int, true, 10, false>_mean                                                  9.40 ns         9.40 ns            4
+ssa s = "123456789"; int res = s.to_int<int, true, 10, false>_median                                                9.31 ns         9.31 ns            4
+ssa s = "123456789"; int res = s.to_int<int, true, 10, false>_stddev                                               0.289 ns        0.289 ns            4
+ssa s = "123456789"; int res = s.to_int<int, true, 10, false>_cv                                                    3.08 %          3.08 %             4
+lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>_mean                                         9.44 ns         9.44 ns            4
+lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>_median                                       9.47 ns         9.47 ns            4
+lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>_stddev                                      0.153 ns        0.153 ns            4
+lstringa<20> s = "123456789"; int res = s.to_int<int, true, 10, false>_cv                                           1.62 %          1.62 %             4
+-----  Convert to unsigned 'abcDef'  ---------/repeats:1                                                           0.000 ns        0.000 ns   1000000000000
+std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);_mean                                             23.3 ns         23.3 ns            4
+std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);_median                                           23.3 ns         23.3 ns            4
+std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);_stddev                                          0.192 ns        0.192 ns            4
+std::string s = "abcDef"; int res = std::strtol(s.c_str(), 0, 16);_cv                                               0.82 %          0.82 %             4
+std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);_mean                        21.9 ns         21.9 ns            4
+std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);_median                      21.9 ns         21.9 ns            4
+std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);_stddev                     0.300 ns        0.300 ns            4
+std::string_view s = "abcDef"; std::from_chars(s.data(), s.data() + s.size(), res, 16);_cv                          1.37 %          1.37 %             4
+stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>_mean                                                 7.71 ns         7.71 ns            4
+stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>_median                                               7.64 ns         7.64 ns            4
+stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>_stddev                                              0.209 ns        0.209 ns            4
+stringa s = "abcDef"; int res = s.to_int<int, true, 16, false>_cv                                                   2.71 %          2.71 %             4
+ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>_mean                                                     7.62 ns         7.62 ns            4
+ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>_median                                                   7.55 ns         7.55 ns            4
+ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>_stddev                                                  0.225 ns        0.225 ns            4
+ssa s = "abcDef"; int res = s.to_int<int, true, 16, false>_cv                                                       2.95 %          2.95 %             4
+lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>_mean                                            7.41 ns         7.41 ns            4
+lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>_median                                          7.44 ns         7.44 ns            4
+lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>_stddev                                         0.065 ns        0.065 ns            4
+lstringa<20> s = "abcDef"; int res = s.to_int<int, true, 16, false>_cv                                              0.88 %          0.88 %             4
+-----  Convert to int '    1234567'  ---------/repeats:1                                                           0.000 ns        0.000 ns   1000000000000
+std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);_mean                                       28.6 ns         28.6 ns            4
+std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);_median                                     28.7 ns         28.7 ns            4
+std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);_stddev                                    0.530 ns        0.530 ns            4
+std::string s = "    123456789"; int res = std::strtol(s.c_str(), 0, 0);_cv                                         1.85 %          1.85 %             4
+stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow_mean                                        11.1 ns         11.1 ns            4
+stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow_median                                      10.9 ns         10.9 ns            4
+stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow_stddev                                     0.625 ns        0.625 ns            4
+stringa s = "    123456789"; int res = s.to_int<int>; // Check overflow_cv                                          5.65 %          5.65 %             4
+ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow_mean                                  13.1 ns         13.1 ns            4
+ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow_median                                13.1 ns         13.1 ns            4
+ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow_stddev                               0.470 ns        0.470 ns            4
+ssa s = "    123456789"; int res = s.to_int<int, false>; // No check overflow_cv                                    3.60 %          3.60 %             4
+-----  Convert to double '1234.567e10'  ---------/repeats:1                                                        0.000 ns        0.000 ns   1000000000000
+std::string s = "1234.567e10"; double res = std::strtod(s.c_str(), nullptr);_mean                                   66.6 ns         66.6 ns            4
+std::string s = "1234.567e10"; double res = std::strtod(s.c_str(), nullptr);_median                                 66.5 ns         66.5 ns            4
+std::string s = "1234.567e10"; double res = std::strtod(s.c_str(), nullptr);_stddev                                 1.69 ns         1.69 ns            4
+std::string s = "1234.567e10"; double res = std::strtod(s.c_str(), nullptr);_cv                                     2.53 %          2.53 %             4
+std::string_view s = "1234.567e10"; std::from_chars(s.data(), s.data() + s.size(), res);                      ERROR OCCURRED: 'not implemented'
+std::string_view s = "1234.567e10"; std::from_chars(s.data(), s.data() + s.size(), res);                      ERROR OCCURRED: 'not implemented'
+std::string_view s = "1234.567e10"; std::from_chars(s.data(), s.data() + s.size(), res);                      ERROR OCCURRED: 'not implemented'
+std::string_view s = "1234.567e10"; std::from_chars(s.data(), s.data() + s.size(), res);                      ERROR OCCURRED: 'not implemented'
+ssa s = "1234.567e10"; double res = *s.to_double()_mean                                                             34.2 ns         34.2 ns            4
+ssa s = "1234.567e10"; double res = *s.to_double()_median                                                           34.0 ns         34.0 ns            4
+ssa s = "1234.567e10"; double res = *s.to_double()_stddev                                                          0.705 ns        0.705 ns            4
+ssa s = "1234.567e10"; double res = *s.to_double()_cv                                                               2.06 %          2.06 %             4
+-- Append const literal of 16 bytes 64 times, 1024 total length --/repeats:1                                       0.000 ns        0.000 ns   1000000000000
+std::stringstream str; ... str << "abbaabbaabbaabba";_mean                                                          1948 ns         1948 ns            4
+std::stringstream str; ... str << "abbaabbaabbaabba";_median                                                        1942 ns         1942 ns            4
+std::stringstream str; ... str << "abbaabbaabbaabba";_stddev                                                        21.2 ns         21.2 ns            4
+std::stringstream str; ... str << "abbaabbaabbaabba";_cv                                                            1.09 %          1.09 %             4
+std::string str; ... str += "abbaabbaabbaabba";_mean                                                                 419 ns          419 ns            4
+std::string str; ... str += "abbaabbaabbaabba";_median                                                               424 ns          424 ns            4
+std::string str; ... str += "abbaabbaabbaabba";_stddev                                                              30.8 ns         30.8 ns            4
+std::string str; ... str += "abbaabbaabbaabba";_cv                                                                  7.33 %          7.33 %             4
+lstringa<8> str; ... str += "abbaabbaabbaabba";_mean                                                                 381 ns          381 ns            4
+lstringa<8> str; ... str += "abbaabbaabbaabba";_median                                                               387 ns          387 ns            4
+lstringa<8> str; ... str += "abbaabbaabbaabba";_stddev                                                              19.1 ns         19.1 ns            4
+lstringa<8> str; ... str += "abbaabbaabbaabba";_cv                                                                  5.00 %          5.00 %             4
+lstringa<128> str; ... str += "abbaabbaabbaabba";_mean                                                               279 ns          279 ns            4
+lstringa<128> str; ... str += "abbaabbaabbaabba";_median                                                             287 ns          287 ns            4
+lstringa<128> str; ... str += "abbaabbaabbaabba";_stddev                                                            24.2 ns         24.2 ns            4
+lstringa<128> str; ... str += "abbaabbaabbaabba";_cv                                                                8.65 %          8.65 %             4
+lstringa<512> str; ... str += "abbaabbaabbaabba";_mean                                                               253 ns          253 ns            4
+lstringa<512> str; ... str += "abbaabbaabbaabba";_median                                                             260 ns          260 ns            4
+lstringa<512> str; ... str += "abbaabbaabbaabba";_stddev                                                            21.7 ns         21.7 ns            4
+lstringa<512> str; ... str += "abbaabbaabbaabba";_cv                                                                8.57 %          8.57 %             4
+lstringa<1024> str; ... str += "abbaabbaabbaabba";_mean                                                              157 ns          157 ns            4
+lstringa<1024> str; ... str += "abbaabbaabbaabba";_median                                                            156 ns          156 ns            4
+lstringa<1024> str; ... str += "abbaabbaabbaabba";_stddev                                                           2.06 ns         2.06 ns            4
+lstringa<1024> str; ... str += "abbaabbaabbaabba";_cv                                                               1.31 %          1.31 %             4
+-- Append string of 16 bytes and const literal of 16 bytes 32 times, 1024 total length --/repeats:1                0.000 ns        0.000 ns   1000000000000
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba";_mean                                               1961 ns         1961 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba";_median                                             1969 ns         1969 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba";_stddev                                             32.4 ns         32.4 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba";_cv                                                 1.65 %          1.65 %             4
+std::string str; ... str += str_var + "abbaabbaabbaabba";_mean                                                      1263 ns         1263 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba";_median                                                    1254 ns         1254 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba";_stddev                                                    42.6 ns         42.6 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba";_cv                                                        3.37 %          3.37 %             4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";_mean                                                       467 ns          467 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";_median                                                     445 ns          445 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";_stddev                                                    61.8 ns         61.8 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba";_cv                                                       13.23 %         13.23 %             4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";_mean                                                     355 ns          355 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";_median                                                   358 ns          358 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";_stddev                                                  13.6 ns         13.6 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba";_cv                                                      3.83 %          3.83 %             4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";_mean                                                     317 ns          317 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";_median                                                   320 ns          320 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";_stddev                                                  23.3 ns         23.3 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba";_cv                                                      7.37 %          7.37 %             4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";_mean                                                    230 ns          230 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";_median                                                  230 ns          230 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";_stddev                                                 1.11 ns         1.11 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba";_cv                                                     0.48 %          0.48 %             4
+-- Append string of 16 bytes and const literal of 16 bytes 2048 times, 65536 total length --/repeats:1             0.000 ns        0.000 ns   1000000000000
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba"; 2048 times_mean                                  140567 ns       140568 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba"; 2048 times_median                                139519 ns       139520 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba"; 2048 times_stddev                                  3948 ns         3948 ns            4
+std::stringstream str; ... str << str_var << "abbaabbaabbaabba"; 2048 times_cv                                      2.81 %          2.81 %             4
+std::string str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_mean                                          94630 ns        94630 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_median                                        94079 ns        94080 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_stddev                                         2140 ns         2140 ns            4
+std::string str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_cv                                             2.26 %          2.26 %             4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_mean                                          43021 ns        43021 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_median                                        42724 ns        42724 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_stddev                                         1352 ns         1352 ns            4
+lstringa<8> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_cv                                             3.14 %          3.14 %             4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_mean                                        23822 ns        23822 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_median                                      23394 ns        23394 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_stddev                                       1063 ns         1063 ns            4
+lstringa<128> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_cv                                           4.46 %          4.46 %             4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_mean                                        18156 ns        18156 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_median                                      18115 ns        18115 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_stddev                                        583 ns          583 ns            4
+lstringa<512> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_cv                                           3.21 %          3.21 %             4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_mean                                       17874 ns        17875 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_median                                     17853 ns        17853 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_stddev                                       317 ns          317 ns            4
+lstringa<1024> str; ... str += str_var + "abbaabbaabbaabba"; 2048 times_cv                                          1.78 %          1.78 %             4
+-- Append 2 string of 16 bytes 32 times, 1024 total length --/repeats:1                                            0.000 ns        0.000 ns   1000000000000
+std::stringstream str; ... str << str_var1 << str_var2;_mean                                                        2003 ns         2003 ns            4
+std::stringstream str; ... str << str_var1 << str_var2;_median                                                      1970 ns         1970 ns            4
+std::stringstream str; ... str << str_var1 << str_var2;_stddev                                                      83.4 ns         83.4 ns            4
+std::stringstream str; ... str << str_var1 << str_var2;_cv                                                          4.16 %          4.16 %             4
+std::string str; ... str += str_var1 + str_var2;_mean                                                               1370 ns         1370 ns            4
+std::string str; ... str += str_var1 + str_var2;_median                                                             1383 ns         1383 ns            4
+std::string str; ... str += str_var1 + str_var2;_stddev                                                             38.9 ns         38.9 ns            4
+std::string str; ... str += str_var1 + str_var2;_cv                                                                 2.84 %          2.84 %             4
+lstringa<16> str; ... str += str_var1 + str_var2;_mean                                                               496 ns          496 ns            4
+lstringa<16> str; ... str += str_var1 + str_var2;_median                                                             495 ns          495 ns            4
+lstringa<16> str; ... str += str_var1 + str_var2;_stddev                                                            21.7 ns         21.7 ns            4
+lstringa<16> str; ... str += str_var1 + str_var2;_cv                                                                4.36 %          4.36 %             4
+lstringa<128> str; ... str += str_var1 + str_var2;_mean                                                              434 ns          434 ns            4
+lstringa<128> str; ... str += str_var1 + str_var2;_median                                                            442 ns          442 ns            4
+lstringa<128> str; ... str += str_var1 + str_var2;_stddev                                                           25.2 ns         25.2 ns            4
+lstringa<128> str; ... str += str_var1 + str_var2;_cv                                                               5.81 %          5.81 %             4
+lstringa<512> str; ... str += str_var1 + str_var2;_mean                                                              387 ns          387 ns            4
+lstringa<512> str; ... str += str_var1 + str_var2;_median                                                            390 ns          390 ns            4
+lstringa<512> str; ... str += str_var1 + str_var2;_stddev                                                           17.2 ns         17.2 ns            4
+lstringa<512> str; ... str += str_var1 + str_var2;_cv                                                               4.45 %          4.45 %             4
+lstringa<1024> str; ... str += str_var1 + str_var2;_mean                                                             290 ns          290 ns            4
+lstringa<1024> str; ... str += str_var1 + str_var2;_median                                                           289 ns          289 ns            4
+lstringa<1024> str; ... str += str_var1 + str_var2;_stddev                                                          4.35 ns         4.35 ns            4
+lstringa<1024> str; ... str += str_var1 + str_var2;_cv                                                              1.50 %          1.50 %             4
+-- Append text, number, text --/repeats:1                                                                          0.000 ns        0.000 ns   1000000000000
+std::stringstream str; str << "test = " << k << " times";_mean                                                      3322 ns         3322 ns            4
+std::stringstream str; str << "test = " << k << " times";_median                                                    3297 ns         3297 ns            4
+std::stringstream str; str << "test = " << k << " times";_stddev                                                     111 ns          111 ns            4
+std::stringstream str; str << "test = " << k << " times";_cv                                                        3.34 %          3.34 %             4
+std::string str = "test = " + std::to_string(k) + " times";_mean                                                     475 ns          475 ns            4
+std::string str = "test = " + std::to_string(k) + " times";_median                                                   463 ns          463 ns            4
+std::string str = "test = " + std::to_string(k) + " times";_stddev                                                  26.9 ns         26.9 ns            4
+std::string str = "test = " + std::to_string(k) + " times";_cv                                                      5.67 %          5.67 %             4
+char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;_mean                                      1200 ns         1200 ns            4
+char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;_median                                    1162 ns         1162 ns            4
+char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;_stddev                                     118 ns          118 ns            4
+char buf[100]; sprintf(buf, "test = %u times", k); std::string str = buf;_cv                                        9.84 %          9.84 %             4
+std::string str = std::format("test = {} times", k);_mean                                                            948 ns          948 ns            4
+std::string str = std::format("test = {} times", k);_median                                                          943 ns          943 ns            4
+std::string str = std::format("test = {} times", k);_stddev                                                         27.0 ns         27.0 ns            4
+std::string str = std::format("test = {} times", k);_cv                                                             2.85 %          2.85 %             4
+lstringa<8> str; str.format("test = {} times", k);_mean                                                             2019 ns         2019 ns            4
+lstringa<8> str; str.format("test = {} times", k);_median                                                           2017 ns         2017 ns            4
+lstringa<8> str; str.format("test = {} times", k);_stddev                                                           44.0 ns         44.0 ns            4
+lstringa<8> str; str.format("test = {} times", k);_cv                                                               2.18 %          2.18 %             4
+lstringa<32> str; str.format("test = {} times", k);_mean                                                            1714 ns         1714 ns            4
+lstringa<32> str; str.format("test = {} times", k);_median                                                          1701 ns         1701 ns            4
+lstringa<32> str; str.format("test = {} times", k);_stddev                                                          46.4 ns         46.4 ns            4
+lstringa<32> str; str.format("test = {} times", k);_cv                                                              2.71 %          2.71 %             4
+lstringa<8> str = "test = " + k + " times";_mean                                                                     271 ns          271 ns            4
+lstringa<8> str = "test = " + k + " times";_median                                                                   272 ns          272 ns            4
+lstringa<8> str = "test = " + k + " times";_stddev                                                                  2.40 ns         2.40 ns            4
+lstringa<8> str = "test = " + k + " times";_cv                                                                      0.89 %          0.89 %             4
+lstringa<32> str = "test = " + k + " times";_mean                                                                    120 ns          120 ns            4
+lstringa<32> str = "test = " + k + " times";_median                                                                  120 ns          120 ns            4
+lstringa<32> str = "test = " + k + " times";_stddev                                                                 1.02 ns         1.02 ns            4
+lstringa<32> str = "test = " + k + " times";_cv                                                                     0.85 %          0.85 %             4
+stringa str = "test = " + k + " times";_mean                                                                         124 ns          124 ns            4
+stringa str = "test = " + k + " times";_median                                                                       121 ns          121 ns            4
+stringa str = "test = " + k + " times";_stddev                                                                      7.42 ns         7.42 ns            4
+stringa str = "test = " + k + " times";_cv                                                                          5.97 %          5.97 %             4
+-- Split text and convert to int --/repeats:1                                                                      0.000 ns        0.000 ns   1000000000000
+std::string::find + substr + std::strtol_mean                                                                        277 ns          277 ns            4
+std::string::find + substr + std::strtol_median                                                                      278 ns          278 ns            4
+std::string::find + substr + std::strtol_stddev                                                                     3.47 ns         3.47 ns            4
+std::string::find + substr + std::strtol_cv                                                                         1.25 %          1.25 %             4
+ssa::splitter + ssa::as_int_mean                                                                                     153 ns          153 ns            4
+ssa::splitter + ssa::as_int_median                                                                                   152 ns          152 ns            4
+ssa::splitter + ssa::as_int_stddev                                                                                  3.60 ns         3.60 ns            4
+ssa::splitter + ssa::as_int_cv                                                                                      2.35 %          2.35 %             4
+ssa::splitf + functor_mean                                                                                           211 ns          211 ns            4
+ssa::splitf + functor_median                                                                                         210 ns          210 ns            4
+ssa::splitf + functor_stddev                                                                                        5.09 ns         5.09 ns            4
+ssa::splitf + functor_cv                                                                                            2.41 %          2.41 %             4
+-- Replace symbols in text ~400 symbols --/repeats:1                                                               0.000 ns        0.000 ns   1000000000000
+Naive (and wrong) replace symbols with std::string find + replace_mean                                               892 ns          892 ns            4
+Naive (and wrong) replace symbols with std::string find + replace_median                                             892 ns          892 ns            4
+Naive (and wrong) replace symbols with std::string find + replace_stddev                                            16.7 ns         16.7 ns            4
+Naive (and wrong) replace symbols with std::string find + replace_cv                                                1.88 %          1.88 %             4
+replace symbols with std::string find_first_of + replace_mean                                                       2193 ns         2193 ns            4
+replace symbols with std::string find_first_of + replace_median                                                     2199 ns         2199 ns            4
+replace symbols with std::string find_first_of + replace_stddev                                                     29.9 ns         29.9 ns            4
+replace symbols with std::string find_first_of + replace_cv                                                         1.36 %          1.36 %             4
+replace symbols with std::string_view find_first_of + copy_mean                                                     1024 ns         1024 ns            4
+replace symbols with std::string_view find_first_of + copy_median                                                   1025 ns         1025 ns            4
+replace symbols with std::string_view find_first_of + copy_stddev                                                   7.54 ns         7.54 ns            4
+replace symbols with std::string_view find_first_of + copy_cv                                                       0.74 %          0.74 %             4
+replace runtime symbols with string expressions and without remembering all search results_mean                     1463 ns         1463 ns            4
+replace runtime symbols with string expressions and without remembering all search results_median                   1440 ns         1440 ns            4
+replace runtime symbols with string expressions and without remembering all search results_stddev                   61.5 ns         61.5 ns            4
+replace runtime symbols with string expressions and without remembering all search results_cv                       4.21 %          4.21 %             4
+replace runtime symbols with simstr and memorization of all search results_mean                                     1131 ns         1131 ns            4
+replace runtime symbols with simstr and memorization of all search results_median                                   1121 ns         1121 ns            4
+replace runtime symbols with simstr and memorization of all search results_stddev                                   28.4 ns         28.4 ns            4
+replace runtime symbols with simstr and memorization of all search results_cv                                       2.51 %          2.51 %             4
+replace const symbols with string expressions and without remembering all search results_mean                       1003 ns         1003 ns            4
+replace const symbols with string expressions and without remembering all search results_median                     1000 ns         1000 ns            4
+replace const symbols with string expressions and without remembering all search results_stddev                     15.8 ns         15.8 ns            4
+replace const symbols with string expressions and without remembering all search results_cv                         1.58 %          1.58 %             4
+replace const symbols with string expressions and memorization of all search results_mean                            876 ns          876 ns            4
+replace const symbols with string expressions and memorization of all search results_median                          872 ns          872 ns            4
+replace const symbols with string expressions and memorization of all search results_stddev                         21.1 ns         21.1 ns            4
+replace const symbols with string expressions and memorization of all search results_cv                             2.41 %          2.41 %             4
+-- Replace symbols in text ~40 symbols --/repeats:1                                                                0.000 ns        0.000 ns   1000000000000
+Short Naive (and wrong) replace symbols with std::string find + replace_mean                                         167 ns          167 ns            4
+Short Naive (and wrong) replace symbols with std::string find + replace_median                                       166 ns          166 ns            4
+Short Naive (and wrong) replace symbols with std::string find + replace_stddev                                      4.51 ns         4.51 ns            4
+Short Naive (and wrong) replace symbols with std::string find + replace_cv                                          2.70 %          2.70 %             4
+Short replace symbols with std::string find_first_of + replace_mean                                                  309 ns          309 ns            4
+Short replace symbols with std::string find_first_of + replace_median                                                309 ns          309 ns            4
+Short replace symbols with std::string find_first_of + replace_stddev                                               4.61 ns         4.61 ns            4
+Short replace symbols with std::string find_first_of + replace_cv                                                   1.49 %          1.49 %             4
+Short replace symbols with std::string_view find_first_of + copy_mean                                                152 ns          152 ns            4
+Short replace symbols with std::string_view find_first_of + copy_median                                              152 ns          152 ns            4
+Short replace symbols with std::string_view find_first_of + copy_stddev                                             2.46 ns         2.46 ns            4
+Short replace symbols with std::string_view find_first_of + copy_cv                                                 1.61 %          1.61 %             4
+Short replace runtime symbols with string expressions and without remembering all search results_mean                192 ns          192 ns            4
+Short replace runtime symbols with string expressions and without remembering all search results_median              189 ns          189 ns            4
+Short replace runtime symbols with string expressions and without remembering all search results_stddev             6.01 ns         6.01 ns            4
+Short replace runtime symbols with string expressions and without remembering all search results_cv                 3.13 %          3.13 %             4
+Short replace runtime symbols with simstr and memorization of all search results_mean                                208 ns          208 ns            4
+Short replace runtime symbols with simstr and memorization of all search results_median                              208 ns          208 ns            4
+Short replace runtime symbols with simstr and memorization of all search results_stddev                             2.40 ns         2.40 ns            4
+Short replace runtime symbols with simstr and memorization of all search results_cv                                 1.15 %          1.15 %             4
+Short replace const symbols with string expressions and without remembering all search results_mean                  124 ns          124 ns            4
+Short replace const symbols with string expressions and without remembering all search results_median                124 ns          124 ns            4
+Short replace const symbols with string expressions and without remembering all search results_stddev               1.96 ns         1.96 ns            4
+Short replace const symbols with string expressions and without remembering all search results_cv                   1.58 %          1.58 %             4
+Short replace const symbols with string expressions and memorization of all search results_mean                      137 ns          137 ns            4
+Short replace const symbols with string expressions and memorization of all search results_median                    136 ns          136 ns            4
+Short replace const symbols with string expressions and memorization of all search results_stddev                   3.34 ns         3.34 ns            4
+Short replace const symbols with string expressions and memorization of all search results_cv                       2.44 %          2.45 %             4
+-----  Replace All Str To Longer Size ---------/repeats:1                                                          0.000 ns        0.000 ns   1000000000000
+replace bb to ---- in std::string|64_mean                                                                            173 ns          173 ns            4
+replace bb to ---- in std::string|64_median                                                                          174 ns          174 ns            4
+replace bb to ---- in std::string|64_stddev                                                                         4.58 ns         4.58 ns            4
+replace bb to ---- in std::string|64_cv                                                                             2.64 %          2.64 %             4
+replace bb to ---- in std::string|256_mean                                                                           844 ns          844 ns            4
+replace bb to ---- in std::string|256_median                                                                         845 ns          845 ns            4
+replace bb to ---- in std::string|256_stddev                                                                        21.6 ns         21.6 ns            4
+replace bb to ---- in std::string|256_cv                                                                            2.55 %          2.55 %             4
+replace bb to ---- in std::string|512_mean                                                                          1199 ns         1199 ns            4
+replace bb to ---- in std::string|512_median                                                                        1177 ns         1177 ns            4
+replace bb to ---- in std::string|512_stddev                                                                        60.1 ns         60.1 ns            4
+replace bb to ---- in std::string|512_cv                                                                            5.01 %          5.01 %             4
+replace bb to ---- in std::string|1024_mean                                                                         2462 ns         2462 ns            4
+replace bb to ---- in std::string|1024_median                                                                       2456 ns         2456 ns            4
+replace bb to ---- in std::string|1024_stddev                                                                        113 ns          113 ns            4
+replace bb to ---- in std::string|1024_cv                                                                           4.60 %          4.60 %             4
+replace bb to ---- in std::string|2048_mean                                                                         6298 ns         6298 ns            4
+replace bb to ---- in std::string|2048_median                                                                       6218 ns         6218 ns            4
+replace bb to ---- in std::string|2048_stddev                                                                        185 ns          185 ns            4
+replace bb to ---- in std::string|2048_cv                                                                           2.94 %          2.94 %             4
+replace bb to ---- in lstringa<8>|64_mean                                                                            129 ns          129 ns            4
+replace bb to ---- in lstringa<8>|64_median                                                                          128 ns          128 ns            4
+replace bb to ---- in lstringa<8>|64_stddev                                                                         5.20 ns         5.20 ns            4
+replace bb to ---- in lstringa<8>|64_cv                                                                             4.04 %          4.04 %             4
+replace bb to ---- in lstringa<8>|256_mean                                                                           446 ns          446 ns            4
+replace bb to ---- in lstringa<8>|256_median                                                                         444 ns          444 ns            4
+replace bb to ---- in lstringa<8>|256_stddev                                                                        19.7 ns         19.7 ns            4
+replace bb to ---- in lstringa<8>|256_cv                                                                            4.41 %          4.41 %             4
+replace bb to ---- in lstringa<8>|512_mean                                                                           831 ns          831 ns            4
+replace bb to ---- in lstringa<8>|512_median                                                                         830 ns          830 ns            4
+replace bb to ---- in lstringa<8>|512_stddev                                                                        18.6 ns         18.6 ns            4
+replace bb to ---- in lstringa<8>|512_cv                                                                            2.23 %          2.23 %             4
+replace bb to ---- in lstringa<8>|1024_mean                                                                         1609 ns         1609 ns            4
+replace bb to ---- in lstringa<8>|1024_median                                                                       1608 ns         1608 ns            4
+replace bb to ---- in lstringa<8>|1024_stddev                                                                       21.2 ns         21.2 ns            4
+replace bb to ---- in lstringa<8>|1024_cv                                                                           1.32 %          1.32 %             4
+replace bb to ---- in lstringa<8>|2048_mean                                                                         3058 ns         3058 ns            4
+replace bb to ---- in lstringa<8>|2048_median                                                                       3039 ns         3039 ns            4
+replace bb to ---- in lstringa<8>|2048_stddev                                                                       51.4 ns         51.4 ns            4
+replace bb to ---- in lstringa<8>|2048_cv                                                                           1.68 %          1.68 %             4
+replace bb to ---- by init stringa|64_mean                                                                          89.4 ns         89.4 ns            4
+replace bb to ---- by init stringa|64_median                                                                        89.4 ns         89.4 ns            4
+replace bb to ---- by init stringa|64_stddev                                                                       0.659 ns        0.659 ns            4
+replace bb to ---- by init stringa|64_cv                                                                            0.74 %          0.74 %             4
+replace bb to ---- by init stringa|256_mean                                                                          283 ns          283 ns            4
+replace bb to ---- by init stringa|256_median                                                                        284 ns          284 ns            4
+replace bb to ---- by init stringa|256_stddev                                                                       5.33 ns         5.33 ns            4
+replace bb to ---- by init stringa|256_cv                                                                           1.88 %          1.88 %             4
+replace bb to ---- by init stringa|512_mean                                                                          673 ns          673 ns            4
+replace bb to ---- by init stringa|512_median                                                                        673 ns          673 ns            4
+replace bb to ---- by init stringa|512_stddev                                                                       14.9 ns         14.9 ns            4
+replace bb to ---- by init stringa|512_cv                                                                           2.21 %          2.21 %             4
+replace bb to ---- by init stringa|1024_mean                                                                        1432 ns         1432 ns            4
+replace bb to ---- by init stringa|1024_median                                                                      1406 ns         1406 ns            4
+replace bb to ---- by init stringa|1024_stddev                                                                       112 ns          112 ns            4
+replace bb to ---- by init stringa|1024_cv                                                                          7.85 %          7.85 %             4
+replace bb to ---- by init stringa|2048_mean                                                                        2854 ns         2854 ns            4
+replace bb to ---- by init stringa|2048_median                                                                      2850 ns         2851 ns            4
+replace bb to ---- by init stringa|2048_stddev                                                                      26.3 ns         26.3 ns            4
+replace bb to ---- by init stringa|2048_cv                                                                          0.92 %          0.92 %             4
+-----  Replace All Str To Same Size ---------/repeats:1                                                            0.000 ns        0.000 ns   1000000000000
+replace bb to -- in std::string|64_mean                                                                              118 ns          118 ns            4
+replace bb to -- in std::string|64_median                                                                            118 ns          118 ns            4
+replace bb to -- in std::string|64_stddev                                                                          0.809 ns        0.809 ns            4
+replace bb to -- in std::string|64_cv                                                                               0.68 %          0.68 %             4
+replace bb to -- in std::string|256_mean                                                                             413 ns          413 ns            4
+replace bb to -- in std::string|256_median                                                                           414 ns          414 ns            4
+replace bb to -- in std::string|256_stddev                                                                          5.02 ns         5.02 ns            4
+replace bb to -- in std::string|256_cv                                                                              1.21 %          1.21 %             4
+replace bb to -- in std::string|512_mean                                                                             825 ns          825 ns            4
+replace bb to -- in std::string|512_median                                                                           817 ns          817 ns            4
+replace bb to -- in std::string|512_stddev                                                                          21.3 ns         21.3 ns            4
+replace bb to -- in std::string|512_cv                                                                              2.57 %          2.57 %             4
+replace bb to -- in std::string|1024_mean                                                                           1543 ns         1543 ns            4
+replace bb to -- in std::string|1024_median                                                                         1542 ns         1542 ns            4
+replace bb to -- in std::string|1024_stddev                                                                         13.5 ns         13.5 ns            4
+replace bb to -- in std::string|1024_cv                                                                             0.87 %          0.87 %             4
+replace bb to -- in std::string|2048_mean                                                                           3140 ns         3140 ns            4
+replace bb to -- in std::string|2048_median                                                                         3113 ns         3113 ns            4
+replace bb to -- in std::string|2048_stddev                                                                         98.1 ns         98.1 ns            4
+replace bb to -- in std::string|2048_cv                                                                             3.12 %          3.12 %             4
+replace bb to -- in lstringa<8>|64_mean                                                                             88.1 ns         88.1 ns            4
+replace bb to -- in lstringa<8>|64_median                                                                           88.0 ns         88.0 ns            4
+replace bb to -- in lstringa<8>|64_stddev                                                                           1.30 ns         1.30 ns            4
+replace bb to -- in lstringa<8>|64_cv                                                                               1.48 %          1.48 %             4
+replace bb to -- in lstringa<8>|256_mean                                                                             282 ns          282 ns            4
+replace bb to -- in lstringa<8>|256_median                                                                           279 ns          279 ns            4
+replace bb to -- in lstringa<8>|256_stddev                                                                          8.81 ns         8.81 ns            4
+replace bb to -- in lstringa<8>|256_cv                                                                              3.12 %          3.12 %             4
+replace bb to -- in lstringa<8>|512_mean                                                                             526 ns          526 ns            4
+replace bb to -- in lstringa<8>|512_median                                                                           525 ns          525 ns            4
+replace bb to -- in lstringa<8>|512_stddev                                                                          7.04 ns         7.04 ns            4
+replace bb to -- in lstringa<8>|512_cv                                                                              1.34 %          1.34 %             4
+replace bb to -- in lstringa<8>|1024_mean                                                                           1072 ns         1072 ns            4
+replace bb to -- in lstringa<8>|1024_median                                                                         1066 ns         1066 ns            4
+replace bb to -- in lstringa<8>|1024_stddev                                                                         54.3 ns         54.3 ns            4
+replace bb to -- in lstringa<8>|1024_cv                                                                             5.07 %          5.07 %             4
+replace bb to -- in lstringa<8>|2048_mean                                                                           2023 ns         2023 ns            4
+replace bb to -- in lstringa<8>|2048_median                                                                         1990 ns         1990 ns            4
+replace bb to -- in lstringa<8>|2048_stddev                                                                         69.4 ns         69.4 ns            4
+replace bb to -- in lstringa<8>|2048_cv                                                                             3.43 %          3.43 %             4
+replace bb to -- by init stringa|64_mean                                                                            75.3 ns         75.3 ns            4
+replace bb to -- by init stringa|64_median                                                                          75.2 ns         75.2 ns            4
+replace bb to -- by init stringa|64_stddev                                                                         0.454 ns        0.454 ns            4
+replace bb to -- by init stringa|64_cv                                                                              0.60 %          0.60 %             4
+replace bb to -- by init stringa|256_mean                                                                            233 ns          233 ns            4
+replace bb to -- by init stringa|256_median                                                                          232 ns          232 ns            4
+replace bb to -- by init stringa|256_stddev                                                                         7.50 ns         7.50 ns            4
+replace bb to -- by init stringa|256_cv                                                                             3.22 %          3.22 %             4
+replace bb to -- by init stringa|512_mean                                                                            428 ns          428 ns            4
+replace bb to -- by init stringa|512_median                                                                          426 ns          426 ns            4
+replace bb to -- by init stringa|512_stddev                                                                         6.17 ns         6.17 ns            4
+replace bb to -- by init stringa|512_cv                                                                             1.44 %          1.44 %             4
+replace bb to -- by init stringa|1024_mean                                                                           846 ns          846 ns            4
+replace bb to -- by init stringa|1024_median                                                                         847 ns          847 ns            4
+replace bb to -- by init stringa|1024_stddev                                                                        19.0 ns         19.0 ns            4
+replace bb to -- by init stringa|1024_cv                                                                            2.25 %          2.25 %             4
+replace bb to -- by init stringa|2048_mean                                                                          1654 ns         1654 ns            4
+replace bb to -- by init stringa|2048_median                                                                        1658 ns         1658 ns            4
+replace bb to -- by init stringa|2048_stddev                                                                        47.7 ns         47.7 ns            4
+replace bb to -- by init stringa|2048_cv                                                                            2.88 %          2.88 %             4
+-----  Hash Map insert and find ---------/repeats:1                                                                0.000 ns        0.000 ns   1000000000000
+hashStrMapA<size_t> emplace & find stringa;_mean                                                                 3677557 ns      3677568 ns            4
+hashStrMapA<size_t> emplace & find stringa;_median                                                               3617202 ns      3617214 ns            4
+hashStrMapA<size_t> emplace & find stringa;_stddev                                                                132384 ns       132384 ns            4
+hashStrMapA<size_t> emplace & find stringa;_cv                                                                      3.60 %          3.60 %             4
+std::unordered_map<std::string, size_t> emplace & find std::string;_mean                                         3517210 ns      3517220 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string;_median                                       3520155 ns      3520166 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string;_stddev                                         38144 ns        38141 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string;_cv                                              1.08 %          1.08 %             4
+hashStrMapA<size_t> emplace & find ssa;_mean                                                                     3630665 ns      3630676 ns            4
+hashStrMapA<size_t> emplace & find ssa;_median                                                                   3629915 ns      3629926 ns            4
+hashStrMapA<size_t> emplace & find ssa;_stddev                                                                     15226 ns        15225 ns            4
+hashStrMapA<size_t> emplace & find ssa;_cv                                                                          0.42 %          0.42 %             4
+std::unordered_map<std::string, size_t> emplace & find std::string_view;_mean                                    4042057 ns      4042070 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string_view;_median                                  4042055 ns      4042067 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string_view;_stddev                                    54785 ns        54789 ns            4
+std::unordered_map<std::string, size_t> emplace & find std::string_view;_cv                                         1.36 %          1.36 %             4
+-----  Build Full Func Name ---------/repeats:1                                                                    0.000 ns        0.000 ns   1000000000000
+Build func full name std::string;_mean                                                                               991 ns          991 ns            4
+Build func full name std::string;_median                                                                             992 ns          992 ns            4
+Build func full name std::string;_stddev                                                                            13.3 ns         13.3 ns            4
+Build func full name std::string;_cv                                                                                1.34 %          1.34 %             4
+Build func full name std::string 1;_mean                                                                             997 ns          997 ns            4
+Build func full name std::string 1;_median                                                                           999 ns          999 ns            4
+Build func full name std::string 1;_stddev                                                                          9.26 ns         9.26 ns            4
+Build func full name std::string 1;_cv                                                                              0.93 %          0.93 %             4
+Build func full name std::stream;_mean                                                                              2832 ns         2832 ns            4
+Build func full name std::stream;_median                                                                            2834 ns         2834 ns            4
+Build func full name std::stream;_stddev                                                                            50.3 ns         50.3 ns            4
+Build func full name std::stream;_cv                                                                                1.78 %          1.78 %             4
+Build func full name stringa;_mean                                                                                   443 ns          443 ns            4
+Build func full name stringa;_median                                                                                 444 ns          444 ns            4
+Build func full name stringa;_stddev                                                                                10.7 ns         10.7 ns            4
+Build func full name stringa;_cv                                                                                    2.43 %          2.43 %             4
+Build func full name stringa 1;_mean                                                                                 597 ns          597 ns            4
+Build func full name stringa 1;_median                                                                               595 ns          595 ns            4
+Build func full name stringa 1;_stddev                                                                              8.01 ns         8.01 ns            4
+Build func full name stringa 1;_cv                                                                                  1.34 %          1.34 %             4
+-----  Make Upper  ---------/repeats:1                                                                             0.000 ns        0.000 ns   1000000000000
+To upper case std::wstring_mean                                                                                      167 ns          167 ns            4
+To upper case std::wstring_median                                                                                    167 ns          167 ns            4
+To upper case std::wstring_stddev                                                                                   2.16 ns         2.16 ns            4
+To upper case std::wstring_cv                                                                                       1.29 %          1.29 %             4
+To upper case lstringw<15>_mean                                                                                     40.3 ns         40.3 ns            4
+To upper case lstringw<15>_median                                                                                   39.8 ns         39.8 ns            4
+To upper case lstringw<15>_stddev                                                                                   1.05 ns         1.05 ns            4
+To upper case lstringw<15>_cv                                                                                       2.60 %          2.60 %             4

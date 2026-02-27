@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.7.1
+    VERSION 1.7.2
     DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -29,6 +29,12 @@ option(SIMSTR_BUILD_TESTS "Build tests" ON)
 option(SIMSTR_BENCHMARKS "Build benchmarks" Off)
 option(USE_SYSTEM_DEPS "Use system dependencies" Off)
 cmake_dependent_option(SIMSTR_LINK_NATVIS "Link natvis file" On CAN_LINK_NATVIS Off)
+cmake_dependent_option(SIMSTR_USE_LIBCXX "Use libc++" Off "NOT CAN_LINK_NATVIS" Off)
+
+if (SIMSTR_USE_LIBCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+endif(SIMSTR_USE_LIBCXX)
 
 add_library(simstr_simstr
     src/sstring.cpp
@@ -142,6 +148,10 @@ function(GBencmark)
     set(BENCHMARK_INSTALL_DOCS OFF)
     set(BENCHMARK_DOWNLOAD_DEPENDENCIES ON)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+    if (SIMSTR_USE_LIBCXX)
+        set(BENCHMARK_USE_LIBCXX On)
+    endif(SIMSTR_USE_LIBCXX)
+
     add_compile_definitions(BENCHMARK_STATIC_DEFINE)
     FetchContent_MakeAvailable(googlebench)
     if(TARGET benchmark)

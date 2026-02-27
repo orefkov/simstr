@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.7.1
+* ver. 1.7.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -331,9 +331,9 @@ public:
             return {};
         }
         #ifdef __linux__
-        if constexpr(sizeof(K) == 1) {
+        if constexpr(sizeof(K) == 1 && requires {std::from_chars(std::declval<const K*>(), std::declval<const K*>(), std::declval<double&>()); }) {
             double d{};
-            if (std::from_chars((const u8s*)ptr, (const u8s*)ptr + len, d).ec == std::errc{}) {
+            if (std::from_chars((const K*)ptr, (const K*)ptr + len, d).ec == std::errc{}) {
                 return d;
             }
             return {};

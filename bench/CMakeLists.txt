@@ -6,7 +6,12 @@ cmake_minimum_required (VERSION 3.15)
 add_executable(benchStr bench_str.cpp bench.h)
 target_link_libraries(benchStr simstr::simstr benchmark::benchmark)
 target_compile_features(benchStr PUBLIC cxx_std_23)
-target_compile_definitions(benchStr PRIVATE SIMSTR_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(benchStr PRIVATE
+    SIMSTR_VERSION="${PROJECT_VERSION}"
+    CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}"
+    CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}"
+)
+
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt

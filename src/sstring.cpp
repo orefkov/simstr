@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.1
+ * ver. 1.7.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Реализация строковых функций
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com

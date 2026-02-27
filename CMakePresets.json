@@ -134,8 +134,8 @@
       "inherits": "base",
       "displayName": "Linux base",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc-13",
-        "CMAKE_CXX_COMPILER": "g++-13",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       },
       "condition": {
@@ -169,7 +169,7 @@
     },
     {
       "name": "linux-release",
-      "displayName": "Linux Release",
+      "displayName": "Linux Release GCC",
       "inherits": "linux-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
@@ -181,8 +181,20 @@
       "inherits": "linux-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang-21",
-        "CMAKE_CXX_COMPILER": "clang++-21"
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "linux-release-clang-libcxx",
+      "displayName": "Linux Release Clang libc++",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "SIMSTR_USE_LIBCXX": true,
+        "SIMSTR_BENCHMARKS":  true
       }
     }
   ],

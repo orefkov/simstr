@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.1
+ * ver. 1.7.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -4158,7 +4158,9 @@ public:
      * @en @brief Convert string to double.
      * @return std::optional<double>.
      */
-    template<bool SkipWS = true, bool AllowPlus = true> requires (sizeof(K) == 1)
+    template<bool SkipWS = true, bool AllowPlus = true>
+        requires(sizeof(K) == 1 &&
+        requires { std::from_chars(std::declval<K*>(), std::declval<K*>(), std::declval<double&>()); })
     std::optional<double> to_double() const noexcept {
         size_t len = _len();
         const K* ptr = _str();
@@ -4177,9 +4179,11 @@ public:
         if (!len) {
             return {};
         }
-        double d{};
-        if (std::from_chars((const u8s*)ptr, (const u8s*)ptr + len, d).ec == std::errc{}) {
-            return d;
+        if constexpr (requires { std::from_chars(std::declval<K*>(), std::declval<K*>(), std::declval<double&>()); }) {
+            double d{};
+            if (std::from_chars((const K*)ptr, (const K*)ptr + len, d).ec == std::errc{}) {
+                return d;
+            }
         }
         return {};
     }
@@ -4189,7 +4193,9 @@ public:
      * @en @brief Convert string in hex form to double.
      * @return std::optional<double>.
      */
-    template<bool SkipWS = true> requires (sizeof(K) == 1)
+    template<bool SkipWS = true>
+        requires(sizeof(K) == 1 &&
+        requires { std::from_chars(std::declval<K*>(), std::declval<K*>(), std::declval<double&>()); })
     std::optional<double> to_double_hex() const noexcept {
         size_t len = _len();
         const K* ptr = _str();
@@ -4200,9 +4206,11 @@ public:
             }
         }
         if (len) {
-            double d{};
-            if (std::from_chars(ptr, ptr + len, d, std::chars_format::hex).ec == std::errc{}) {
-                return d;
+            if constexpr (requires { std::from_chars(std::declval<K*>(), std::declval<K*>(), std::declval<double&>()); }) {
+                double d{};
+                if (std::from_chars((const K*)ptr, (const K*)ptr + len, d, std::chars_format::hex).ec == std::errc{}) {
+                    return d;
+                }
             }
         }
         return {};

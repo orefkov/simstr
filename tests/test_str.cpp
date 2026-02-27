@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.1
+ * ver. 1.7.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -1987,13 +1987,21 @@ TEST(SimStr, HexEpr) {
 
     std::u32string textuu = +U"val = 0X"sv + e_hex<HexFlags::No0x | HexFlags::Short>(0x12Au);
     EXPECT_EQ(textuu, U"val = 0X12A");
+    if (sizeof(void*) == 8) {
+        text = +"ptr = "sv + (const void*)0xdeadbeefcafe01;
+        EXPECT_EQ(text, "ptr = 0x00DEADBEEFCAFE01");
 
-    text = +"ptr = "sv + (const void*)0xdeadbeefcafe01;
-    EXPECT_EQ(text, "ptr = 0x00DEADBEEFCAFE01");
+        const char* ptr = (const char*)0xdeadbeefcafe01;
+        std::u16string utext = ptr + +u" freed"sv;
+        EXPECT_EQ(utext, u"0x00DEADBEEFCAFE01 freed");
+    } else {
+        text = +"ptr = "sv + (const void*)0xdeadbeef;
+        EXPECT_EQ(text, "ptr = 0xDEADBEEF");
 
-    const char* ptr = (const char*)0xdeadbeefcafe01;
-    std::u16string utext = ptr + +u" freed"sv;
-    EXPECT_EQ(utext, u"0x00DEADBEEFCAFE01 freed");
+        const char* ptr = (const char*)0xdeadbeef;
+        std::u16string utext = ptr + +u" freed"sv;
+        EXPECT_EQ(utext, u"0xDEADBEEF freed");
+    }
 }
 
 TEST(SimStr, EFill) {
