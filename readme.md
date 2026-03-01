@@ -76,13 +76,14 @@ When using only `#include "simstr/strexpr.h"`:
   - str::replace - replaces occurrences of the search substring with a replacement string or string expression.
     If the substring is not found, the string expression is not even evaluated.
   - str::make_ascii_upper, str::make_ascii_lower - change the case of ASCII characters.
-- Parsing integers with the possibility of "fine" tuning at compile time - you can set options for checking overflow,
-  skipping whitespace characters, a specific radix or auto-selection by prefixes `0x`, `0`, `0b`, `0o`,
-  the admissibility of the `+` sign. Parsing is implemented for all types of strings and characters.
-- Parsing double for `char` and `wchar_t`, as well as character types compatible with them in size.
+- Parsing of integers from a "piece of string" (does not require null termination) with the possibility of "fine" tuning during compilation -
+  you can set options for checking for overflow, skipping whitespace characters, a specific radix, or auto-select by
+  prefixes `0x`, `0`, `0b`, `0o`, the `+` sign is allowed. Parsing is implemented for all types of strings and characters.
+- Parsing double from a "piece of string" for `char` and `char8_t`.
 
 When using the full version of the library:
 - Everything that is listed above, plus
+- Parsing double from a "piece of string" for all types of characters.
 - Additional efficient string objects - `sstring` (shared string), `lstring` (local string).
 - `lstring` - supports many mutable operations with strings - various replacements, insertions, deletions, etc.
   Allows you to set the size for the internal character buffer, which can turn *Small String Optimization* into *Big String Optimization* :).

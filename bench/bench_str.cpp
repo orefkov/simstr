@@ -422,8 +422,11 @@ void StdFormatSize(benchmark::State& state) {
     for (auto _: state) {
         for (unsigned i = 1; i <= 100'000; i *= 10) {
             size_t len = std::formatted_size("abcdefghihklmopqr {:#010o} end", i);
-            std::string str(len, 0);
-            std::format_to_n(str.data(), len, "abcdefghihklmopqr {:#010o} end", i);
+            std::string str;
+            str.resize_and_overwrite(len, [&](char* p, size_t) {
+                std::format_to_n(str.data(), len, "abcdefghihklmopqr {:#010o} end", i);
+                return len;
+            });
             benchmark::DoNotOptimize(str);
         }
     }
