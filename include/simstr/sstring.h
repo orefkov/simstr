@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.7.2
+* ver. 1.7.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -372,6 +372,87 @@ public:
     template<ToIntNumber T>
     constexpr void as_number(T& t) const {
         base::as_number(t);
+    }
+    /*!
+     * @ru @brief Получить строку без префикса, если она начинается с него без учёта регистра Unicode символов до 0xFFFF.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param prefix - искомый префикс.
+     * @return constexpr std::optional<R> - если строка начинается с указанного префикса без учёта регистра символов до 0xFFFF,
+     *  возвращает часть строки без этого префикса, иначе пустое значение.
+     * @en @brief Get a string without a prefix if it starts with it, insensitive to Unicode characters up to 0xFFFF.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param prefix - the prefix to search for.
+     * @return constexpr std::optional<R> - if the string begins with the specified prefix, insensitive to characters up to 0xFFFF,
+     *  returns the part of the string without this prefix, otherwise empty.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_prefix_iu(str_piece prefix) const {
+        if (starts_with_iu(prefix)) {
+            return R{operator()(prefix.length())};
+        }
+        return {};
+    }
+    /*!
+     * @ru @brief Получить строку без суффикса, если она заканчивается им без учёта регистра Unicode символов до 0xFFFF.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param suffix - искомый суффикс.
+     * @return constexpr std::optional<R> - если строка заканчивается указанным суффиксом без учёта регистра символов до 0xFFFF,
+     *  возвращает часть строки без него, иначе пустое значение.
+     * @en @brief Get a string without a suffix if it ends with one in case-insensitive Unicode characters up to 0xFFFF.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param suffix - the suffix you are looking for.
+     * @return constexpr std::optional<R> - if the string ends with the specified suffix, insensitive to characters up to 0xFFFF,
+     *  returns part of the string without it, otherwise empty.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_suffix_iu(str_piece suffix) const {
+        if (ends_with_iu(suffix)) {
+            return R{operator()(0, -suffix.length())};
+        }
+        return {};
+    }
+    /*!
+     * @ru @brief Возвращает строку, в которой удалено начало строки, если она начинается с указанного префикса без учёта регистра Unicode символов до 0xFFFF.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param prefix - искомый префикс.
+     * @param max_count - до сколько раз можно удалять префикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалено начало, если она начинается с этого префикса без учёта регистра символов до 0xFFFF.
+     * @en @brief Returns a string with the beginning of the string removed if it begins with the specified prefix, case-insensitive Unicode characters up to 0xFFFF.
+     * @tparam R - desired string type, default str_src.
+     * @param prefix - the prefix to search for.
+     * @param max_count - up to how many times a prefix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the beginning removed if it starts with this prefix, insensitive to 0xFFFF.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_prefix_iu(str_piece prefix, size_t max_count = 0) const {
+        str_piece res = *this;
+        while(res.starts_with_iu(prefix)) {
+            res = res(prefix.length());
+            if (--max_count == 0) {
+                break;
+            }
+        }
+        return res;
+    }
+    /*!
+     * @ru @brief Возвращает строку, в которой удалён конец строки, если она заканчивается указанным суффиксом без учёта регистра Unicode символов до 0xFFFF.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param suffix - искомый суффикс.
+     * @param max_count - до сколько раз можно удалять суффикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалён конец, если она заканчивается этим суффиксом без учёта регистра символов до 0xFFFF.
+     * @en @brief Returns a string with the end of the string removed if it ends with the specified suffix of case-insensitive Unicode characters up to 0xFFFF.
+     * @tparam R - desired string type, default str_src.
+     * @param suffix - the suffix you are looking for.
+     * @param max_count - up to how many times a suffix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the end removed if it ends with this suffix, insensitive to 0xFFFF.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_suffix_iu(str_piece suffix) const {
+        str_piece res = *this;
+        while(res.ends_with_iu(suffix)) {
+            res = res(0, -suffix.length());
+        }
+        return res;
     }
 };
 

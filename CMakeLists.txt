@@ -5,7 +5,7 @@ include(FetchContent)
 
 project(
     simstr
-    VERSION 1.7.2
+    VERSION 1.7.3
     DESCRIPTION "Yet another modern C++ string library"
     HOMEPAGE_URL "https://github.com/orefkov/simstr"
     LANGUAGES CXX
@@ -131,6 +131,9 @@ if(SIMSTR_BUILD_TESTS)
     if(TARGET gtest)
         target_compile_features(gtest PUBLIC cxx_std_23)
         target_compile_features(gtest_main PUBLIC cxx_std_23)
+        if (CLANG_COMPILER)
+            target_compile_options(gtest PRIVATE -Wno-error=character-conversion)
+        endif(CLANG_COMPILER)
     endif()
 endif()
 

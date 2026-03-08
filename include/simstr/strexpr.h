@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.2
+ * ver. 1.7.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -4355,6 +4355,36 @@ public:
     constexpr bool starts_with(str_piece prefix) const noexcept {
         return starts_with(prefix.symbols(), prefix.length());
     }
+    /*!
+     * @ru @brief Проверить, начинается ли строка с указанной подстроки, за которой следует ней пробельный ASCII символ.
+     * @param prefix - проверяемая подстрока.
+     * @en @brief Check if a string begins with the specified substring followed by a whitespace ASCII character.
+     * @param prefix - substring to be checked.
+     */
+    constexpr bool starts_with_and_ws(str_piece prefix) const noexcept {
+        return _len() > prefix.length() &&
+            starts_with(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, size_t(-1), true>{}.isTrim(_str()[prefix.length()]);
+    }
+    /*!
+     * @ru @brief Проверить, начинается ли строка с указанной подстроки, за которой следует один из указанных символов.
+     * @param prefix - проверяемая подстрока.
+     * @param next_symbol - проверяемые после подстроки символы.
+     * @en @brief Check if a string begins with the specified substring followed by one of the specified characters.
+     * @param prefix - substring to be checked.
+     * @param next_symbol - symbols to be checked after the substring.
+     */
+    constexpr bool starts_with_and_oneof(str_piece prefix, str_piece next_symbol) const noexcept {
+        return _len() > prefix.length() &&
+            starts_with(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, 0, false>{next_symbol}.isTrim(_str()[prefix.length()]);
+    }
+    template<typename T, size_t N = const_lit_for<K, T>::Count, StrType<K> From> requires is_const_pattern<N>
+    constexpr bool starts_with_and_oneof(str_piece prefix, T&& next_symbol) const noexcept {
+        return _len() >= N &&
+            starts_with(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, N - 1, false>{next_symbol}.isTrim(_str()[prefix.length()]);
+    }
 
     constexpr bool starts_with_ia(const K* prefix, size_t len) const noexcept {
         size_t myLen = _len();
@@ -4379,6 +4409,36 @@ public:
      */
     constexpr bool starts_with_ia(str_piece prefix) const noexcept {
         return starts_with_ia(prefix.symbols(), prefix.length());
+    }
+    /*!
+     * @ru @brief Проверить, начинается ли строка с указанной подстроки без учета регистра ASCII, за которой следует ней пробельный ASCII символ.
+     * @param prefix - проверяемая подстрока.
+     * @en @brief Check if a string begins with the specified case-insensitive ASCII substring followed by a whitespace ASCII character.
+     * @param prefix - substring to be checked.
+     */
+    constexpr bool starts_with_ia_and_ws(str_piece prefix) const noexcept {
+        return _len() > prefix.length() &&
+            starts_with_ia(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, size_t(-1), true>{}.isTrim(_str()[prefix.length()]);
+    }
+    /*!
+     * @ru @brief Проверить, начинается ли строка с указанной подстроки без учета регистра ASCII, за которой следует один из указанных символов.
+     * @param prefix - проверяемая подстрока.
+     * @param next_symbol - проверяемые после подстроки символы.
+     * @en @brief Check if a string begins with the specified case-insensitive ASCII substring followed by one of the specified characters.
+     * @param prefix - substring to be checked.
+     * @param next_symbol - symbols to be checked after the substring.
+     */
+    constexpr bool starts_with_ia_and_oneof(str_piece prefix, str_piece next_symbol) const noexcept {
+        return _len() > prefix.length() &&
+            starts_with_ia(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, 0, false>{next_symbol}.isTrim(_str()[prefix.length()]);
+    }
+    template<typename T, size_t N = const_lit_for<K, T>::Count, StrType<K> From> requires is_const_pattern<N>
+    constexpr bool starts_with_ia_and_oneof(str_piece prefix, T&& next_symbol) const noexcept {
+        return _len() >= N &&
+            starts_with_ia(prefix) &&
+            trim_operator<TrimSides::TrimLeft, K, N - 1, false>{next_symbol}.isTrim(_str()[prefix.length()]);
     }
 
     // Является ли эта строка началом указанной строки
@@ -4522,6 +4582,82 @@ public:
     R replaced(str_piece pattern, str_piece repl, size_t offset = 0, size_t maxCount = 0) const {
         return R::replaced_from(d(), pattern, repl, offset, maxCount);
     }
+    /*!
+     * @ru @brief Получить строку без префикса, если она начинается с него.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param prefix - искомый префикс.
+     * @return constexpr std::optional<R> - если строка начинается с указанного префикса, возвращает часть строки без этого префикса,
+     *  иначе пустое значение.
+     * @en @brief Get a string without a prefix if it starts with one.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param prefix - the prefix to search for.
+     * @return constexpr std::optional<R> - if the string begins with the specified prefix, returns the part of the string without this prefix,
+     *  otherwise empty value.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_prefix(str_piece prefix) const {
+        if (starts_with(prefix)) {
+            return R{operator()(prefix.length())};
+        }
+        return {};
+    }
+    /*!
+     * @ru @brief Получить строку без префикса, если она начинается с него без учёта регистра ASCII символов.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param prefix - искомый префикс.
+     * @return constexpr std::optional<R> - если строка начинается с указанного префикса без учёта регистра ASCII символов,
+     *  возвращает часть строки без этого префикса, иначе пустое значение.
+     * @en @brief Get a string without a prefix if it starts with it, insensitive to ASCII characters.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param prefix - the prefix to search for.
+     * @return constexpr std::optional<R> - if the string begins with the specified prefix, insensitive to ASCII characters,
+     *  returns the part of the string without this prefix, otherwise empty.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_prefix_ia(str_piece prefix) const {
+        if (starts_with_ia(prefix)) {
+            return R{operator()(prefix.length())};
+        }
+        return {};
+    }
+    /*!
+     * @ru @brief Получить строку без суффикса, если она заканчивается им.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param suffix - искомый суффикс.
+     * @return constexpr std::optional<R> - если строка заканчивается указанным суффиксом, возвращает часть строки без него,
+     *  иначе пустое значение.
+     * @en @brief Get a string without a suffix if it ends with one.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param suffix - the suffix you are looking for.
+     * @return constexpr std::optional<R> - if the string ends with the specified suffix, returns the part of the string without it,
+     *  otherwise empty value.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_suffix(str_piece suffix) const {
+        if (ends_with(suffix)) {
+            return R{operator()(0, -suffix.length())};
+        }
+        return {};
+    }
+    /*!
+     * @ru @brief Получить строку без суффикса, если она заканчивается им без учёта регистра ASCII символов.
+     * @tparam R - желаемый тип строкового объекта, по умолчанию str_piece.
+     * @param suffix - искомый суффикс.
+     * @return constexpr std::optional<R> - если строка заканчивается указанным суффиксом без учёта регистра ASCII символов,
+     *  возвращает часть строки без него, иначе пустое значение.
+     * @en @brief Get a string without a suffix if it ends with one in case-insensitive ASCII characters.
+     * @tparam R - the desired type of string object, defaults to str_piece.
+     * @param suffix - the suffix you are looking for.
+     * @return constexpr std::optional<R> - if the string ends with the specified suffix, insensitive to ASCII characters,
+     *  returns part of the string without it, otherwise empty.
+     */
+    template<typename R = str_piece>
+    constexpr std::optional<R> strip_suffix_ia(str_piece suffix) const {
+        if (ends_with_ia(suffix)) {
+            return R{operator()(0, -suffix.length())};
+        }
+        return {};
+    }
 
     template<StrType<K> From>
     constexpr static my_type make_trim_op(const From& from, const auto& opTrim) {
@@ -4568,7 +4704,7 @@ public:
      * @return R - a string with leading whitespace characters removed.
      */
     template<typename R = str_piece>
-    R trimmed_left() const {
+    constexpr R trimmed_left() const {
         return R::template trim_static<TrimSides::TrimLeft>(d());
     }
     /*!
@@ -4580,7 +4716,7 @@ public:
      * @return R - a string with whitespace characters removed at the end.
      */
     template<typename R = str_piece>
-    R trimmed_right() const {
+    constexpr R trimmed_right() const {
         return R::template trim_static<TrimSides::TrimRight>(d());
     }
     /*!
@@ -4595,7 +4731,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed(T&& pattern) const {
+    constexpr R trimmed(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimAll, false>(d(), pattern);
     }
     /*!
@@ -4610,7 +4746,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed_left(T&& pattern) const {
+    constexpr R trimmed_left(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, false>(d(), pattern);
     }
     /*!
@@ -4625,7 +4761,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed_right(T&& pattern) const {
+    constexpr R trimmed_right(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimRight, false>(d(), pattern);
     }
     // Триминг по символам в литерале и пробелам
@@ -4647,7 +4783,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed_with_spaces(T&& pattern) const {
+    constexpr R trimmed_with_spaces(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimAll, true>(d(), pattern);
     }
     /*!
@@ -4666,7 +4802,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed_left_with_spaces(T&& pattern) const {
+    constexpr R trimmed_left_with_spaces(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, true>(d(), pattern);
     }
     /*!
@@ -4685,7 +4821,7 @@ public:
      */
     template<typename R = str_piece, typename T, size_t N = const_lit_for<K, T>::Count>
         requires is_const_pattern<N>
-    R trimmed_right_with_spaces(T&& pattern) const {
+    constexpr R trimmed_right_with_spaces(T&& pattern) const {
         return R::template trim_static<TrimSides::TrimRight, true>(d(), pattern);
     }
     // Триминг по динамическому источнику
@@ -4702,7 +4838,7 @@ public:
      * @return R - a string with the characters contained in the pattern removed at the beginning and at the end.
      */
     template<typename R = str_piece>
-    R trimmed(str_piece pattern) const {
+    constexpr R trimmed(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimAll, false>(d(), pattern);
     }
     /*!
@@ -4716,7 +4852,7 @@ public:
      * @return R - a string with the characters contained in the pattern removed at the beginning.
      */
     template<typename R = str_piece>
-    R trimmed_left(str_piece pattern) const {
+    constexpr R trimmed_left(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, false>(d(), pattern);
     }
     /*!
@@ -4730,7 +4866,7 @@ public:
      * @return R - a string with characters contained in the pattern removed at the end.
      */
     template<typename R = str_piece>
-    R trimmed_right(str_piece pattern) const {
+    constexpr R trimmed_right(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimRight, false>(d(), pattern);
     }
     /*!
@@ -4748,7 +4884,7 @@ public:
      *  and whitespace characters.
      */
     template<typename R = str_piece>
-    R trimmed_with_spaces(str_piece pattern) const {
+    constexpr R trimmed_with_spaces(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimAll, true>(d(), pattern);
     }
     /*!
@@ -4766,7 +4902,7 @@ public:
      *  and whitespace characters.
      */
     template<typename R = str_piece>
-    R trimmed_left_with_spaces(str_piece pattern) const {
+    constexpr R trimmed_left_with_spaces(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimLeft, true>(d(), pattern);
     }
     /*!
@@ -4784,10 +4920,95 @@ public:
      * and whitespace characters.
      */
     template<typename R = str_piece>
-    R trimmed_right_with_spaces(str_piece pattern) const {
+    constexpr R trimmed_right_with_spaces(str_piece pattern) const {
         return R::template trim_static<TrimSides::TrimRight, true>(d(), pattern);
     }
-
+    /*!
+     * @ru @brief Возвращает строку, в которой удалено начало строки, если она начинается с указанного префикса.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param prefix - искомый префикс.
+     * @param max_count - до сколько раз можно удалять префикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалено начало, если она начинается с этого префикса.
+     * @en @brief Returns a string with the beginning of the string removed if it begins with the specified prefix.
+     * @tparam R - desired string type, default str_src.
+     * @param prefix - the prefix to search for.
+     * @param max_count - up to how many times a prefix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the beginning removed, if it starts with this prefix.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_prefix(str_piece prefix, size_t max_count = 0) const {
+        str_piece res = *this;
+        while(res.starts_with(prefix)) {
+            res = res(prefix.length());
+            if (--max_count == 0) {
+                break;
+            }
+        }
+        return res;
+    }
+    /*!
+     * @ru @brief Возвращает строку, в которой удалено начало строки, если она начинается с указанного префикса без учёта регистра ASCII символов.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param prefix - искомый префикс.
+     * @param max_count - до сколько раз можно удалять префикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалено начало, если она начинается с этого префикса без учёта регистра ASCII символов.
+     * @en @brief Returns a string with the beginning of the string removed if it begins with the specified prefix, insensitive to ASCII characters.
+     * @tparam R - desired string type, default str_src.
+     * @param prefix - the prefix to search for.
+     * @param max_count - up to how many times a prefix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the beginning removed if it starts with this prefix, insensitive to ASCII characters.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_prefix_ia(str_piece prefix, size_t max_count = 0) const {
+        str_piece res = *this;
+        while(res.starts_with_ia(prefix)) {
+            res = res(prefix.length());
+            if (--max_count == 0) {
+                break;
+            }
+        }
+        return res;
+    }
+    /*!
+     * @ru @brief Возвращает строку, в которой удалён конец строки, если она заканчивается указанным суффиксом.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param suffix - искомый суффикс.
+     * @param max_count - до сколько раз можно удалять суффикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалён конец, если она заканчивается этим суффиксом.
+     * @en @brief Returns a string with the beginning of the string removed if it begins with the specified prefix.
+     * @tparam R - desired string type, default str_src.
+     * @param suffix - the prefix to search for.
+     * @param max_count - up to how many times a suffix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the beginning removed, if it starts with this prefix.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_suffix(str_piece suffix) const {
+        str_piece res = *this;
+        while(res.ends_with(suffix)) {
+            res = res(0, -suffix.length());
+        }
+        return res;
+    }
+    /*!
+     * @ru @brief Возвращает строку, в которой удалён конец строки, если она заканчивается указанным суффиксом без учёта регистра ASCII символов.
+     * @tparam R - желаемый тип строки, по умолчанию str_src.
+     * @param suffix - искомый суффикс.
+     * @param max_count - до сколько раз можно удалять суффикс, 0 - без ограничений.
+     * @return R - Копию строки, в которой удалён конец, если она заканчивается этим суффиксом без учёта регистра ASCII символов.
+     * @en @brief Returns a string with the end of the string removed if it ends with the specified suffix, insensitive to ASCII characters.
+     * @tparam R - desired string type, default str_src.
+     * @param suffix - the suffix you are looking for.
+     * @param max_count - up to how many times a suffix can be removed, 0 - no restrictions.
+     * @return R - A copy of the string with the end removed if it ends with this suffix, insensitive to ASCII characters.
+     */
+    template<typename R = str_piece>
+    constexpr R trimmed_suffix_ia(str_piece suffix) const {
+        str_piece res = *this;
+        while(res.ends_with_ia(suffix)) {
+            res = res(0, -suffix.length());
+        }
+        return res;
+    }
     /*!
      * @ru @brief Получить объект `Splitter` по заданному разделителю, который позволяет последовательно
      *        получать подстроки методом `next()`, пока `is_done()` false.

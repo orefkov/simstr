@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.2
+ * ver. 1.7.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -425,6 +425,31 @@ TEST(StrExpr, ChangeCase) {
 
     str::make_ascii_lower(ures, 1, 3);
     EXPECT_EQ(ures, u"/teST/");
+}
+
+TEST(StrExpr, StripPrefixSuffix) {
+    const ssa from = "begin--end";
+    EXPECT_EQ(*from.strip_prefix("begin"), "--end");
+    EXPECT_FALSE(from.strip_prefix("sd").has_value());
+    EXPECT_EQ(*from.strip_suffix_ia("End"), "begin--");
+    EXPECT_FALSE(from.strip_suffix("sd").has_value());
+}
+
+TEST(StrExpr, TrimPrefixSuffix) {
+    const ssa from = "beginbegin--end";
+    EXPECT_EQ(from.trimmed_prefix("begin"), "--end");
+    EXPECT_EQ(from.trimmed_prefix("begin", 1), "begin--end");
+    EXPECT_EQ(from.trimmed_prefix("sd"), from);
+    EXPECT_EQ(from.trimmed_suffix_ia("End"), "beginbegin--");
+    EXPECT_EQ(from.trimmed_suffix("sd"), from);
+}
+
+TEST(StrExpr, StartWithAnd) {
+    EXPECT_TRUE("begin --end"_ss.starts_with_and_ws("begin"));
+    EXPECT_FALSE("beginn --end"_ss.starts_with_and_ws("begin"));
+    EXPECT_TRUE("BegiN\t--end"_ss.starts_with_ia_and_ws("begin"_ss));
+    EXPECT_TRUE("begin[ --end"_ss.starts_with_and_oneof("begin", "/*[]"));
+    EXPECT_TRUE("Begin[ --end"_ss.starts_with_ia_and_oneof("begin", "/*[]"_ss));
 }
 
 } // namespace simstr::tests
