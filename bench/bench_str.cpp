@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.2
+ * ver. 1.8.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Бенчмарки
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com

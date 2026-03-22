@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.3
+ * ver. 1.8.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Реализация строковых функций
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -250,7 +250,7 @@ size_t utf8_case_change(const u8s*& src, size_t len, u8s*& dest, size_t lenBuffe
     // то есть если символ считан, и длина записываемого символа не больше считанного, то он поместится в буфер записи
     // и не перетрет символы, которые еще не прочитали
     // По другому работать откажемся
-    if (lenBuffer < len || (dest > src && dest < src + len))
+    if (dest > src && dest < src + len)
         return len;
     const uu8s *beginReadPos = reinterpret_cast<const uu8s*>(src), *readPos = beginReadPos, *endReadPos = beginReadPos + len,
                     *readFromPos = readPos;

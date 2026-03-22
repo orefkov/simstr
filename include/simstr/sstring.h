@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.7.3
+* ver. 1.8.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -775,7 +775,6 @@ protected:
      Эти методы должен реализовать класс-наследник.
      вызывается только при создании объекта
        init(size_t size)
-       set_size(size_t size)
     */
     template<typename O>
         requires(!std::is_same_v<O, K>)
@@ -841,6 +840,94 @@ expr_utf<From, To> e_utf(simple_str<From> from) {
     return {from};
 }
 
+template<is_one_of_char_v K, bool upper>
+struct expr_change_case : expr_to_std_string<expr_change_case<K, upper>>{
+    using symb_type = K;
+
+    str_src<K> src_;
+    mutable size_t len_{};
+
+    template<StrSource S>
+    expr_change_case(S&& s) : src_(std::forward<S>(s)){}
+
+    constexpr size_t length() const noexcept {
+        if constexpr (sizeof(K) > 1) {
+            return src_.length();
+        } else {
+            if constexpr (upper) {
+                len_ = unicode_traits<K>::upper_len(src_.str, src_.len);
+            } else {
+                len_ = unicode_traits<K>::lower_len(src_.str, src_.len);
+            }
+            return len_;
+        }
+    }
+    constexpr K* place(K* ptr) const noexcept {
+        if constexpr (sizeof(K) > 1) {
+            if constexpr (upper) {
+                unicode_traits<K>::upper(src_.str, src_.len, ptr);
+            } else {
+                unicode_traits<K>::lower(src_.str, src_.len, ptr);
+            }
+            return ptr + src_.len;
+        } else {
+            const K* src = src_.str;
+            if constexpr (upper) {
+                unicode_traits<K>::upper(src, src_.len, ptr, len_);
+            } else {
+                unicode_traits<K>::lower(src, src_.len, ptr, len_);
+            }
+            return ptr;
+        }
+    }
+};
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все строчные буквы первой плоскости Юникода на прописные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя строчные буквы первой плоскости Юникода на прописные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @en @brief Generates a string based on the original one, replacing all lowercase letters of the first Unicode plane with uppercase ones.
+ * @tparam K - character type, inferred based on the source string.
+ * @details Takes the original string and copies it, replacing the lowercase letters of the first Unicode plane with uppercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa upper = "Upper case version is: '" + e_upper(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_upper : expr_change_case<K, true> {
+    using base = expr_change_case<K, true>;
+    using base::base;
+};
+
+template<StrSource S>
+e_upper(S&&) -> e_upper<symb_type_from_src_t<S>>;
+
+/*!
+ * @ru @brief Генерирует строку на основе исходной, заменяя все прописные буквы первой плоскости Юникода на строчные.
+ * @tparam K - тип символов, выводится на основе исходной строки.
+ * @details Берёт исходную строку и копирует её, заменяя прописные буквы первой плоскости Юникода на строчные.
+ *  В качестве исходной строки может браться любой строковый объект.
+ * @ru @brief Generate a string from the original one, replacing all uppercase letters of the first Unicode plane with lowercase ones.
+ * @tparam K - character type, inferred based on the source string.
+ * @details Takes the original string and copies it, replacing the uppercase letters of the first Unicode plane with lowercase ones.
+ *  Any string object can be taken as the source string.
+ * @ru Пример @en Example @~
+ * ```cpp
+ *  stringa lower = "Lower case version is: '" + e_lower(source_str) + "'.";
+ * ```
+ */
+template<is_one_of_char_v K>
+struct e_lower : expr_change_case<K, false> {
+    using base = expr_change_case<K, false>;
+    using base::base;
+};
+
+template<StrSource S>
+e_lower(S&&) -> e_lower<symb_type_from_src_t<S>>;
+
 /*!
  * @ru @brief Концепт типа, который может сохранить строку.
  * @en @brief A type concept that can store a string.
@@ -879,12 +966,9 @@ concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
  * Эти методы должен реализовать класс-наследник, вызываются только при создании объекта
  *   - `K* init(size_t size)`     - выделить место для строки указанного размера, вернуть адрес
  *   - `void create_empty()`      - создать пустой объект
- *   - `K* set_size(size_t size)` - перевыделить место для строки, если при создании не угадали
- *                                  нужный размер и место нужно больше или меньше.
- *                                  Содержимое строки нужно оставить.
  * Хотя тип аллокатора и задаётся параметром шаблона, делается это только для проброса
  * его типа в конструкторы, методы аллокатора не вызываются. Если наследник не пользуется
- * аллокатором, а сам в `init` и `set_size` как-то выделяет место, может указать типом аллокатора
+ * аллокатором, а сам в `init` как-то выделяет место, может указать типом аллокатора
  * какой-либо пустой класс.
  * @en @brief The base for the objects that own the string.
  * @tparam K - character type.
@@ -899,12 +983,9 @@ concept immutable_str = storable_str<A, K> && !mutable_str<A, K>;
  * These methods must be implemented by the descendant class and are called only when an object is created
  *  - `K* init(size_t size)`       - allocate space for a string of the specified size, return the address
  *  - `void create_empty()`        - create an empty object
- *  - `K* set_size(size_t size)`   - re-allocate space for the string if you didn’t guess correctly when creating
- *                                   the size you need and the space you need is larger or smaller.
- *                                   The contents of the string must be left.
  * Although the allocator type is specified by the template parameter, this is done only for forwarding
  * of its type in constructors, allocator methods are not called. If the heir does not use
- * an allocator, and in `init` and `set_size` it somehow allocates space, can indicate the type of the allocator
+ * an allocator, and in `init` it somehow allocates space, can indicate the type of the allocator
  * any empty class.
  */
 template<typename K, typename Impl, typename Allocator>
@@ -1068,74 +1149,6 @@ protected:
         *ptr = 0;
     }
 
-    template<StrType<K> From, typename Op1, typename... Args>
-        requires std::is_constructible_v<allocator_t, Args...>
-    static my_type changeCaseAscii(const From& f, const Op1& opMakeNeedCase, Args&&... args) {
-        my_type result{std::forward<Args>(args)...};
-        size_t len = f.length();
-        if (len) {
-            const K* source = f.symbols();
-            K* destination = result.init(len);
-            while(len--) {
-                *destination++ = opMakeNeedCase(*source++);
-            }
-            *destination = 0;
-        }
-        return result;
-    }
-    // GCC до сих пор не даёт делать полную специализацию вложенного шаблонного класса внутри внешнего класса, только частичную.
-    // Поэтому добавим фиктивный параметр шаблона, чтобы сделать специализацию для u8s прямо в классе.
-    // GCC still does not allow full specialization of a nested template class inside an outer class, only partial.
-    // So let's add a dummy template parameter to make the specialization for u8s right in the class.
-    template<typename T, bool Dummy = true>
-    struct ChangeCase {
-        template<typename From, typename Op1, typename... Args>
-            requires std::is_constructible_v<allocator_t, Args...>
-        static my_type changeCase(const From& f, const Op1& opChangeCase, Args&&... args) {
-            my_type result{std::forward<Args>(args)...};
-            size_t len = f.length();
-            if (len) {
-                opChangeCase(f.symbols(), len, result.init(len));
-            }
-            return result;
-        }
-    };
-    // Для utf8 сделаем отдельную спецификацию, так как при смене регистра может изменится длина строки
-    // For utf8 we will make a separate specification, since changing the register may change the length of the string
-    template<bool Dummy>
-    struct ChangeCase<u8s, Dummy> {
-        template<typename From, typename Op1, typename... Args>
-            requires std::is_constructible_v<allocator_t, Args...>
-        static my_type changeCase(const From& f, const Op1& opChangeCase, Args&&... args) {
-            my_type result{std::forward<Args>(args)...};
-            ;
-            size_t len = f.length();
-            if (len) {
-                const K* ptr = f.symbols();
-                K* pWrite = result.init(len);
-
-                const u8s* source = ptr;
-                u8s* dest = pWrite;
-                size_t newLen = opChangeCase(source, len, dest, len);
-                if (newLen < len) {
-                    // Строка просто укоротилась
-                    // The string was simply shortened
-                    result.set_size(newLen);
-                } else if (newLen > len) {
-                    // Строка не влезла в буфер.
-                    // The string did not fit into the buffer.
-                    size_t readed = static_cast<size_t>(source - ptr);
-                    size_t writed = static_cast<size_t>(dest - pWrite);
-                    pWrite = result.set_size(newLen);
-                    dest = pWrite + writed;
-                    opChangeCase(source, len - readed, dest, newLen - writed);
-                }
-                pWrite[newLen] = 0;
-            }
-            return result;
-        }
-    };
-
 public:
 
     inline static constexpr bool is_str_storable = true;
@@ -1264,7 +1277,7 @@ public:
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     static my_type upperred_only_ascii_from(const From& f, Args&&... args) {
-        return changeCaseAscii(f, makeAsciiUpper<K>, std::forward<Args>(args)...);
+        return my_type{e_ascii_upper<K>{f}, std::forward<Args>(args)...};
     }
     /*!
      * @ru @brief Создать копию переданной строки в нижнем регистре символов ASCII.
@@ -1277,7 +1290,7 @@ public:
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     static my_type lowered_only_ascii_from(const From& f, Args&&... args) {
-        return changeCaseAscii(f, makeAsciiLower<K>, std::forward<Args>(args)...);
+        return my_type{e_ascii_lower<K>{f}, std::forward<Args>(args)...};
     }
     /*!
      * @ru @brief Создать копию переданной строки в верхнем регистре символов Unicode первой плоскости (<0xFFFF).
@@ -1294,7 +1307,7 @@ public:
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     static my_type upperred_from(const From& f, Args&&... args) {
-        return ChangeCase<K>::changeCase(f, uni::upper, std::forward<Args>(args)...);
+        return my_type{e_upper<K>{f}, std::forward<Args>(args)...};
     }
     /*!
      * @ru @brief Создать копию переданной строки в нижнем регистре символов Unicode первой плоскости (<0xFFFF).
@@ -1311,7 +1324,7 @@ public:
     template<StrType<K> From, typename... Args>
         requires std::is_constructible_v<allocator_t, Args...>
     static my_type lowered_from(const From& f, Args&&... args) {
-        return ChangeCase<K>::changeCase(f, uni::lower, std::forward<Args>(args)...);
+        return my_type{e_lower<K>{f}, std::forward<Args>(args)...};
     }
     /*!
      * @ru @brief Создать копию переданной строки с заменой подстрок.
@@ -1341,10 +1354,27 @@ public:
  * @en @brief Concept of a memory management type
  */
 template<typename A>
-concept Allocatorable = requires(A& a, size_t size, void* void_ptr) {
+concept AllocatableNoSized = requires(A& a, size_t size, void* void_ptr) {
     { a.allocate(size) } -> std::same_as<void*>;
     { a.deallocate(void_ptr) } noexcept -> std::same_as<void>;
 };
+
+/*!
+ * @ru @brief Концепт типа, управляющего памятью
+ * @en @brief Concept of a memory management type
+ */
+template<typename A>
+concept AllocatableSized = requires(A& a, size_t size, void* void_ptr) {
+    { a.allocate(size) } -> std::same_as<void*>;
+    { a.deallocate(void_ptr, size) } noexcept -> std::same_as<void>;
+};
+
+/*!
+ * @ru @brief Концепт типа, управляющего памятью
+ * @en @brief Concept of a memory management type
+ */
+template<typename A>
+concept Allocatable = AllocatableNoSized<A> || AllocatableSized<A>;
 
 struct printf_selector {
     template<typename K, typename... T>  requires (is_one_of_std_char_v<K>)
@@ -2577,9 +2607,14 @@ public:
 template<typename K>
 struct SharedStringData {
     std::atomic_size_t ref_; // Счетчик ссылок | Reference count
+    inline static constexpr size_t mask = (size_t(-1)) >> 1, check = ~mask;
 
     SharedStringData() {
         ref_ = 1;
+    }
+    SharedStringData(size_t capacity) {
+        ref_ = 1 | check;
+        reinterpret_cast<size_t*>(this)[-1] = (capacity + 1) * sizeof(K) + sizeof(*this) + sizeof(size_t);
     }
     K* str() const {
         return (K*)(this + 1);
@@ -2587,18 +2622,32 @@ struct SharedStringData {
     void incr() {
         ref_.fetch_add(1, std::memory_order_relaxed);
     }
-    void decr(Allocatorable auto& allocator) {
+    void decr(AllocatableNoSized auto& allocator) {
         size_t val = ref_.fetch_sub(1, std::memory_order_relaxed);
         if (val == 1) {
             allocator.deallocate(this);
         }
     }
-    static SharedStringData<K>* create(size_t l, Allocatorable auto& allocator) {
-        size_t size = sizeof(SharedStringData<K>) + (l + 1) * sizeof(K);
+    void decr(AllocatableSized auto& allocator, size_t len) {
+        size_t val = ref_.fetch_sub(1, std::memory_order_relaxed);
+        if ((val & mask) == 1) {
+            if (val & check) {
+                // Это блок от перемещённой lstring, перед ним записан размер выделенной памяти.
+                // This is a block from the moved lstring, the size of the allocated memory is written in front of it.
+                size_t* ptr = reinterpret_cast<size_t*>(this);
+                ptr--;
+                allocator.deallocate(ptr, *ptr);
+            } else {
+                allocator.deallocate(this, (len + 1) * sizeof(K) + sizeof(*this));
+            }
+        }
+    }
+    static SharedStringData* create(size_t l, Allocatable auto& allocator) {
+        size_t size = sizeof(SharedStringData) + (l + 1) * sizeof(K);
         return new (allocator.allocate(size)) SharedStringData();
     }
-    static SharedStringData<K>* from_str(const K* p) {
-        return (SharedStringData<K>*)p - 1;
+    static SharedStringData* from_str(const K* p) {
+        return (SharedStringData*)p - 1;
     }
     K* place(K* p, size_t len) {
         ch_traits<K>::copy(p, str(), len);
@@ -2611,10 +2660,10 @@ struct SharedStringData {
 class string_common_allocator {
 public:
     void* allocate(size_t bytes) {
-        return new char[bytes];
+        return ::operator new(bytes);
     }
     void deallocate(void* address) noexcept {
-        delete [] static_cast<char*>(address);
+        ::operator delete(address);
     }
 };
 
@@ -2627,7 +2676,7 @@ string_common_allocator default_string_allocator_selector(...);
 // your_allocator_type default_string_allocator_selector(int);
 using allocator_string = decltype(default_string_allocator_selector(int(0)));
 
-template<typename K, Allocatorable Allocator>
+template<typename K, Allocatable Allocator>
 class sstring;
 
 /*
@@ -2659,7 +2708,7 @@ class sstring;
  * At the same time, if you plan to later move the result to sstring, then for a dynamic buffer
  * +n bytes are allocated so as not to copy the data later.
  */
-template<typename K, size_t N, bool forShared = false, Allocatorable Allocator = allocator_string>
+template<typename K, size_t N, bool forShared = false, Allocatable Allocator = allocator_string>
 class decl_empty_bases lstring :
     public str_algs<K, simple_str<K>, lstring<K, N, forShared, Allocator>, true>,
     public str_mutable<K, lstring<K, N, forShared, Allocator>>,
@@ -2678,7 +2727,7 @@ public:
 
 protected:
     enum : size_t {
-        extra = forShared ? sizeof(SharedStringData<K>) : 0,
+        extra = forShared ? sizeof(SharedStringData<K>) + (AllocatableSized<Allocator> ? sizeof(size_t) : 0) : 0,
     };
 
     using base_algs = str_algs<K, simple_str<K>, my_type, true>;
@@ -2732,7 +2781,11 @@ protected:
 
     constexpr void dealloc() {
         if (is_alloced()) {
-            base_storable::allocator().deallocate(to_real_address(data_));
+            if constexpr (AllocatableNoSized<Allocator>) {
+                base_storable::allocator().deallocate(to_real_address(data_));
+            } else {
+                base_storable::allocator().deallocate(to_real_address(data_), (capacity_ + 1) * sizeof(K) + extra);
+            }
             data_ = local_;
         }
     }
@@ -3349,7 +3402,7 @@ constexpr const size_t local_count = _local_count<sizeof(size_t), sizeof(T)>;
  * - for u16s - 32 bytes, stores strings of up to 15 characters + 0
  * - for u32s - 32 bytes, stores strings of up to 7 characters + 0
  */
-template<typename K, Allocatorable Allocator = allocator_string>
+template<typename K, Allocatable Allocator = allocator_string>
 class decl_empty_bases sstring :
     public str_algs<K, simple_str<K>, sstring<K, Allocator>, false>,
     public str_storable<K, sstring<K, Allocator>, Allocator>,
@@ -3421,49 +3474,15 @@ protected:
         }
     }
 
-    K* set_size(size_t newSize) {
-        // Вызывается при создании строки при необходимости изменить размер.
-        // Других ссылок на shared buffer нет.
-        // Called when a string is created and needs to be resized.
-        // There are no other references to the shared buffer.
-        size_t size = length();
-        if (newSize != size) {
-            if (type_ == Constant) {
-                bigLen_ = newSize;
+    void dealloc() {
+        if (type_ == Shared) {
+            if constexpr (AllocatableNoSized<Allocator>) {
+                SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
             } else {
-                if (newSize <= LocalCount) {
-                    if (type_ == Shared) {
-                        SharedStringData<K>* str_buf = SharedStringData<K>::from_str(sstr_);
-                        traits::copy(buf_, sstr_, newSize);
-                        str_buf->decr(base_storable::allocator());
-                    }
-                    type_ = Local;
-                    localRemain_ = LocalCount - newSize;
-                } else {
-                    if (type_ == Shared) {
-                        if (newSize > size || (newSize > 64 && newSize <= size * 3 / 4)) {
-                            K* newStr = SharedStringData<K>::create(newSize, base_storable::allocator())->str();
-                            traits::copy(newStr, sstr_, newSize);
-                            SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
-                            sstr_ = newStr;
-                        }
-                    } else if (type_ == Local) {
-                        K* newStr = SharedStringData<K>::create(newSize, base_storable::allocator())->str();
-                        if (size)
-                            traits::copy(newStr, buf_, size);
-                        sstr_ = newStr;
-                        type_ = Shared;
-                        localRemain_ = 0;
-                    }
-                    bigLen_ = newSize;
-                }
+                SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator(), bigLen_);
             }
         }
-        K* str = type_ == Local ? buf_ : (K*)sstr_;
-        str[newSize] = 0;
-        return str;
     }
-
 public:
 
     sstring() {
@@ -3571,9 +3590,7 @@ public:
     static const sstring<K> empty_str;
     /// @ru Деструктор строки. @en String destructor.
     constexpr ~sstring() {
-        if (type_ == Shared) {
-            SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
-        }
+        dealloc();
     }
     /*!
      * @ru @brief Конструктор копирования строки.
@@ -3612,8 +3629,8 @@ public:
         size_t size = src.length();
         if (size) {
             if (src.is_alloced()) {
-                // Там динамический буфер, выделенный с запасом для SharedStringData.
-                // There is a dynamic buffer allocated with a reserve for SharedStringData.
+                // Там динамический буфер, выделенный с запасом для SharedStringData и size_t.
+                // There is a dynamic buffer allocated with a reserve for SharedStringData and size_t.
                 K* str = src.str();
                 if (size > LocalCount) {
                     // Просто присвоим его себе.
@@ -3622,7 +3639,11 @@ public:
                     bigLen_ = size;
                     type_ = Shared;
                     localRemain_ = 0;
-                    new (SharedStringData<K>::from_str(str)) SharedStringData<K>();
+                    if constexpr (AllocatableNoSized<Allocator>) {
+                        new (SharedStringData<K>::from_str(str)) SharedStringData<K>;
+                    } else {
+                        new (SharedStringData<K>::from_str(str)) SharedStringData<K>(src.capacity_);
+                    }
                 } else {
                     // Скопируем локально
                     // Copy locally
@@ -3765,8 +3786,7 @@ public:
      * @return my_type& - a reference to yourself.
      */
     constexpr my_type& make_empty() noexcept {
-        if (type_ == Shared)
-            SharedStringData<K>::from_str(sstr_)->decr(base_storable::allocator());
+        dealloc();
         create_empty();
         return *this;
     }
@@ -3832,7 +3852,7 @@ public:
     }
 };
 
-template<typename K, Allocatorable Allocator>
+template<typename K, Allocatable Allocator>
 inline const sstring<K> sstring<K, Allocator>::empty_str{};
 
 struct no_alloc{};
@@ -5068,94 +5088,6 @@ inline HashKeyIU<uws> operator""_iu(const uws* ptr, size_t l) {
 }
 } // namespace literals
 
-template<is_one_of_char_v K, bool upper>
-struct expr_change_case : expr_to_std_string<expr_change_case<K, upper>>{
-    using symb_type = K;
-
-    str_src<K> src_;
-    mutable size_t len_{};
-
-    template<StrSource S>
-    expr_change_case(S&& s) : src_(std::forward<S>(s)){}
-
-    constexpr size_t length() const noexcept {
-        if constexpr (sizeof(K) > 1) {
-            return src_.length();
-        } else {
-            if constexpr (upper) {
-                len_ = unicode_traits<K>::upper_len(src_.str, src_.len);
-            } else {
-                len_ = unicode_traits<K>::lower_len(src_.str, src_.len);
-            }
-            return len_;
-        }
-    }
-    constexpr K* place(K* ptr) const noexcept {
-        if constexpr (sizeof(K) > 1) {
-            if constexpr (upper) {
-                unicode_traits<K>::upper(src_.str, src_.len, ptr);
-            } else {
-                unicode_traits<K>::lower(src_.str, src_.len, ptr);
-            }
-            return ptr + src_.len;
-        } else {
-            const K* src = src_.str;
-            if constexpr (upper) {
-                unicode_traits<K>::upper(src, src_.len, ptr, len_);
-            } else {
-                unicode_traits<K>::lower(src, src_.len, ptr, len_);
-            }
-            return ptr;
-        }
-    }
-};
-
-/*!
- * @ru @brief Генерирует строку на основе исходной, заменяя все строчные буквы первой плоскости Юникода на прописные.
- * @tparam K - тип символов, выводится на основе исходной строки.
- * @details Берёт исходную строку и копирует её, заменяя строчные буквы первой плоскости Юникода на прописные.
- *  В качестве исходной строки может браться любой строковый объект.
- * @en @brief Generates a string based on the original one, replacing all lowercase letters of the first Unicode plane with uppercase ones.
- * @tparam K - character type, inferred based on the source string.
- * @details Takes the original string and copies it, replacing the lowercase letters of the first Unicode plane with uppercase ones.
- *  Any string object can be taken as the source string.
- * @ru Пример @en Example @~
- * ```cpp
- *  stringa upper = "Upper case version is: '" + e_upper(source_str) + "'.";
- * ```
- */
-template<is_one_of_char_v K>
-struct e_upper : expr_change_case<K, true> {
-    using base = expr_change_case<K, true>;
-    using base::base;
-};
-
-template<StrSource S>
-e_upper(S&&) -> e_upper<symb_type_from_src_t<S>>;
-
-/*!
- * @ru @brief Генерирует строку на основе исходной, заменяя все прописные буквы первой плоскости Юникода на строчные.
- * @tparam K - тип символов, выводится на основе исходной строки.
- * @details Берёт исходную строку и копирует её, заменяя прописные буквы первой плоскости Юникода на строчные.
- *  В качестве исходной строки может браться любой строковый объект.
- * @ru @brief Generate a string from the original one, replacing all uppercase letters of the first Unicode plane with lowercase ones.
- * @tparam K - character type, inferred based on the source string.
- * @details Takes the original string and copies it, replacing the uppercase letters of the first Unicode plane with lowercase ones.
- *  Any string object can be taken as the source string.
- * @ru Пример @en Example @~
- * ```cpp
- *  stringa lower = "Lower case version is: '" + e_lower(source_str) + "'.";
- * ```
- */
-template<is_one_of_char_v K>
-struct e_lower : expr_change_case<K, false> {
-    using base = expr_change_case<K, false>;
-    using base::base;
-};
-
-template<StrSource S>
-e_lower(S&&) -> e_lower<symb_type_from_src_t<S>>;
-
 /*!
  * @ru @brief Оператор вывода в поток simple_str.
  * @param stream - поток вывода.
@@ -5250,7 +5182,7 @@ inline std::wostream& operator<<(std::wostream& stream, const sstring<wchar_type
  * @param text - text.
  * @return std::ostream&.
  */
-template<size_t N, bool S, simstr::Allocatorable A>
+template<size_t N, bool S, simstr::Allocatable A>
 inline std::ostream& operator<<(std::ostream& stream, const lstring<u8s, N, S, A>& text) {
     return stream << std::string_view{text.symbols(), text.length()};
 }
@@ -5265,7 +5197,7 @@ inline std::ostream& operator<<(std::ostream& stream, const lstring<u8s, N, S, A
  * @param text - text.
  * @return std::ostream&.
  */
-template<size_t N, bool S, simstr::Allocatorable A>
+template<size_t N, bool S, simstr::Allocatable A>
 inline std::wostream& operator<<(std::wostream& stream, const lstring<uws, N, S, A>& text) {
     return stream << std::wstring_view{text.symbols(), text.length()};
 }
@@ -5280,7 +5212,7 @@ inline std::wostream& operator<<(std::wostream& stream, const lstring<uws, N, S,
  * @param text - text.
  * @return std::ostream&.
  */
-template<size_t N, bool S, simstr::Allocatorable A>
+template<size_t N, bool S, simstr::Allocatable A>
 inline std::wostream& operator<<(std::wostream& stream, const lstring<wchar_type, N, S, A>& text) {
     return stream << std::wstring_view{from_w(text.symbols()), text.length()};
 }

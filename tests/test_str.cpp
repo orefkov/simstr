@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.7.3
+ * ver. 1.8.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -23,6 +23,9 @@ public:
 
     size_t sharedCount() const {
         return type_ == Shared ? SharedStringData<u8s>::from_str(sstr_)->ref_.load() : 0u;
+    }
+    size_t sharedCountForce() const {
+        return SharedStringData<u8s>::from_str(sstr_)->ref_.load();
     }
 };
 
@@ -2108,6 +2111,62 @@ TEST(SimStr, ConstEval) {
     static_assert(ce_repl == "t--st");
 }
 #endif
+
+struct sized_alloc {
+    inline static size_t allocated = 0, dealloced = 0;
+    inline static void* alloced = nullptr;
+
+    void* allocate(size_t bytes) {
+        allocated += bytes;
+        return alloced = ::operator new(bytes);
+    }
+    template<typename T>
+    void deallocate(T* address, size_t size) noexcept {
+        dealloced += size;
+        EXPECT_EQ(address, alloced);
+        if constexpr (requires{::operator delete(address, size);}) {
+            ::operator delete(address, size);
+        } else {
+            ::operator delete(address);
+        }
+    }
+};
+
+TEST(SimStr, SizedAlloc) {
+    sized_alloc::allocated = sized_alloc::dealloced = 0;
+    {
+        lstring<u8s, 0, true, sized_alloc> src{10, "test"};
+        sstring<u8s, sized_alloc> str{std::move(src)};
+        EXPECT_TRUE(src.is_empty());
+        EXPECT_EQ(((Tstringa*)&str)->sharedCount(), SharedStringData<u8s>::check | 1);
+    }
+    EXPECT_EQ(sized_alloc::allocated, sized_alloc::dealloced);
+    EXPECT_EQ(sized_alloc::allocated, 64);
+    {
+        sstring<u8s, sized_alloc> str{10, "test"};
+        EXPECT_EQ(((Tstringa*)&str)->sharedCount(), 1);
+    }
+    EXPECT_EQ(sized_alloc::allocated, sized_alloc::dealloced);
+    EXPECT_EQ(sized_alloc::allocated, 113);
+}
+
+TEST(SimStr, SizedAllocU) {
+    sized_alloc::allocated = sized_alloc::dealloced = 0;
+    {
+        lstring<u16s, 0, true, sized_alloc> src{10, u"test"};
+        sstring<u16s, sized_alloc> str{std::move(src)};
+        EXPECT_TRUE(src.is_empty());
+        EXPECT_EQ(((Tstringa*)&str)->sharedCountForce(), SharedStringData<u8s>::check | 1);
+    }
+    EXPECT_EQ(sized_alloc::allocated, sized_alloc::dealloced);
+    EXPECT_EQ(sized_alloc::allocated, 112);
+    {
+        sstring<u16s, sized_alloc> str{10, u"test"};
+        EXPECT_EQ(((Tstringa*)&str)->sharedCountForce(), 1);
+    }
+    EXPECT_EQ(sized_alloc::allocated, sized_alloc::dealloced);
+    EXPECT_EQ(sized_alloc::allocated, 202);
+}
 
 } // namespace simstr::tests
 
