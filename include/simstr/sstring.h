@@ -3257,7 +3257,7 @@ public:
     }
     /*!
      * @ru @brief Определить длину строки.
-     * Ищет символ 0 в буфере строки до его ёмкости, после чего устаналивает длину строки по найденному 0.
+     * Ищет символ 0 в буфере строки до его ёмкости, после чего устанавливает длину строки по найденному 0.
      * @en @brief Determine the length of the string.
      * Searches for the character 0 in the string buffer to its capacity, and then sets the length of the string to the found 0.
      */
@@ -3283,7 +3283,7 @@ public:
         if (is_alloced() && capacity_ > need_capacity) {
             K* newData = size_ <= LocalCapacity ? local_ : alloc_place(need_capacity);
             traits::copy(newData, data_, size_ + 1);
-            base_storable::allocator().deallocate(to_real_address(data_));
+            dealloc();
             data_ = newData;
 
             if (size_ > LocalCapacity) {
