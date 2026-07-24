@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.8.1
+* ver. 1.8.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -4365,8 +4365,7 @@ public:
     }
 
     auto erase(const InStore& key) {
-        auto it = hash_t::find(key);
-        if (it != hash_t::end()) {
+        if (auto it = hash_t::find(key); it != hash_t::end()) {
             ((sstring<K>*)it->first.node)->~sstring();
             hash_t::erase(it);
             return 1;
@@ -4378,13 +4377,149 @@ public:
         return erase(toStoreType(key));
     }
 
-    bool lookup(simple_str<K> txt, T& val) const {
-        auto it = find(txt);
-        if (it != hash_t::end()) {
+    /*!
+     * @ru @brief Поиск и извлечение значения.
+     * @param key - искомый ключ.
+     * @param val - ссылка на приёмник значения.
+     * @details Если ключ существует, присваивает переданной ссылке хранимое значение и возвращает true.
+     *  Иначе возвращает false.
+     * @en @brief Finding and retrieving the value.
+     * @param key - the key you are looking for.
+     * @param val - reference to the value receiver.
+     * @details If the key exists, assigns the stored value to the passed reference and returns true.
+     * Otherwise returns false.
+     */
+    template<typename Dst> requires std::is_assignable_v<T, Dst>
+    bool lookup(simple_str<K> key, Dst& val) const {
+        if (auto it = find(key); it != hash_t::end()) {
             val = it->second;
             return true;
         }
         return false;
+    }
+
+    /*!
+     * @ru @brief Поиск и извлечение значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, присваивает переданной ссылке хранимое значение и возвращает true.
+     *  Иначе возвращает false.
+     * @en @brief Finding and retrieving the value.
+     * @param key - the key you are looking for.
+     * @param val - reference to the value receiver.
+     * @details If the key exists, assigns the stored value to the passed reference and returns true.
+     * Otherwise returns false.
+     */
+    template<typename Dst> requires std::is_assignable_v<T, Dst>
+    bool lookup(const InStore& key, Dst& val) const {
+        if (auto it = find(key); it != hash_t::end()) {
+            val = it->second;
+            return true;
+        }
+        return false;
+    }
+
+    /*!
+     * @ru @brief Поиск и извлечение значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает std::optional указанного типа с копией значения.
+     *  Иначе возвращает std::nullopt.
+     * @en @brief Finding and retrieving the value.
+     * @param key - the key you are looking for.
+     * @details If the key exists, return a std::optional of the specified type with a copy of the value.
+     * Otherwise returns std::nullopt.
+     */
+    template<typename Dst = T> requires std::is_constructible_v<Dst, T>
+    std::optional<Dst> get(simple_str<K> key) const {
+        if (auto it = find(key); it != hash_t::end()) {
+            return it->second;
+        }
+        return {};
+    }
+
+    /*!
+     * @ru @brief Поиск и извлечение значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает std::optional указанного типа с копией значения.
+     *  Иначе возвращает std::nullopt.
+     * @en @brief Finding and retrieving the value.
+     * @param s - the key you are looking for.
+     * @details If the key exists, return a std::optional of the specified type with a copy of the value.
+     * Otherwise returns std::nullopt.
+     */
+    template<typename Dst = T> requires std::is_constructible_v<Dst, T>
+    std::optional<Dst> get(const InStore& key) const {
+        if (auto it = find(key); it != hash_t::end()) {
+            return it->second;
+        }
+        return {};
+    }
+
+    /*!
+     * @ru @brief Поиск существующего значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает указатель на хранимое значение.
+     *  Иначе возвращает nullptr.
+     * @en @brief Finding an existing value.
+     * @param s - the key you are looking for.
+     * @details If the key exists, returns a pointer to the stored value.
+     * Otherwise returns nullptr.
+     */
+    T* existed(simple_str<K> key) {
+        if (auto it = find(key); it != hash_t::end()) {
+            return std::addressof(it->second);
+        }
+        return nullptr;
+    }
+
+    /*!
+     * @ru @brief Поиск существующего значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает указатель на хранимое значение.
+     *  Иначе возвращает nullptr.
+     * @en @brief Finding an existing value.
+     * @param s - the key you are looking for.
+     * @details If the key exists, returns a pointer to the stored value.
+     * Otherwise returns nullptr.
+     */
+    T* existed(const InStore& key) {
+        if (auto it = find(key); it != hash_t::end()) {
+            return std::addressof(it->second);
+        }
+        return nullptr;
+    }
+
+    /*!
+     * @ru @brief Поиск существующего значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает константный указатель на хранимое значение.
+     *  Иначе возвращает nullptr.
+     * @en @brief Finding an existing value.
+     * @param s - the key you are looking for.
+     * @details If the key exists, returns a constant pointer to the stored value.
+     * Otherwise returns nullptr.
+     */
+    const T* existed(simple_str<K> key) const {
+        if (auto it = find(key); it != hash_t::end()) {
+            return std::addressof(it->second);
+        }
+        return nullptr;
+    }
+
+    /*!
+     * @ru @brief Поиск существующего значения.
+     * @param key - искомый ключ.
+     * @details Если ключ существует, возвращает константный указатель на хранимое значение.
+     *  Иначе возвращает nullptr.
+     * @en @brief Finding an existing value.
+     * @param s - the key you are looking for.
+     * @details If the key exists, returns a constant pointer to the stored value.
+     * Otherwise returns nullptr.
+     */
+    const T* existed(const InStore& key) const {
+        if (auto it = find(key); it != hash_t::end()) {
+            return std::addressof(it->second);
+        }
+        return nullptr;
     }
 
     void clear() {
