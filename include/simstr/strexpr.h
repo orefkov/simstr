@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.8.2
+ * ver. 1.9.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -3274,6 +3274,20 @@ public:
     }
 };
 
+struct from_begin {
+    size_t idx_;
+};
+struct from_end {
+    size_t idx_;
+};
+inline constexpr from_end to_end{0};
+
+template<typename T>
+concept first_index_in_str = std::is_same_v<T, from_end> || std::is_convertible_v<T, size_t>;
+
+template<typename T>
+concept last_index_in_str = first_index_in_str<T> || std::is_same_v<T, from_begin>;
+
 /*!
  * @ru @brief Класс с базовыми константными строковыми алгоритмами.
  * @details Является базой для классов, могущих выполнять константные операции со строками.
@@ -3445,6 +3459,7 @@ public:
      *      "0123456789"_ss(-4, -1) == "678";
      *  ```
      */
+    [[deprecated("Use 'get' or [start, end] in C++23")]]
     constexpr str_piece operator()(ptrdiff_t from, ptrdiff_t len = 0) const noexcept {
         size_t myLen = _len(), idxStart = from >= 0 ? from : (ptrdiff_t)myLen > -from ? myLen + from : 0,
             idxEnd = len > 0 ? idxStart + len : (ptrdiff_t)myLen > -len ? myLen + len : 0;
@@ -3453,6 +3468,83 @@ public:
         if (idxStart > idxEnd)
             idxStart = idxEnd;
         return str_piece{_str() + idxStart, idxEnd - idxStart};
+    }
+
+    /*!
+     * @ru @brief Получить часть строки как "str_src".
+     * @param start - начальная позиция в строке.
+     * @param end - конечная позиция в строке.
+     * @return Подстроку, str_src.
+     * @details В качестве начальной позиции может задаваться или число - отсчитывается от начала строки, но не далее её конца,
+     * или `from_end(число)` - отсчитывается от конца строки, но не ранее её начала.
+     * В качестве конечной позиции может задаваться или число - отсчитывается от начальной позиции, но не далее конца строки,
+     * или `from_end(число)` - отсчитывается от конца строки, но не ранее начальной позиции,
+     * или `from_begin(число)` - отсчитывается от начала строки, но не ранее начальной позиции и не далее конца строки.
+     * Также можно использовать `to_end` - эквивалентно from_end(0).
+     * @en @brief Get part of a string as "str_src".
+     * @param start - starting position in the string.
+     * @param end - the end position in the string.
+     * @return Substring, str_src.
+     * @details Either a number can be specified as the starting position - it is counted from the beginning of the string, but not further than its end,
+     * or `from_end(number)` - counted from the end of the string, but not earlier than its beginning.
+     * The ending position can be either a number - counted from the starting position, but not further than the end of the string,
+     * or `from_end(number)` - counted from the end of the string, but not earlier than the starting position,
+     * or `from_begin(number)` - counted from the beginning of the string, but not earlier than the starting position and not further than the end of the string.
+     * You can also use `to_end` - equivalent to from_end(0).
+     * @~
+     *  ```cpp
+     *      "0123456789"_ss.get(5, 2) == "56";
+     *      "0123456789"_ss.get(5, to_end) == "56789";
+     *      "0123456789"_ss.get(5, from_end(1)) == "5678";
+     *      "0123456789"_ss.get(from_end(3), to_end) == "789";
+     *      "0123456789"_ss.get(from_end(3), 2) == "78";
+     *      "0123456789"_ss.get(from_end(4), from_end(1)) == "678";
+     *  ```
+     */
+    template<first_index_in_str S, last_index_in_str E>
+    constexpr str_piece get(S start, E end) const noexcept {
+        size_t idxStart, idxEnd, len = _len();
+        if constexpr (std::is_same_v<S, from_end>) {
+            idxStart = start.idx_ > len ? 0 : len - start.idx_;
+        } else {
+            idxStart = std::min(size_t(start), len);
+        }
+
+        if constexpr (std::is_same_v<E, from_begin>) {
+            idxEnd = std::max(idxStart, std::min(end.idx_, len));
+        } else if constexpr (std::is_same_v<E, from_end>) {
+            idxEnd = std::max(idxStart, end.idx_ > len ? 0 : len - end.idx_);
+        } else {
+            size_t e = end;
+            idxEnd = len - idxStart < e ? len : idxStart + e;
+        }
+
+        return str_piece{_str() + idxStart, idxEnd - idxStart};
+    }
+
+#if defined(__cpp_multidimensional_subscript) && __cpp_multidimensional_subscript >= 202211L
+    /*!
+    * @ru @brief Обертка вокруг `get` в виде многомерного оператора [].
+    * @en @brief Wraps `get` as a multidimensional operator [].
+    */
+    template<first_index_in_str S, last_index_in_str E>
+    constexpr str_piece operator[](S start, E end) const noexcept {
+        return get(start, end);
+    }
+#endif
+    /*!
+    * @ru @brief Обертка вокруг `get(0, count)`.
+    * @en @brief Wraps `get(0, count)`.
+    */
+    constexpr str_piece prefix(size_t count) const noexcept {
+        return get(0, count);
+    }
+    /*!
+    * @ru @brief Обертка вокруг `get(from_end(count), to_end)`.
+    * @en @brief Wraps `get(from_end(count), to_end)`.
+    */
+    constexpr str_piece suffix(size_t count) const noexcept {
+        return get(from_end(count), to_end);
     }
     /*!
      * @ru @brief Получить часть строки как "кусок строки".
@@ -3500,7 +3592,7 @@ public:
      * @return Substring, str_src.
      */
     constexpr str_piece until(str_piece pattern, size_t offset = 0) const noexcept {
-        return (*this)(0, find_or_all(pattern, offset));
+        return get(0, find_or_all(pattern, offset));
     }
     /*!
      * @ru @brief Проверка на пустоту.
@@ -4071,8 +4163,13 @@ public:
      * @param len - the number of characters in the resulting "chunk". If less than or equal to zero, then count len ​​characters from the end of the string.
      * @return my_type - a substring, an object of the same type to which the method is applied.
      */
+    [[deprecated("Use sub(start, end)")]]
     constexpr my_type substr(ptrdiff_t from, ptrdiff_t len = 0) const { // индексация в code units | indexing in code units
         return my_type{d()(from, len)};
+    }
+    template<first_index_in_str S, last_index_in_str E>
+    constexpr my_type sub(S start, E end) const noexcept {
+        return my_type{get(start, end)};
     }
     /*!
      * @ru @brief Получить часть строки объектом того же типа, к которому применён метод, аналогично mid.
@@ -4597,7 +4694,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_prefix(str_piece prefix) const {
         if (starts_with(prefix)) {
-            return R{operator()(prefix.length())};
+            return R{get(prefix.length(), to_end)};
         }
         return {};
     }
@@ -4616,7 +4713,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_prefix_ia(str_piece prefix) const {
         if (starts_with_ia(prefix)) {
-            return R{operator()(prefix.length())};
+            return R{get(prefix.length(), to_end)};
         }
         return {};
     }
@@ -4635,7 +4732,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_suffix(str_piece suffix) const {
         if (ends_with(suffix)) {
-            return R{operator()(0, -suffix.length())};
+            return R{get(0, from_end{suffix.length()})};
         }
         return {};
     }
@@ -4654,7 +4751,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_suffix_ia(str_piece suffix) const {
         if (ends_with_ia(suffix)) {
-            return R{operator()(0, -suffix.length())};
+            return R{get(0, from_end{suffix.length()})};
         }
         return {};
     }
@@ -4939,7 +5036,7 @@ public:
     constexpr R trimmed_prefix(str_piece prefix, size_t max_count = 0) const {
         str_piece res = *this;
         while(res.starts_with(prefix)) {
-            res = res(prefix.length());
+            res.remove_prefix(prefix.length());
             if (--max_count == 0) {
                 break;
             }
@@ -4962,7 +5059,7 @@ public:
     constexpr R trimmed_prefix_ia(str_piece prefix, size_t max_count = 0) const {
         str_piece res = *this;
         while(res.starts_with_ia(prefix)) {
-            res = res(prefix.length());
+            res.remove_prefix(prefix.length());
             if (--max_count == 0) {
                 break;
             }
@@ -4985,7 +5082,7 @@ public:
     constexpr R trimmed_suffix(str_piece suffix) const {
         str_piece res = *this;
         while(res.ends_with(suffix)) {
-            res = res(0, -suffix.length());
+            res.remove_suffix(suffix.length());
         }
         return res;
     }
@@ -5005,7 +5102,7 @@ public:
     constexpr R trimmed_suffix_ia(str_piece suffix) const {
         str_piece res = *this;
         while(res.ends_with_ia(suffix)) {
-            res = res(0, -suffix.length());
+            res.remove_suffix(suffix.length());
         }
         return res;
     }

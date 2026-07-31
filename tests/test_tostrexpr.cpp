@@ -1,5 +1,5 @@
 /*
- * ver. 1.8.2
+ * ver. 1.9.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com

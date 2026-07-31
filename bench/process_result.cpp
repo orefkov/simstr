@@ -38,7 +38,7 @@ struct result_info {
         }
         // Текущее положение поставим сразу за cpuinfo и откинем завершающие переводы строк
         // We will put the current position immediately after cpuinfo and discard the final line feeds
-        current_text_ = current_text_(cpu_info_.end() - current_text_.begin() + 1).trimmed_right("\n");
+        current_text_ = current_text_.get(cpu_info_.end() - current_text_.begin() + 1, to_end).trimmed_right("\n");
     }
 };
 
@@ -96,11 +96,11 @@ results_vector get_results_infos() {
             // В начале имени файла может идти число и дефис, для сортировки, уберём их
             // At the beginning of the file name there can be a number and a hyphen, for sorting, remove them
             if (auto delimiter = fileName.find('-'); delimiter + 1 > 1) {
-                if (fileName(0, delimiter).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
+                if (fileName.prefix(delimiter).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
                     fileName.remove_prefix(delimiter + 1);
                 }
             }
-            results.emplace_back(get_file_content(lstringa<128>{dirForResults + f}), fileName(0, -suffix.length()));
+            results.emplace_back(get_file_content(lstringa<128>{dirForResults + f}), fileName.get(0, from_end(suffix.length())));
         }
     }
     return results;
@@ -117,7 +117,7 @@ void write_platforms_cpu(out_t& out, const results_vector& results) {
     for (const auto& r : results) {
         size_t rp = r.cpu_info_.find('(') + 1, lp = r.cpu_info_.find(')', rp);
         ssa shortCpuInfo = r.cpu_info_.from_to(rp, lp);
-        ssa cpuInfo = r.cpu_info_(lp + 2);
+        ssa cpuInfo = r.cpu_info_.get(lp + 2, to_end);
         out += e_subst(R"--(
 <li><span class="platform">{}</span><span class="tooltip">{}<span class="tooltiptext">{}</span></span>&nbsp;Include in charts: <input type="checkbox" id="pl{}" checked onchange="buildCharts()"/></li>)--",
             r.platform_, shortCpuInfo, cpuInfo, counter++);
@@ -167,7 +167,7 @@ ssa extract_name_result(ssa line, ssa& result) {
     line.len = ns;
     if (inNs) {
         size_t end = line.find_last(' ');
-        result = line(end + 1);
+        result = line.get(end + 1, to_end);
         if (auto rp = line.find("/repeats"); rp != str::npos) {
             line.len = rp;
         } else {
@@ -182,7 +182,7 @@ ssa extract_name_result(ssa line, ssa& result) {
 ssa extract_comment(ssa commentsText, ssa benchmarkName) {
     size_t idx = commentsText.find_end(lstringa<120>{"- " + benchmarkName + "\n"});
     if (idx != str::npos) {
-        if (commentsText[idx] != '\n' && commentsText(idx, 2) != "- ") {
+        if (commentsText[idx] != '\n' && commentsText.get(idx, 2) != "- ") {
             return commentsText.from_to(idx, commentsText.find("\n\n", idx));
         }
     }
@@ -206,7 +206,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
     }();
 
     size_t delim = benchName.find_last('/');
-    if (delim != str::npos && benchName(delim + 1).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
+    if (delim != str::npos && benchName.get(delim + 1, to_end).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
         benchName.len = delim;
     }
     auto [it, not_exist] = textes.try_emplace(benchName, stringa{}, 0);
@@ -218,7 +218,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
             std::cerr << "Can not found benchmark function name for " << benchName << std::endl;
             return {stra::empty_str, 0};
         }
-        start = sourceText(0, start).find('(', sourceText.find_last('\n', start - 1));
+        start = sourceText.prefix(start).find('(', sourceText.find_last('\n', start - 1));
         if (start == str::npos) {
             std::cerr << "Can not found benchmark function name for " << benchName << std::endl;
             return {stra::empty_str, 0};
@@ -237,7 +237,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
             }
             start = sourceText.find_last('\n', start);
             size_t templ_start = sourceText.find_last('\n', start) + 1;
-            if (sourceText(templ_start).starts_with("template")) {
+            if (sourceText.get(templ_start, to_end).starts_with("template")) {
                 start = templ_start;
             } else {
                 start++;
@@ -261,7 +261,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
                     throw std::runtime_error{"Not found end of func"};
                 }
                 lstringa<2048> text{sourceText.from_to(beginLine, end + indent.length() + 1), indent, "\n"};
-                func_it->second.first = repl_html_symbols(text(1));
+                func_it->second.first = repl_html_symbols(text.get(1, to_end));
             } else {
                 end = sourceText.find("\n}\n", start);
                 func_it->second.first = repl_html_symbols(sourceText.from_to(start, end + 2));
@@ -274,7 +274,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
 }
 
 void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText, ssa commentsText) {
-    ssa releaseVersion = sourceText(sourceText.find_end("\n * ver. ")).until("\n").trimmed();
+    ssa releaseVersion = sourceText.get(sourceText.find_end("\n * ver. "), to_end).until("\n").trimmed();
     if (!releaseVersion) {
         std::cerr << "Not found release version in sources" << std::endl;
         throw std::runtime_error{"Not found release version in sources"};
@@ -292,7 +292,7 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
     while(!splitters[0].is_done()) {
         ssa line = splitters[0].next(), benchName, result;
         if (auto rm = line.find("_mean"); rm != str::npos) {
-            benchName = extract_name_result(line, result)(0, rm);
+            benchName = extract_name_result(line, result).prefix(rm);
             auto [source, line_num] = extract_source_for_benchmark(benchName, sourceText);
             auto comment = extract_comment(commentsText, benchName);
             // Нужно вывести название бенча и коммент
@@ -312,12 +312,12 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
                     throw std::runtime_error{"Not expected end of file"};
                 }
                 line = splitters[idx].next();
-                ssa rbench_name = extract_name_result(line, result)(0, rm);
+                ssa rbench_name = extract_name_result(line, result).prefix(rm);
                 if (rbench_name != benchName) {
                     while (line.find("_mean") == str::npos && !splitters[idx].is_done()) {
                         line = splitters[idx].next();
                     }
-                    rbench_name = extract_name_result(line, result)(0, rm);
+                    rbench_name = extract_name_result(line, result).prefix(rm);
                     if (rbench_name != benchName) {
                         std::cerr << "In results for " << results[idx].platform_ << " benchmark '" << rbench_name
                                   << "' does not match with other results" << std::endl;

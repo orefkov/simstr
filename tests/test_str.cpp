@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.8.2
+ * ver. 1.9.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -274,6 +274,7 @@ TEST(SimStr, SimpleFind) {
     EXPECT_EQ("abccccc"_ss.find_last("ab"), 0);
 }
 
+#if 0
 TEST(SimStr, SubPiece) {
     ssa testa{"test"};
     EXPECT_EQ(testa(1), "est");
@@ -289,39 +290,83 @@ TEST(SimStr, SubPiece) {
     EXPECT_EQ(testw(1), L"est");
     EXPECT_EQ(testw(1, 2), L"es");
 }
+#endif
+
+TEST(SimStr, Get) {
+    ssa testa{"test"};
+    EXPECT_EQ(testa.get(1, to_end), "est");
+    EXPECT_EQ(testa.get(1, 2), "es");
+    EXPECT_EQ(testa.get(1, from_end(1)), "es");
+    EXPECT_EQ(testa.get(1, from_end(10)), "");
+
+    ssu testu{u"test"};
+    EXPECT_EQ(testu.get(1, to_end), u"est");
+    EXPECT_EQ(testu.get(1, 2), u"es");
+
+    ssw testw{L"test"};
+    EXPECT_EQ(testw.get(1, to_end), L"est");
+    EXPECT_EQ(testw.get(1, 2), L"es");
+}
 
 TEST(SimStr, SimpleSubstr) {
     ssa testa = "test";
+#if 0
     EXPECT_EQ(testa.substr(1, 0), "est");
     EXPECT_EQ(testa.substr(1, 2), "es");
     EXPECT_EQ(testa.substr(0, -1), "tes");
     EXPECT_EQ(testa.substr(-2), "st");
     EXPECT_EQ(testa.substr(-3, 2), "es");
     EXPECT_EQ(testa.substr(-3, -1), "es");
+#endif
+    EXPECT_EQ(testa.sub(1, to_end), "est");
+    EXPECT_EQ(testa.sub(1, 2), "es");
+    EXPECT_EQ(testa.sub(0, from_end(1)), "tes");
+    EXPECT_EQ(testa.sub(from_end(2), to_end), "st");
+    EXPECT_EQ(testa.sub(from_end(3), 2), "es");
+    EXPECT_EQ(testa.sub(from_end(3), from_end(1)), "es");
+
     EXPECT_EQ(testa.str_mid(1), "est");
     EXPECT_EQ(testa.str_mid(1, 0), "");
     EXPECT_EQ(testa.str_mid(1, 2), "es");
     EXPECT_EQ(testa.str_mid(2, 2), "st");
 
     ssu testu = u"test";
+#if 0
     EXPECT_EQ(testu.substr(1, 0), u"est");
     EXPECT_EQ(testu.substr(1, 2), u"es");
     EXPECT_EQ(testu.substr(0, -1), u"tes");
     EXPECT_EQ(testu.substr(-2), u"st");
     EXPECT_EQ(testu.substr(-3, 2), u"es");
     EXPECT_EQ(testu.substr(-3, -1), u"es");
+#endif
+    EXPECT_EQ(testu.sub(1, to_end), u"est");
+    EXPECT_EQ(testu.sub(1, 2), u"es");
+    EXPECT_EQ(testu.sub(0, from_end(1)), u"tes");
+    EXPECT_EQ(testu.sub(from_end(2), to_end), u"st");
+    EXPECT_EQ(testu.sub(from_end(3), 2), u"es");
+    EXPECT_EQ(testu.sub(from_end(3), from_end(1)), u"es");
+
     EXPECT_EQ(testu.str_mid(1), u"est");
     EXPECT_EQ(testu.str_mid(1, 0), u"");
     EXPECT_EQ(testu.str_mid(1, 2), u"es");
     EXPECT_EQ(testu.str_mid(2, 2), u"st");
 
     ssw testw = L"test";
+#if 0
     EXPECT_EQ(testw.substr(1, 0), L"est");
     EXPECT_EQ(testw.substr(1, 2), L"es");
     EXPECT_EQ(testw.substr(0, -1), L"tes");
     EXPECT_EQ(testw.substr(-2), L"st");
     EXPECT_EQ(testw.substr(-3, 2), L"es");
     EXPECT_EQ(testw.substr(-3, -1), L"es");
+#endif
+    EXPECT_EQ(testw.sub(1, to_end), L"est");
+    EXPECT_EQ(testw.sub(1, 2), L"es");
+    EXPECT_EQ(testw.sub(0, from_end(1)), L"tes");
+    EXPECT_EQ(testw.sub(from_end(2), to_end), L"st");
+    EXPECT_EQ(testw.sub(from_end(3), 2), L"es");
+    EXPECT_EQ(testw.sub(from_end(3), from_end(1)), L"es");
+
     EXPECT_EQ(testw.str_mid(1), L"est");
     EXPECT_EQ(testw.str_mid(1, 0), L"");
     EXPECT_EQ(testw.str_mid(1, 2), L"es");
@@ -330,7 +375,7 @@ TEST(SimStr, SimpleSubstr) {
 
 TEST(SimStr, ToInt) {
     EXPECT_EQ(ssa{"  123"}.as_int<int>(), 123);
-    EXPECT_EQ(ssa{"  123"}(0, -1).as_int<int>(), 12);
+    EXPECT_EQ(ssa{"  123"}.get(0, from_end(1)).as_int<int>(), 12);
     EXPECT_EQ(ssa{"+123"}.as_int<int>(), 123);
     EXPECT_EQ(ssa{"  -123aa"}.as_int<int>(), -123);
     EXPECT_EQ(ssa{"123"}.as_int<size_t>(), 123u);
@@ -813,7 +858,7 @@ TEST(SimStr, AssignSstring) {
     EXPECT_EQ(test = ssa{"other"}, "other");
     EXPECT_EQ(test = stringa{"trtr"_ss + 10}, "trtr10");
     EXPECT_EQ(test = "trtr"_ss + 20, "trtr20");
-    EXPECT_EQ(test = test(2), "tr20");
+    EXPECT_EQ(test = test.get(2, to_end), "tr20");
     EXPECT_EQ(test = lstringa<10>{"func"}, "func");
     EXPECT_EQ(test = lstringsa<10>{"func"}, "func");
     lstringsa<10> sample{15, "1234"};
@@ -942,10 +987,10 @@ TEST(SimStr, LStringAssign) {
         test = lstringa<1>{"next step"};
         EXPECT_EQ(test, "next step");
 
-        test = test(0);
+        test = test.get(0, to_end);
         EXPECT_EQ(test, "next step");
 
-        test = test(1, 2);
+        test = test.get(1, 2);
         EXPECT_EQ(test, "ex");
 
         test = e_c(100, 'a');
@@ -1405,7 +1450,7 @@ TEST(SimStr, LStrJoinAndExpressions) {
     buffer.prepend(e_choice(test.length() > 2, eea + 99, eea + 12.1 + "asd"));
     EXPECT_EQ(buffer, "99asd<>fgh<>jkl");
 
-    buffer.change(2, 4, test(0, 3) + "__" + 1 + ',');
+    buffer.change(2, 4, test.get(0, 3) + "__" + 1 + ',');
     EXPECT_EQ(buffer, "99>as__1,>fgh<>jkl");
 }
 
