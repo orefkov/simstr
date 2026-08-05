@@ -3818,7 +3818,7 @@ public:
      * @return size_t - the position of the beginning of the substring occurrence, or throws an Exc exception if not found.
      */
     template<typename Exc, typename ... Args> requires std::is_constructible_v<Exc, Args...>
-    constexpr size_t find_or_throw(str_piece pattern, size_t offset = 0, Args&& ... args) const noexcept {
+    constexpr size_t find_or_throw(str_piece pattern, size_t offset = 0, Args&& ... args) const {
         if (auto fnd = find(pattern.symbols(), pattern.length(), offset); fnd != str::npos) {
             return fnd;
         }
