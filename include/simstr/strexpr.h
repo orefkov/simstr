@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.9.1
+ * ver. 2.0.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -624,7 +624,7 @@ using convert_to_strexpr_t = decltype(to_strexpr<K>(std::declval<T>()));
 * For concatenating two string expression objects into one.
 */
 
-template<typename K, typename Allocator, StrExpr A>
+template<typename K, typename Allocator, StrExprForType<K> A>
 constexpr std::basic_string<K, std::char_traits<K>, Allocator> to_std_string(const A& expr) {
     std::basic_string<K, std::char_traits<K>, Allocator> res;
     if (size_t l = expr.length()) {
@@ -745,7 +745,7 @@ struct strexprjoin_c : expr_to_std_string<strexprjoin_c<A, B, last>>{
     using symb_type = typename A::symb_type;
     const A& a;
     B b;
-    template<typename... Args>
+    template<typename... Args> requires (std::is_constructible_v<B, Args...>)
     constexpr strexprjoin_c(const A& a_, Args&&... args_) : a(a_), b(std::forward<Args>(args_)...) {}
     constexpr size_t length() const noexcept {
         return a.length() + b.length();
@@ -1175,26 +1175,22 @@ struct expr_repeat_expr : expr_to_std_string<expr_repeat_expr<A>> {
     using symb_type = typename A::symb_type;
     size_t repeat_;
     const A& expr_;
+    mutable size_t len_;
     constexpr expr_repeat_expr(size_t repeat, const A& expr) : repeat_(repeat), expr_(expr){}
     constexpr size_t length() const noexcept {
         if (repeat_) {
-            return repeat_ * expr_.length();
+            len_ = expr_.length();
+            return repeat_ * len_;
         }
-        return 0;
+        return len_ = 0;
     }
     constexpr symb_type* place(symb_type* p) const noexcept {
-        if (repeat_) {
-            if (repeat_ == 1) {
-                return expr_.place(p);
-            }
+        if (repeat_ && len_) {
             symb_type* start = p;
             p = expr_.place(p);
-            size_t len = size_t(p - start);
-            if (len) {
-                for (size_t i = 1; i < repeat_; i++) {
-                    std::char_traits<symb_type>::copy(p, start, len);
-                    p += len;
-                }
+            for (size_t i = repeat_; --i; ) {
+                std::char_traits<symb_type>::copy(p, start, len_);
+                p += len_;
             }
         }
         return p;
@@ -3459,7 +3455,7 @@ public:
      *      "0123456789"_ss(-4, -1) == "678";
      *  ```
      */
-    [[deprecated("Use 'get' or [start, end] in C++23")]]
+    [[deprecated("Use 'slice' or [start, end] in C++23")]]
     constexpr str_piece operator()(ptrdiff_t from, ptrdiff_t len = 0) const noexcept {
         size_t myLen = _len(), idxStart = from >= 0 ? from : (ptrdiff_t)myLen > -from ? myLen + from : 0,
             idxEnd = len > 0 ? idxStart + len : (ptrdiff_t)myLen > -len ? myLen + len : 0;
@@ -3493,19 +3489,19 @@ public:
      * You can also use `to_end` - equivalent to from_end(0).
      * @~
      *  ```cpp
-     *      "0123456789"_ss.get(5, 2) == "56";
-     *      "0123456789"_ss.get(5, to_end) == "56789";
-     *      "0123456789"_ss.get(5, from_end(1)) == "5678";
-     *      "0123456789"_ss.get(from_end(3), to_end) == "789";
-     *      "0123456789"_ss.get(from_end(3), 2) == "78";
-     *      "0123456789"_ss.get(from_end(4), from_end(1)) == "678";
+     *      "0123456789"_ss.slice(5, 2) == "56";
+     *      "0123456789"_ss.slice(5, to_end) == "56789";
+     *      "0123456789"_ss.slice(5, from_end(1)) == "5678";
+     *      "0123456789"_ss.slice(from_end(3), to_end) == "789";
+     *      "0123456789"_ss.slice(from_end(3), 2) == "78";
+     *      "0123456789"_ss.slice(from_end(4), from_end(1)) == "678";
      *  ```
      */
     template<first_index_in_str S, last_index_in_str E>
-    constexpr str_piece get(S start, E end) const noexcept {
+    constexpr str_piece slice(S start, E end) const noexcept {
         size_t idxStart, idxEnd, len = _len();
         if constexpr (std::is_same_v<S, from_end>) {
-            idxStart = start.idx_ > len ? 0 : len - start.idx_;
+            idxStart = start.idx_ >= len ? 0 : len - start.idx_;
         } else {
             idxStart = std::min(size_t(start), len);
         }
@@ -3513,10 +3509,10 @@ public:
         if constexpr (std::is_same_v<E, from_begin>) {
             idxEnd = std::max(idxStart, std::min(end.idx_, len));
         } else if constexpr (std::is_same_v<E, from_end>) {
-            idxEnd = std::max(idxStart, end.idx_ > len ? 0 : len - end.idx_);
+            idxEnd = std::max(idxStart, end.idx_ >= len ? 0 : len - end.idx_);
         } else {
             size_t e = end;
-            idxEnd = len - idxStart < e ? len : idxStart + e;
+            idxEnd = len - idxStart <= e ? len : idxStart + e;
         }
 
         return str_piece{_str() + idxStart, idxEnd - idxStart};
@@ -3524,27 +3520,27 @@ public:
 
 #if defined(__cpp_multidimensional_subscript) && __cpp_multidimensional_subscript >= 202211L
     /*!
-    * @ru @brief Обертка вокруг `get` в виде многомерного оператора [].
-    * @en @brief Wraps `get` as a multidimensional operator [].
+    * @ru @brief Обертка вокруг `slice` в виде многомерного оператора [].
+    * @en @brief Wraps `slice` as a multidimensional operator [].
     */
     template<first_index_in_str S, last_index_in_str E>
     constexpr str_piece operator[](S start, E end) const noexcept {
-        return get(start, end);
+        return slice(start, end);
     }
 #endif
     /*!
-    * @ru @brief Обертка вокруг `get(0, count)`.
-    * @en @brief Wraps `get(0, count)`.
+    * @ru @brief Обертка вокруг `slice(0, count)`.
+    * @en @brief Wraps `slice(0, count)`.
     */
     constexpr str_piece prefix(size_t count) const noexcept {
-        return get(0, count);
+        return slice(0, count);
     }
     /*!
-    * @ru @brief Обертка вокруг `get(from_end(count), to_end)`.
-    * @en @brief Wraps `get(from_end(count), to_end)`.
+    * @ru @brief Обертка вокруг `slice(from_end(count), to_end)`.
+    * @en @brief Wraps `slice(from_end(count), to_end)`.
     */
     constexpr str_piece suffix(size_t count) const noexcept {
-        return get(from_end(count), to_end);
+        return slice(from_end(count), to_end);
     }
     /*!
      * @ru @brief Получить часть строки как "кусок строки".
@@ -3556,6 +3552,7 @@ public:
      * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the string.
      * @return Substring, str_src.
      */
+    [[deprecated("Use 'slice' or [start, end] in C++23")]]
     constexpr str_piece mid(size_t from, size_t len = -1) const noexcept {
         size_t myLen = _len(), idxStart = from, idxEnd = from > std::numeric_limits<size_t>::max() - len ? myLen : from + len;
         if (idxEnd > myLen)
@@ -3592,7 +3589,7 @@ public:
      * @return Substring, str_src.
      */
     constexpr str_piece until(str_piece pattern, size_t offset = 0) const noexcept {
-        return get(0, find_or_all(pattern, offset));
+        return slice(0, find_or_all(pattern, offset));
     }
     /*!
      * @ru @brief Проверка на пустоту.
@@ -4163,13 +4160,35 @@ public:
      * @param len - the number of characters in the resulting "chunk". If less than or equal to zero, then count len ​​characters from the end of the string.
      * @return my_type - a substring, an object of the same type to which the method is applied.
      */
-    [[deprecated("Use sub(start, end)")]]
+    [[deprecated("Use substring(start, end)")]]
     constexpr my_type substr(ptrdiff_t from, ptrdiff_t len = 0) const { // индексация в code units | indexing in code units
         return my_type{d()(from, len)};
     }
+    /*!
+     * @ru @brief Получить результат slice и поместить его в объект заданного типа.
+     * @tparam T - тип объекта
+     * @return объект типа T, инициализированный результатом slice.
+     * @en @brief Get the slice result and place it into an object of the specified type.
+     * @tparam T - object type
+     * @return an object of type T initialized with the slice result.
+     */
+    template<typename T, first_index_in_str S, last_index_in_str E> requires std::is_constructible_v<T, str_piece>
+    constexpr T slice_to(S start, E end) const noexcept {
+        str_piece res = slice(start, end);
+        if constexpr (std::is_constructible_v<T, const my_type&> && !std::is_same_v<T, str_piece>) {
+            if (res.is_same(*this)) {
+                return T{*this};
+            }
+        }
+        return T{res};
+    }
+    /*!
+     * @ru @brief Обёртка вокруг slice_to<my_type>
+     * @en @brief Wrapper around slice_to<my_type>
+     */
     template<first_index_in_str S, last_index_in_str E>
-    constexpr my_type sub(S start, E end) const noexcept {
-        return my_type{get(start, end)};
+    constexpr my_type substring(S start, E end) const noexcept {
+        return slice_to<my_type>(start, end);
     }
     /*!
      * @ru @brief Получить часть строки объектом того же типа, к которому применён метод, аналогично mid.
@@ -4181,6 +4200,7 @@ public:
      * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the string.
      * @return A string of the same type to which the method is applied.
      */
+    [[deprecated("Use slice_to(start, end)")]]
     constexpr my_type str_mid(size_t from, size_t len = -1) const { // индексация в code units | indexing in code units
         return my_type{d().mid(from, len)};
     }
@@ -4694,7 +4714,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_prefix(str_piece prefix) const {
         if (starts_with(prefix)) {
-            return R{get(prefix.length(), to_end)};
+            return R{slice(prefix.length(), to_end)};
         }
         return {};
     }
@@ -4713,7 +4733,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_prefix_ia(str_piece prefix) const {
         if (starts_with_ia(prefix)) {
-            return R{get(prefix.length(), to_end)};
+            return R{slice(prefix.length(), to_end)};
         }
         return {};
     }
@@ -4732,7 +4752,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_suffix(str_piece suffix) const {
         if (ends_with(suffix)) {
-            return R{get(0, from_end{suffix.length()})};
+            return R{slice(0, from_end{suffix.length()})};
         }
         return {};
     }
@@ -4751,7 +4771,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_suffix_ia(str_piece suffix) const {
         if (ends_with_ia(suffix)) {
-            return R{get(0, from_end{suffix.length()})};
+            return R{slice(0, from_end{suffix.length()})};
         }
         return {};
     }
@@ -6762,7 +6782,7 @@ struct e_subst : expr_to_std_string<e_subst<K, PtLen, Args...>> {
     * @param args... - аргументы, которые будут подставляться в заданные места образца. Также, как и в `e_concat`, могут быть строковые литералы,
     * строковые выражения, стандартные строки, а также любые типы, для которых есть преобразование в строковое выражение.
     * @details Функция создаёт строковое выражение, которое при материализации генерирует текст из образца, подставляя в места подстановки
-    *  значения переданных аргументов. Строка-образец задается строковым литералом, константной времени компиляции.
+    *  значения переданных аргументов. Строка-образец задается строковым литералом, константой времени компиляции.
     *  Места вставки обозначаются либо как `{}`, либо как `{номер}`.
     *  В случае без указания номера, параметры подставляются в переданном в функцию порядке. В случае указания номера, параметры подставляются в соответствии
     *  с указанным порядковым номером. Нумерация параметров начинается с 1. Смешивать параметры без номера и с номером нельзя - используется только

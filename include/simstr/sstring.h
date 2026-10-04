@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 1.9.1
+* ver. 2.0.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -4272,6 +4272,7 @@ public:
     // При входе хэш должен быть уже посчитан
     // When entering, the hash must already be calculated
     template<typename... ValArgs>
+        requires(std::is_constructible_v<T, ValArgs...>)
     auto try_emplace(const InStore& key, ValArgs&&... args) {
         auto it = hash_t::try_emplace(key, std::forward<ValArgs>(args)...);
         if (it.second) {
@@ -4287,7 +4288,7 @@ public:
     }
 
     template<typename Key, typename... ValArgs>
-        requires(std::is_convertible_v<Key, simple_str<K>>)
+        requires(std::is_convertible_v<Key, simple_str<K>> && std::is_constructible_v<T, ValArgs...>)
     auto try_emplace(Key&& key, ValArgs&&... args) {
         auto it = hash_t::try_emplace(toStoreType(key), std::forward<ValArgs>(args)...);
         if (it.second) {
@@ -4299,6 +4300,7 @@ public:
     }
 
     template<typename... ValArgs>
+        requires(std::is_constructible_v<T, ValArgs...>)
     auto emplace(const InStore& key, ValArgs&&... args) {
         auto it = try_emplace(key, std::forward<ValArgs>(args)...);
         if (!it.second) {
@@ -4308,7 +4310,7 @@ public:
     }
 
     template<typename Key, typename... ValArgs>
-        requires(std::is_convertible_v<Key, simple_str<K>>)
+        requires(std::is_convertible_v<Key, simple_str<K>> && std::is_constructible_v<T, ValArgs...>)
     auto emplace(Key&& key, ValArgs&&... args) {
         auto it = try_emplace(std::forward<Key>(key), std::forward<ValArgs>(args)...);
         if (!it.second) {
@@ -4317,12 +4319,12 @@ public:
         return it;
     }
 
-    auto& operator[](const InStore& key) {
+    auto& operator[](const InStore& key) requires(std::is_default_constructible_v<T>) {
         return try_emplace(key).first->second;
     }
 
     template<typename Key>
-        requires(std::is_convertible_v<Key, simple_str<K>>)
+        requires(std::is_convertible_v<Key, simple_str<K>> && std::is_default_constructible_v<T>)
     auto& operator[](Key&& key) {
         return try_emplace(std::forward<Key>(key)).first->second;
     }

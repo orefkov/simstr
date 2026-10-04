@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 1.9.1
+ * ver. 2.0.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -454,20 +454,21 @@ TEST(StrExpr, StartWithAnd) {
 
 TEST(SimStr, Get) {
     ssa testa{"test"};
-    EXPECT_EQ(testa.get(1, to_end), "est");
-    EXPECT_EQ(testa.get(1, 2), "es");
-    EXPECT_EQ(testa.get(1, from_end(1)), "es");
-    EXPECT_EQ(testa.get(1, from_end(10)), "");
-    EXPECT_EQ(testa.get(from_end(3), from_end(1)), "es");
+    EXPECT_EQ(testa.slice(1, to_end), "est");
+    EXPECT_EQ(testa.slice(1, 2), "es");
+    EXPECT_EQ(testa.slice(1, from_end(1)), "es");
+    EXPECT_EQ(testa.slice(1, from_end(10)), "");
+    EXPECT_EQ(testa.slice(from_end(3), from_end(1)), "es");
+    EXPECT_EQ(testa.slice(1, from_begin(3)), "es");
 
     ssu testu{u"test"};
-    EXPECT_EQ(testu.get(1, to_end), u"est");
-    EXPECT_EQ(testu.get(1, 2), u"es");
-    EXPECT_EQ(testu.get(from_end(3), from_end(1)), u"es");
+    EXPECT_EQ(testu.slice(1, to_end), u"est");
+    EXPECT_EQ(testu.slice(1, 2), u"es");
+    EXPECT_EQ(testu.slice(from_end(3), from_end(1)), u"es");
 
     ssw testw{L"test"};
-    EXPECT_EQ(testw.get(1, to_end), L"est");
-    EXPECT_EQ(testw.get(1, 2), L"es");
-    EXPECT_EQ(testw.get(from_end(3), from_end(1)), L"es");
+    EXPECT_EQ(testw.slice(1, to_end), L"est");
+    EXPECT_EQ(testw.slice(1, 2), L"es");
+    EXPECT_EQ(testw.slice(from_end(3), from_end(1)), L"es");
 }
 } // namespace simstr::tests

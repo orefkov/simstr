@@ -3,12 +3,15 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Версия 1.9.1
+[Свидетельство о государственной регистрации программы для ЭВМ № 2026686340](https://fips.ru/EGD/d0aceeb7-5012-484e-bf09-90a836006439)
+
+Версия 2.0.0
 
 <h2>Ускорь работу со строками в 2-10 раз!</h2>
 
 
 В этой библиотеке содержится современная реализация нескольких видов строковых объектов и различных алгоритмов для работы со строками.
+
 ## Сгенерированная документация
 [Находится здесь](https://orefkov.github.io/simstr/docs_ru/)
 
@@ -326,8 +329,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel1.9.1# Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 1.9.1
+        GIT_TAG tags/rel2.0.0# Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 2.0.0
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()
