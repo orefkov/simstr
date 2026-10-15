@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.0.0
+ * ver. 2.1.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -7,6 +7,7 @@
  */
 
 #include <simstr/sstring.h>
+#include <source_location>
 #include <gtest/gtest.h>
 
 using namespace std::literals;
@@ -2200,6 +2201,72 @@ TEST(SimStr, SizedAllocU) {
     }
     EXPECT_EQ(sized_alloc::allocated, sized_alloc::dealloced);
     EXPECT_EQ(sized_alloc::allocated, 202);
+}
+
+static std::vector<int> test_func(int a, int b) {
+    EXPECT_EQ(stra{std::source_location::current().function_name()}.
+        trimmed_prefix("static ").
+        slice(" "_eoa, to_end).
+        trimmed_prefix("__cdecl ").
+        slice(0, "("_boa), "simstr::tests::test_func");
+
+    EXPECT_EQ(stra{std::source_location::current().function_name()}.
+        trimmed_prefix("static ").
+        slice(0, " "_boa), "std::vector<int>");
+
+    EXPECT_EQ(stra{std::source_location::current().function_name()}.
+        slice("("_eoa, ")"_boa), "int, int");
+    EXPECT_EQ(stra{std::source_location::current().function_name()}.
+        slice("("_boa, ")"_eoa), "(int, int)");
+    return {};
+}
+
+TEST(SimStr, SliceFind) {
+    ssa test{"abc def"};
+    EXPECT_EQ(test.slice(begin_or_all{stra{"c "}}, to_end), "c def");
+    EXPECT_EQ(test.slice(end_or_all{"c "}, to_end), "def");
+    EXPECT_EQ(test.slice("c "_boa, to_end), "c def");
+    EXPECT_EQ(test.slice("c "_eoa, to_end), "def");
+    test = "-abc -abcFound";
+    EXPECT_EQ(test.slice(begin_or_all{"abc", 0, 1}, to_end), "abcFound");
+    EXPECT_EQ(test.slice(end_or_all{"abc", 0, 1}, to_end), "Found");
+    EXPECT_EQ(test.slice(begin_or_all{"abc", 2}, to_end), "abcFound");
+    EXPECT_EQ(test.slice(end_or_all{"abc", 2}, to_end), "Found");
+    EXPECT_EQ(test.slice(begin_or_all{"abc", 2, 1}, to_end), "-abc -abcFound");
+    EXPECT_EQ(test.slice(end_or_all{"abc", 2, 1}, to_end), "-abc -abcFound");
+    test = "int func(int)";
+    EXPECT_EQ(test.slice(" "_eoa, "("_boa), "func");
+
+    ssu utest = u"int func(int)";
+    EXPECT_EQ(utest.slice(u" "_eoa, u"("_boa), u"func");
+#ifndef _MSC_VER
+    test_func(0, 0);
+#endif
+    test = "qwe rty uio pas dfg";
+    EXPECT_EQ(test.slice(" "_eoa, " "_bloa), "rty uio pas");
+    EXPECT_EQ(test.slice(end_or_empty(" "),  begin_last_or_empty(" ")), "rty uio pas");
+}
+
+TEST(SimStr, FindIa) {
+    EXPECT_EQ("-Hello World!-"_ss.find_ia("HeLlO"), 1);
+    EXPECT_EQ("asdEd-Hello World!-"_ss.find_ia("-HeLlO w"), 5);
+    EXPECT_EQ("asdEd-Hello W"_ss.find_ia("-HeLlO w"), 5);
+    EXPECT_EQ("asdEd-Hello World!"_ss.find_ia("HeLlO w", 7), -1);
+
+    EXPECT_EQ(u"-Hello World!-"_ss.find_ia(u"HeLlO"), 1);
+    EXPECT_EQ(u"asdEd-Hello World!-"_ss.find_ia(u"-HeLlO w"), 5);
+    EXPECT_EQ(u"asdEd-Hello W"_ss.find_ia(u"-HeLlO w"), 5);
+    EXPECT_EQ(u"asdEd-Hello World!"_ss.find_ia(u"HeLlO w", 7), -1);
+
+    EXPECT_EQ("-Hello World!-"_ss.find_ia_lower("hello"), 1);
+    EXPECT_EQ("asdEd-Hello World!-"_ss.find_ia_lower("-hello w"), 5);
+    EXPECT_EQ("asdEd-Hello W"_ss.find_ia_lower("-hello w"), 5);
+    EXPECT_EQ("asdEd-Hello World!"_ss.find_ia_lower("- w", 7), -1);
+
+    EXPECT_EQ(u"-Hello World!-"_ss.find_ia_lower(u"hello"), 1);
+    EXPECT_EQ(u"asdEd-Hello World!-"_ss.find_ia_lower(u"-hello w"), 5);
+    EXPECT_EQ(u"asdEd-Hello W"_ss.find_ia_lower(u"-hello w"), 5);
+    EXPECT_EQ(u"asdEd-Hello World!"_ss.find_ia_lower(u"hello w", 7), -1);
 }
 
 } // namespace simstr::tests

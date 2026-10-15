@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 2.0.0
+* ver. 2.1.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com

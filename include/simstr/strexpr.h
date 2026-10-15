@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.0.0
+ * ver. 2.1.0
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -348,7 +348,6 @@ concept StdStringForType = is_std_string_v<T> && is_equal_str_type_v<K, typename
 template<typename T>
 struct symb_type_from_src {
     using type = void;
-
 };
 
 template<typename K, size_t N>
@@ -1014,7 +1013,7 @@ struct expr_literal_join : expr_to_std_string<expr_literal_join<first, K, N, A>>
                 return p + N;
             }
         } else {
-            return a.place(p);
+            return (symb_type*)a.place((atype*)p);
         }
     }
 };
@@ -1569,7 +1568,7 @@ struct expr_stdstr {
     expr_stdstr(const T& t) : t_(t){}
 
     constexpr size_t length() const noexcept {
-        return t_.length();
+        return t_.size();
     }
     constexpr symb_type* place(symb_type* p) const noexcept {
         size_t s = t_.size();
@@ -3278,11 +3277,48 @@ struct from_end {
 };
 inline constexpr from_end to_end{0};
 
-template<typename T>
-concept first_index_in_str = std::is_same_v<T, from_end> || std::is_convertible_v<T, size_t>;
+template<typename T, typename K>
+concept is_slice_find = requires (const T& t) {
+    std::is_same_v<K, symb_type_from_src_t<decltype(t.pattern_)>>;
+    { T::to_end_of_pattern }->std::same_as<const bool&>;
+    { T::offset_from_found }->std::same_as<const bool&>;
+    { T::find_reverse }->std::same_as<const bool&>;
+    { T::all_at_fail }->std::same_as<const bool&>;
+    { t.offset_ } -> std::convertible_to<size_t>;
+    { t.skip_ } -> std::convertible_to<size_t>;
+    { t.find(t.pattern_, size_t(0)) } -> std::convertible_to<size_t>;
+};
 
 template<typename T>
-concept last_index_in_str = first_index_in_str<T> || std::is_same_v<T, from_begin>;
+using slice_find_func = size_t(*)(T, T, size_t);
+
+template<typename Pattern, bool ToEndOfPattern, bool OffsetFromFound, bool AllAtFail, bool FindReverse, slice_find_func<Pattern> F>
+struct slice_find {
+    inline static constexpr const bool to_end_of_pattern = ToEndOfPattern;
+    inline static constexpr const bool offset_from_found = OffsetFromFound;
+    inline static constexpr const bool find_reverse = FindReverse;
+    inline static constexpr const bool all_at_fail = AllAtFail;
+
+    template<StrSource S>
+    constexpr slice_find(S&& pattern, size_t offset = 0, size_t skip = 0) {
+        pattern_ =  std::forward<S>(pattern);
+        offset_ = offset;
+        skip_ = skip;
+    }
+
+    constexpr size_t find(Pattern where, size_t offset) const {
+        return F(where, pattern_, offset);
+    }
+    Pattern pattern_;
+    size_t offset_;
+    size_t skip_;
+};
+
+template<typename T, typename K>
+concept first_index_in_str = std::is_same_v<T, from_end> || std::is_convertible_v<T, size_t> || is_slice_find<T, K>;
+
+template<typename T, typename K>
+concept last_index_in_str = first_index_in_str<T, K> || std::is_same_v<T, from_begin>;
 
 /*!
  * @ru @brief Класс с базовыми константными строковыми алгоритмами.
@@ -3477,6 +3513,21 @@ public:
      * или `from_end(число)` - отсчитывается от конца строки, но не ранее начальной позиции,
      * или `from_begin(число)` - отсчитывается от начала строки, но не ранее начальной позиции и не далее конца строки.
      * Также можно использовать `to_end` - эквивалентно from_end(0).
+     * Также как начальную либо конечную позицию можно использовать "операторы поиска", задающие под-строку, которую нужно
+     * найти, начальную позицию поиска (по умолчанию 0), сколько найденных вхождений пропустить (по умолчанию 0)
+     *  - begin_or_all{"needle", offset = 0, skip = 0} или  "needle"_boa: позиция с начала найденной подстроки. Если подстрока не найдена, то вся строка.
+     *  - end_or_all{"needle", offset = 0, skip = 0} или "needle"_eoa: позиция после конца найденной подстроки. Если подстрока не найдена, то вся строка.
+     *  - begin_or_empty{"needle", offset = 0, skip = 0} или "needle"_boe: позиция с начала найденной подстроки. Если подстрока не найдена, то пустая строка.
+     *  - end_or_empty{"needle", offset = 0, skip = 0} или "needle"_eoe: : позиция после конца найденной подстроки. Если подстрока не найдена, то пустая строка.
+     *  - begin_last_or_all{"needle", offset = 0, skip = 0} или  "needle"_bloa: позиция с начала последней найденной подстроки. Если подстрока не найдена, то вся строка.
+     *  - end_last_or_all{"needle", offset = 0, skip = 0} или "needle"_eloa: позиция после конца последней найденной подстроки. Если подстрока не найдена, то вся строка.
+     *  - begin_last_or_empty{"needle", offset = 0, skip = 0} или "needle"_bloe: позиция с начала последней найденной подстроки. Если подстрока не найдена, то пустая строка.
+     *  - end_last_or_empty{"needle", offset = 0, skip = 0} или "needle"_eloe: : позиция после конца последней найденной подстроки. Если подстрока не найдена, то пустая строка.
+     * В операторах, ищущих начальные вхождения, при задании начальной позиции для поиска она отсчитывается от начала строки, если оператор задаёт начальную позицию,
+     * и от найденного начала строки, если оператор задаёт конечную позицию.
+     * В операторах, ищущих последние вхождения, при задании начальной позиции для поиска она отсчитывается от конца строки к началу, поиск выполняется от
+     * конца строки к началу, параметр skip задаёт, сколько вхождений пропустить от конца строки.
+     *
      * @en @brief Get part of a string as "str_src".
      * @param start - starting position in the string.
      * @param end - the end position in the string.
@@ -3487,6 +3538,20 @@ public:
      * or `from_end(number)` - counted from the end of the string, but not earlier than the starting position,
      * or `from_begin(number)` - counted from the beginning of the string, but not earlier than the starting position and not further than the end of the string.
      * You can also use `to_end` - equivalent to from_end(0).
+     * As well as the starting or ending position, you can use “search operators” that specify the sub-string that you need
+     * find, search starting position (default 0), how many found occurrences to skip (default 0)
+     * - begin_or_all{"needle", offset = 0, skip = 0} or "needle"_boa: position from the beginning of the found substring. If the substring is not found, then the entire string.
+     * - end_or_all{"needle", offset = 0, skip = 0} or "needle"_eoa: position after the end of the found substring. If the substring is not found, then the entire string.
+     * - begin_or_empty{"needle", offset = 0, skip = 0} or "needle"_boe: position from the beginning of the found substring. If the substring is not found, then the empty string.
+     * - end_or_empty{"needle", offset = 0, skip = 0} or "needle"_eoe: : position after the end of the found substring. If the substring is not found, then the empty string.
+     * - begin_last_or_all{"needle", offset = 0, skip = 0} or "needle"_bloa: position from the beginning of the last substring found. If the substring is not found, then the entire string.
+     * - end_last_or_all{"needle", offset = 0, skip = 0} or "needle"_eloa: position after the end of the last substring found. If the substring is not found, then the entire string.
+     * - begin_last_or_empty{"needle", offset = 0, skip = 0} or "needle"_bloe: position from the beginning of the last substring found. If the substring is not found, then the empty string.
+     * - end_last_or_empty{"needle", offset = 0, skip = 0} or "needle"_eloe: : position after the end of the last substring found. If the substring is not found, then the empty string.
+     * In operators that search for starting occurrences, when specifying a offset for the search, it is counted from the beginning of the line, if the operator specifies a starting position,
+     * and from the found beginning of the string if the operator specifies the end position.
+     * In operators that search for the last occurrences, when specifying the offset for the search, it is counted from the end of the string to the beginning, the search is performed from
+     * the end of the string to the beginning, the skip parameter specifies how many occurrences to skip from the end of the string.
      * @~
      *  ```cpp
      *      "0123456789"_ss.slice(5, 2) == "56";
@@ -3495,18 +3560,73 @@ public:
      *      "0123456789"_ss.slice(from_end(3), to_end) == "789";
      *      "0123456789"_ss.slice(from_end(3), 2) == "78";
      *      "0123456789"_ss.slice(from_end(4), from_end(1)) == "678";
+     *       ssa test{"abc def"}, pattern{"c "};
+     *       test.slice(begin_or_all{pattern}, to_end) == "c def";
+     *       test.slice(end_or_all{pattern}, to_end) == "def";
+     *       test.slice("c "_boa, to_end) == "c def";
+     *       test = "qwe rty uio pas dfg";
+     *       test.slice(" "_eoa, " "_bloa) == "rty uio pas";
+     *       "-abc -abcFound"_ss.slice(begin_or_all{"abc", 0, 1}, to_end) == "abcFound";
      *  ```
      */
-    template<first_index_in_str S, last_index_in_str E>
+    template<first_index_in_str<K> S, last_index_in_str<K> E>
     constexpr str_piece slice(S start, E end) const noexcept {
         size_t idxStart, idxEnd, len = _len();
-        if constexpr (std::is_same_v<S, from_end>) {
+        if constexpr (is_slice_find<S, K>) {
+            size_t offset = std::min(S::find_reverse ? len - start.offset_ : start.offset_, len), skip = start.skip_;
+            for (;;) {
+                size_t find = start.find(d(), offset);
+                if (find == str::npos) {
+                    if constexpr (S::all_at_fail) {
+                        idxStart = 0;
+                    } else {
+                        idxStart = len;
+                    }
+                    break;
+                }
+                if (!skip--) {
+                    if constexpr (S::to_end_of_pattern) {
+                        idxStart = find + start.pattern_.length();
+                    } else {
+                        idxStart = find;
+                    }
+                    break;
+                }
+                if constexpr (!S::find_reverse) {
+                    offset = find + start.pattern_.length();
+                }
+            }
+        } else if constexpr (std::is_same_v<S, from_end>) {
             idxStart = start.idx_ >= len ? 0 : len - start.idx_;
         } else {
             idxStart = std::min(size_t(start), len);
         }
 
-        if constexpr (std::is_same_v<E, from_begin>) {
+        if constexpr (is_slice_find<E, K>) {
+            size_t offset = std::min(E::offset_from_found ? idxStart + end.offset_ : E::find_reverse ? len - end.offset_ : end.offset_, len), skip = end.skip_;
+            for (;;) {
+                size_t find = end.find(d(), offset);
+                if (find == str::npos) {
+                    if constexpr (E::all_at_fail) {
+                        idxEnd = len;
+                    } else {
+                        idxEnd = idxStart;
+                    }
+                    break;
+                }
+                if (!skip--) {
+                    if constexpr (E::to_end_of_pattern) {
+                        idxEnd = find + end.pattern_.length();
+                    } else {
+                        idxEnd = find;
+                    }
+                    break;
+                }
+                if constexpr (!E::find_reverse) {
+                    offset = find + end.pattern_.length();
+                }
+            }
+        } else if constexpr (std::is_same_v<E, from_begin>) {
             idxEnd = std::max(idxStart, std::min(end.idx_, len));
         } else if constexpr (std::is_same_v<E, from_end>) {
             idxEnd = std::max(idxStart, end.idx_ >= len ? 0 : len - end.idx_);
@@ -3523,7 +3643,7 @@ public:
     * @ru @brief Обертка вокруг `slice` в виде многомерного оператора [].
     * @en @brief Wraps `slice` as a multidimensional operator [].
     */
-    template<first_index_in_str S, last_index_in_str E>
+    template<first_index_in_str<K> S, last_index_in_str<K> E>
     constexpr str_piece operator[](S start, E end) const noexcept {
         return slice(start, end);
     }
@@ -3588,6 +3708,7 @@ public:
      * @param offset - position to start the search.
      * @return Substring, str_src.
      */
+    [[deprecated("Use 'slice(0, begin_or_all(pattern, offset))' or '[0, begin_or_all(pattern, offset)]' in C++23, or 'slice(0, \"pattern\"_boa))'")]]
     constexpr str_piece until(str_piece pattern, size_t offset = 0) const noexcept {
         return slice(0, find_or_all(pattern, offset));
     }
@@ -3754,7 +3875,24 @@ public:
      * @return whether the strings are equal.
      */
     constexpr bool equal_ia(str_piece text) const noexcept { // NOLINT
-        return text.length() == _len() && compare_ia(text.symbols(), text.length()) == 0;
+        size_t len = _len();
+        if (len != text.length())
+            return false;
+        const uns_type *ptr1 = reinterpret_cast<const uns_type*>(_str()), *ptr2 = reinterpret_cast<const uns_type*>(text.symbols());
+        while (len--) {
+            uns_type s1 = *ptr1++, s2 = *ptr2++;
+            if (s1 == s2)
+                continue;
+            if (isAsciiUpper(s1)) {
+                if (s1 == (s2 & ~0x20)) {
+                    continue;
+                }
+            } else if (isAsciiLower(s1) && s1 == (s2 | 0x20)) {
+                continue;
+            }
+            return false;
+        }
+        return true;
     }
     /*!
      * @ru @brief Меньше ли строка другой строки посимвольно без учёта регистра ASCII символов.
@@ -3936,7 +4074,7 @@ public:
      * @param offset - from which position to search in the opposite direction, -1 - from the very end.
      * @return size_t - the position immediately after the last occurrence of the substring, or the length of the string if not found.
      */
-    constexpr size_t find_end_of_last_or_all(str_piece pattern, size_t offset = -1) const noexcept {
+    constexpr size_t find_end_last_or_all(str_piece pattern, size_t offset = -1) const noexcept {
         size_t fnd = find_last(pattern.symbols(), pattern.length(), offset);
         return fnd == str::npos ? _len() : fnd + pattern.length();
     }
@@ -3990,6 +4128,131 @@ public:
                 return static_cast<size_t>(fnd - str);
         }
         return len;
+    }
+
+    static const K* find_first_by_case(const K* from, const K* last, K symbol, K symbolInOtherCase) {
+        while (from < last) {
+            K f = *from;
+            if (f == symbol || f == symbolInOtherCase) {
+                return from;
+            }
+            from++;
+        }
+        return nullptr;
+    }
+
+    /*!
+     * @ru @brief Найти начало первого вхождения подстроки в этой строке без учёта регистра ASCII.
+     * @param pattern - искомая строка.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена.
+     * @en @brief Find the start of the first occurrence of a substring within this string, ignoring ASCII case.
+     * @param pattern - the search string.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position of the beginning of the occurrence of the substring, or -1 if not found.
+     */
+    constexpr size_t find_ia(str_piece pattern, size_t offset = 0) const noexcept {
+        size_t lenPattern = pattern.length();
+        size_t lenText = _len();
+        // Образец, не вмещающийся в строку и пустой образец не находим
+        // We don't look for an empty string or a string longer than the text.
+        if (!lenPattern || offset >= lenText || offset + lenPattern > lenText)
+            return str::npos;
+        const K* patternStr = pattern.symbols();
+        lenPattern--;
+        const K *text = _str(), *last = text + lenText - lenPattern, first = patternStr[0];
+        K firstInOtherCase;
+        patternStr++;
+        bool firstHasCase = isAsciiLower(first);
+        if (firstHasCase) {
+            firstInOtherCase = first & ~0x20;
+        } else if (isAsciiUpper(first)) {
+            firstHasCase = true;
+            firstInOtherCase = first | 0x20;
+        }
+
+        auto equal = [&](const K* from) {
+            for (size_t idx = 0; idx < lenPattern; idx++) {
+                K s1 = from[idx], s2 = patternStr[idx];
+                if (s1 == s2)
+                    continue;
+                if (isAsciiUpper(s1)) {
+                    if (s1 == (s2 & ~0x20)) {
+                        continue;
+                    }
+                } else if (isAsciiLower(s1) && s1 == (s2 | 0x20)) {
+                    continue;
+                }
+                return false;
+            }
+            return true;
+        };
+
+        for (const K* fnd = text + offset;;) {
+            if (firstHasCase) {
+                fnd = find_first_by_case(fnd, last, first, firstInOtherCase);
+            } else {
+                fnd = traits::find(fnd, last - fnd, first);
+            }
+            if (!fnd)
+                return str::npos;
+            if (equal(++fnd)) {
+                return fnd - text - 1;
+            }
+        }
+    }
+
+    /*!
+     * @ru @brief Найти начало первого вхождения подстроки в этой строке без учёта регистра ASCII,
+     *  если шаблон поиска заведомо в нижнем регистре ASCII.
+     * @param pattern_lower - искомая строка, обязательно в нижнем регистре.
+     * @param offset - с какой позиции начинать поиск.
+     * @return size_t - позицию начала вхождения подстроки, или -1, если не найдена.
+     * @en @brief Find the start of the first occurrence of a substring within this string, ignoring ASCII case,
+     *  given that the search pattern is already in ASCII lowercase.
+     * @param pattern_lower - the search string, must be in lowercase.
+     * @param offset - from which position to start the search.
+     * @return size_t - the position of the beginning of the occurrence of the substring, or -1 if not found.
+     */
+    constexpr size_t find_ia_lower(str_piece pattern_lower, size_t offset = 0) const noexcept {
+        size_t lenPattern = pattern_lower.length();
+        size_t lenText = _len();
+        // Образец, не вмещающийся в строку и пустой образец не находим
+        // We don't look for an empty string or a string longer than the text.
+        if (!lenPattern || offset >= lenText || offset + lenPattern > lenText)
+            return str::npos;
+        const K* patternStr = pattern_lower.symbols();
+        lenPattern--;
+        const K *text = _str(), *last = text + lenText - lenPattern, first = patternStr[0];
+        K firstInOtherCase;
+        patternStr++;
+        bool firstHasCase = isAsciiLower(first);
+        if (firstHasCase) {
+            firstInOtherCase = first & ~0x20;
+        }
+
+        auto equal = [&](const K* from) {
+            for (size_t idx = 0; idx < lenPattern; idx++) {
+                K s1 = from[idx], s2 = patternStr[idx];
+                if (!(s1 == s2 || (isAsciiUpper(s1) && (s1 | 0x20) == s2))) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        for (const K* fnd = text + offset;;) {
+            if (firstHasCase) {
+                fnd = find_first_by_case(fnd, last, first, firstInOtherCase);
+            } else {
+                fnd = traits::find(fnd, last - fnd, first);
+            }
+            if (!fnd)
+                return str::npos;
+            if (equal(++fnd)) {
+                return fnd - text - 1;
+            }
+        }
     }
 
     template<typename Op>
@@ -4172,7 +4435,7 @@ public:
      * @tparam T - object type
      * @return an object of type T initialized with the slice result.
      */
-    template<typename T, first_index_in_str S, last_index_in_str E> requires std::is_constructible_v<T, str_piece>
+    template<typename T, first_index_in_str<K> S, last_index_in_str<K> E> requires std::is_constructible_v<T, str_piece>
     constexpr T slice_to(S start, E end) const noexcept {
         str_piece res = slice(start, end);
         if constexpr (std::is_constructible_v<T, const my_type&> && !std::is_same_v<T, str_piece>) {
@@ -4186,7 +4449,7 @@ public:
      * @ru @brief Обёртка вокруг slice_to<my_type>
      * @en @brief Wrapper around slice_to<my_type>
      */
-    template<first_index_in_str S, last_index_in_str E>
+    template<first_index_in_str<K> S, last_index_in_str<K> E>
     constexpr my_type substring(S start, E end) const noexcept {
         return slice_to<my_type>(start, end);
     }
@@ -5564,6 +5827,101 @@ SS_CONSTEVAL str_src_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
 } // namespace literals
 
 #endif
+
+template<typename K>
+size_t slice_simple_find_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find(pattern, offset);}
+template<typename K>
+size_t slice_simple_find_rev_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find_last_of(pattern, offset);}
+
+template<typename K, bool ToEndOfPattern, bool OffsetFromFound, bool AllAtFail, auto F = slice_simple_find_func<K>>
+struct slice_simple_find : slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, false, F> {
+    using slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, false, F>::slice_find;
+};
+
+template<typename K>
+struct begin_or_all : slice_simple_find<K, false, true, true> {
+    using base = slice_simple_find<K, false, true, true>;
+    using base::base;
+};
+template<typename K>
+struct end_or_all : slice_simple_find<K, true, true, true> {
+    using base = slice_simple_find<K, true, true, true>;
+    using base::base;
+};
+
+template<typename K>
+struct begin_or_empty : slice_simple_find<K, false, true, false> {
+    using base = slice_simple_find<K, false, true, false>;
+    using base::base;
+};
+template<typename K>
+struct end_or_empty : slice_simple_find<K, true, true, false> {
+    using base = slice_simple_find<K, true, true, false>;
+    using base::base;
+};
+
+template<typename K, bool ToEndOfPattern, bool OffsetFromFound, bool AllAtFail, auto F = slice_simple_find_rev_func<K>>
+struct slice_simple_find_rev : slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, true, F> {
+    using slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, true, F>::slice_find;
+};
+
+template<typename K>
+struct begin_last_or_all : slice_simple_find_rev<K, false, false, true> {
+    using base = slice_simple_find_rev<K, false, false, true>;
+    using base::base;
+};
+
+template<typename K>
+struct end_last_or_all : slice_simple_find_rev<K, true, false, true> {
+    using base = slice_simple_find_rev<K, true, false, true>;
+    using base::base;
+};
+
+template<typename K>
+struct begin_last_or_empty : slice_simple_find_rev<K, false, false, false> {
+    using base = slice_simple_find_rev<K, false, false, false>;
+    using base::base;
+};
+
+template<typename K>
+struct end_last_or_empty : slice_simple_find_rev<K, true, false, false> {
+    using base = slice_simple_find_rev<K, true, false, false>;
+    using base::base;
+};
+
+#define CTAD_SLICE_FIND(name) template<StrSource S> name(S&&) -> name<symb_type_from_src_t<S>>;\
+    template<StrSource S> name(S&&, size_t) -> name<symb_type_from_src_t<S>>;\
+    template<StrSource S> name(S&&, size_t, size_t) -> name<symb_type_from_src_t<S>>
+
+CTAD_SLICE_FIND(begin_or_all);
+CTAD_SLICE_FIND(end_or_all);
+CTAD_SLICE_FIND(begin_or_empty);
+CTAD_SLICE_FIND(end_or_empty);
+CTAD_SLICE_FIND(begin_last_or_all);
+CTAD_SLICE_FIND(end_last_or_all);
+CTAD_SLICE_FIND(begin_last_or_empty);
+CTAD_SLICE_FIND(end_last_or_empty);
+
+inline namespace literals {
+
+#define FIND_LITERAL(name, type, suffix) SS_CONSTEVAL name<type> operator ""_##suffix(const type* ptr, size_t l) {return str_src<type>{ptr, l};}
+#define FIND_LITERALS(name, suffix) \
+    FIND_LITERAL(name, u8s, suffix) \
+    FIND_LITERAL(name, ubs, suffix) \
+    FIND_LITERAL(name, u16s, suffix) \
+    FIND_LITERAL(name, u32s, suffix) \
+    FIND_LITERAL(name, wchar_t, suffix)
+
+FIND_LITERALS(begin_or_all, boa)             // Begin of pattern Or All
+FIND_LITERALS(end_or_all, eoa)               // End of pattern Or All
+FIND_LITERALS(begin_or_empty, boe)           // Begin of pattern Or Empty
+FIND_LITERALS(end_or_empty, eoe)             // End of pattern Or Empty
+FIND_LITERALS(begin_last_or_all, bloa)       // Begin of Last pattern Or All
+FIND_LITERALS(end_last_or_all, eloa)         // End of Last pattern Or All
+FIND_LITERALS(begin_last_or_empty, bloe)     // Begin of Last pattern Or Empty
+FIND_LITERALS(end_last_or_empty, eloe)       // End of Last pattern Or Empty
+
+} // namespace literals
 
 template<typename K, bool withSpaces>
 struct CheckSpaceTrim {
