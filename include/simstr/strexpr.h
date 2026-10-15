@@ -3279,7 +3279,7 @@ inline constexpr from_end to_end{0};
 
 template<typename T, typename K>
 concept is_slice_find = requires (const T& t) {
-    std::is_same_v<K, symb_type_from_src_t<decltype(t.pattern_)>>;
+    requires is_equal_str_type_v<K, symb_type_from_src_t<decltype(t.pattern_)>>;
     { T::to_end_of_pattern }->std::same_as<const bool&>;
     { T::offset_from_found }->std::same_as<const bool&>;
     { T::find_reverse }->std::same_as<const bool&>;
@@ -4189,11 +4189,9 @@ public:
         };
 
         for (const K* fnd = text + offset;;) {
-            if (firstHasCase) {
-                fnd = find_first_by_case(fnd, last, first, firstInOtherCase);
-            } else {
-                fnd = traits::find(fnd, last - fnd, first);
-            }
+            fnd = firstHasCase
+                ? find_first_by_case(fnd, last, first, firstInOtherCase)
+                : traits::find(fnd, last - fnd, first);
             if (!fnd)
                 return str::npos;
             if (equal(++fnd)) {
@@ -4242,11 +4240,9 @@ public:
         };
 
         for (const K* fnd = text + offset;;) {
-            if (firstHasCase) {
-                fnd = find_first_by_case(fnd, last, first, firstInOtherCase);
-            } else {
-                fnd = traits::find(fnd, last - fnd, first);
-            }
+            fnd = firstHasCase
+                ? find_first_by_case(fnd, last, first, firstInOtherCase)
+                : traits::find(fnd, last - fnd, first);
             if (!fnd)
                 return str::npos;
             if (equal(++fnd)) {
@@ -4256,7 +4252,7 @@ public:
     }
 
     template<typename Op>
-    constexpr void for_all_finded(const Op& op, const K* pattern, size_t patternLen, size_t offset, size_t maxCount) const {
+    constexpr void for_all_founded(const Op& op, const K* pattern, size_t patternLen, size_t offset, size_t maxCount) const {
         if (!maxCount)
             maxCount--;
         while (maxCount-- > 0) {
@@ -4280,14 +4276,14 @@ public:
      * @param maxCount - the maximum number of occurrences to be processed, 0 - no restrictions.
      */
     template<typename Op>
-    constexpr void for_all_finded(const Op& op, str_piece pattern, size_t offset = 0, size_t maxCount = 0) const {
-        for_all_finded(op, pattern.symbols(), pattern.length(), offset, maxCount);
+    constexpr void for_all_founded(const Op& op, str_piece pattern, size_t offset = 0, size_t maxCount = 0) const {
+        for_all_founded(op, pattern.symbols(), pattern.length(), offset, maxCount);
     }
 
     template<typename To = std::vector<size_t>>
     constexpr To find_all(const K* pattern, size_t patternLen, size_t offset, size_t maxCount) const {
         To result;
-        for_all_finded([&](auto f) { result.emplace_back(f); }, pattern, patternLen, offset, maxCount);
+        for_all_founded([&](auto f) { result.emplace_back(f); }, pattern, patternLen, offset, maxCount);
         return result;
     }
     /*!
@@ -4308,7 +4304,7 @@ public:
     }
     template<typename To = std::vector<size_t>>
     constexpr void find_all_to(To& to, const K* pattern, size_t len, size_t offset = 0, size_t maxCount = 0) const {
-        return for_all_finded([&](size_t pos) {
+        return for_all_founded([&](size_t pos) {
             to.emplace_back(pos);
         }, pattern, len, offset, maxCount);
     }

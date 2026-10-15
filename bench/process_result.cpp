@@ -15,14 +15,8 @@ using results_vector = std::vector<result_info>;
 bool extract_cpu_info(ssa text, ssa& res) {
     // Найдём, где начинается "Run on ", потом где за ним начинается "\n---"
     // Find where "Run on" begins, then where after it "\n---" begins
-    size_t start = text.find("Run on "), end = text.find("\n---", start);
-    // Если что-то не нашлось - ошибка
-    // If something was not found - an error
-    if (start == str::npos || end == str::npos) {
-        return false;
-    }
-    res = text.from_to(start, end);
-    return true;
+    res = text.slice("Run on "_boe, "\n---"_boe);
+    return !res.is_empty();
 }
 
 struct result_info {
@@ -75,13 +69,13 @@ results_vector get_results_infos() {
     std::vector<stringa> fileNames;
     for (const auto& f: std::filesystem::directory_iterator{str_to_path(dirForResults)}) {
         if (f.is_regular_file()) {
-            auto fileName = path_to_str<lstringa<64>>(f.path().filename());
+            auto fileName = path_to_str<stringa>(f.path().filename());
           #ifdef _WIN32
             if (fileName.ends_with_ia(suffix)) {
           #else
             if (fileName.ends_with(suffix)) {
           #endif
-                fileNames.emplace_back(fileName);
+                fileNames.emplace_back(std::move(fileName));
             }
         }
     }
@@ -115,9 +109,8 @@ void write_platforms_cpu(out_t& out, const results_vector& results) {
     out += R"=(<div>Group tests by platforms in charts: <input type="checkbox" id="gbp" checked onchange="switchGrouping()"/></div><div class="test_platforms"><h3>Test configurations:</h3><ul>)=";
     unsigned counter = 0;
     for (const auto& r : results) {
-        size_t rp = r.cpu_info_.find('(') + 1, lp = r.cpu_info_.find(')', rp);
-        ssa shortCpuInfo = r.cpu_info_.from_to(rp, lp);
-        ssa cpuInfo = r.cpu_info_.slice(lp + 2, to_end);
+        ssa shortCpuInfo = r.cpu_info_.slice("("_eoa, ")"_boa);
+        ssa cpuInfo = r.cpu_info_.slice(shortCpuInfo.end() - r.cpu_info_.begin() + 2, to_end);
         out += e_subst(R"--(
 <li><span class="platform">{}</span><span class="tooltip">{}<span class="tooltiptext">{}</span></span>&nbsp;Include in charts: <input type="checkbox" id="pl{}" checked onchange="buildCharts()"/></li>)--",
             r.platform_, shortCpuInfo, cpuInfo, counter++);
@@ -183,7 +176,7 @@ ssa extract_comment(ssa commentsText, ssa benchmarkName) {
     size_t idx = commentsText.find_end(lstringa<120>{"- " + benchmarkName + "\n"});
     if (idx != str::npos) {
         if (commentsText[idx] != '\n' && commentsText.slice(idx, 2) != "- ") {
-            return commentsText.from_to(idx, commentsText.find("\n\n", idx));
+            return commentsText.slice(idx, "\n\n"_boe);
         }
     }
     return stra::empty_str;
@@ -195,11 +188,11 @@ void write_one_result(out_t& out, ssa result, ssa line, auto& script_text, char 
 }
 
 std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceText) {
-    static hashStrMapA<std::pair<stringa, size_t>> textes;
+    static hashStrMapA<std::pair<stringa, size_t>> texts;
     static auto lines_pos = [&]() {
         std::map<size_t, size_t> l = {{0, 0}};
         size_t line = 0;
-        sourceText.for_all_finded([&](size_t pos){
+        sourceText.for_all_founded([&](size_t pos){
             l.emplace(pos, ++line);
         }, "\n");
         return l;
@@ -209,7 +202,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
     if (delim != str::npos && benchName.slice(delim + 1, to_end).to_int<unsigned, false, 10, false, false>().ec == IntConvertResult::Success) {
         benchName.len = delim;
     }
-    auto [it, not_exist] = textes.try_emplace(benchName, stringa{}, 0);
+    auto [it, not_exist] = texts.try_emplace(benchName, stringa{}, 0);
     if (not_exist) {
         // Ищем имя функции для этого бенчмарка
         // Looking for the name of the function for this benchmark
@@ -226,7 +219,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
         start++;
         size_t end = sourceText.find_first_of(")<,", start);
         ssa funcName = sourceText.from_to(start, end);
-        auto [func_it, not_exist] = textes.try_emplace(funcName, stringa{}, 0);
+        auto [func_it, not_exist] = texts.try_emplace(funcName, stringa{}, 0);
         if (not_exist) {
             // Теперь ищем саму эту функцию
             // Now we look for this function itself
@@ -237,7 +230,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
             }
             start = sourceText.find_last('\n', start);
             size_t templ_start = sourceText.find_last('\n', start) + 1;
-            if (sourceText.slice(templ_start, to_end).starts_with("template")) {
+            if (sourceText.slice(templ_start, 8) == "template") {
                 start = templ_start;
             } else {
                 start++;
@@ -274,7 +267,7 @@ std::pair<ssa, size_t> extract_source_for_benchmark(ssa benchName, ssa sourceTex
 }
 
 void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText, ssa commentsText) {
-    ssa releaseVersion = sourceText.slice(sourceText.find_end("\n * ver. "), to_end).until("\n").trimmed();
+    ssa releaseVersion = sourceText.slice("\n * ver. "_eoe, "\n"_boe).trimmed();
     if (!releaseVersion) {
         std::cerr << "Not found release version in sources" << std::endl;
         throw std::runtime_error{"Not found release version in sources"};
@@ -335,10 +328,9 @@ void write_benchmarks(out_t& out, const results_vector& results, ssa sourceText,
             if (needFooter) {
                 write_benchset_footer(out, script_text);
             }
-            benchName = extract_name_result(line, result);
             // Из названия набора надо удалить начальные и конечные ---
             // From the name of the set we need to remove the beginning and end ---
-            benchName = benchName.from_to(benchName.find(' ') + 1, benchName.find_last(' ')).trimmed();
+            benchName = extract_name_result(line, result).slice(" "_eoa, " "_bloa).trimmed();
             write_benchset_header(out, results, benchName, ++benchSetId);
             needFooter = true;
             needCommaForTests = false;
