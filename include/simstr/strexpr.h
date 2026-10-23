@@ -5825,9 +5825,9 @@ SS_CONSTEVAL str_src_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
 #endif
 
 template<typename K>
-size_t slice_simple_find_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find(pattern, offset);}
+constexpr size_t slice_simple_find_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find(pattern, offset);}
 template<typename K>
-size_t slice_simple_find_rev_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find_last_of(pattern, offset);}
+constexpr size_t slice_simple_find_rev_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find_last_of(pattern, offset);}
 
 template<typename K, bool ToEndOfPattern, bool OffsetFromFound, bool AllAtFail, auto F = slice_simple_find_func<K>>
 struct slice_simple_find : slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, false, F> {
