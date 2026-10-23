@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.1.0
+ * ver. 2.1.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -483,6 +483,7 @@ TEST(SimStr, SliceFind) {
     EXPECT_EQ(test.slice(end_or_all{"abc", 2}, to_end), "Found");
     EXPECT_EQ(test.slice(begin_or_all{"abc", 2, 1}, to_end), "-abc -abcFound");
     EXPECT_EQ(test.slice(end_or_all{"abc", 2, 1}, to_end), "-abc -abcFound");
+    EXPECT_EQ(test.slice(end_last_or_all{"abc", 0, 1}, to_end), " -abcFound");
 }
 
 } // namespace simstr::tests

@@ -15,7 +15,7 @@ target_compile_definitions(benchStr PRIVATE
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG        tags/12.1.0
+  GIT_TAG        tags/12.1.1
 )
 FetchContent_MakeAvailable(fmt)
 

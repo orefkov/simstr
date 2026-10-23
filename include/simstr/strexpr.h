@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.1.0
+ * ver. 2.1.1
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -3592,8 +3592,9 @@ public:
                     }
                     break;
                 }
+                offset = find;
                 if constexpr (!S::find_reverse) {
-                    offset = find + start.pattern_.length();
+                    offset += start.pattern_.length();
                 }
             }
         } else if constexpr (std::is_same_v<S, from_end>) {
@@ -3622,8 +3623,9 @@ public:
                     }
                     break;
                 }
+                offset = find;
                 if constexpr (!E::find_reverse) {
-                    offset = find + end.pattern_.length();
+                    offset += end.pattern_.length();
                 }
             }
         } else if constexpr (std::is_same_v<E, from_begin>) {
@@ -5827,7 +5829,7 @@ SS_CONSTEVAL str_src_nt<u32s> operator""_ss(const u32s* ptr, size_t l) {
 template<typename K>
 constexpr size_t slice_simple_find_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find(pattern, offset);}
 template<typename K>
-constexpr size_t slice_simple_find_rev_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find_last_of(pattern, offset);}
+constexpr size_t slice_simple_find_rev_func(str_src<K> str, str_src<K> pattern, size_t offset){return str.find_last(pattern, offset);}
 
 template<typename K, bool ToEndOfPattern, bool OffsetFromFound, bool AllAtFail, auto F = slice_simple_find_func<K>>
 struct slice_simple_find : slice_find<str_src<K>, ToEndOfPattern, OffsetFromFound, AllAtFail, false, F> {

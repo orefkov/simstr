@@ -1,7 +1,7 @@
 Benchmarks of simstr, version 2.0.0
 Sources: https://github.com/orefkov/simstr
 Results: https://orefkov.github.io/simstr/results.html
-Compiler Clang 22.1.0
+Compiler Clang 22.1.1
 2026-10-04T17:42:23+03:00
 Running benchStr.exe
 Run on (32 X 2494 MHz CPU s)
