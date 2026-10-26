@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.1.1
+ * ver. 2.1.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Тесты simstr
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -388,6 +388,9 @@ TEST(StrExpr, EInt) {
     kk = eea + e_int<2, f::p | f::w<11> | f::r | f::f<'_'>| f::ss>(123);
     kf = std::format("{:_> #11b}", 123);
     EXPECT_EQ(kk, kf);
+
+    std::string s = eea + e_int<2>(-5);
+    EXPECT_EQ(s, "-101");
 
     //EXPECT_EQ(kk, "0b001111011");
     //std::cout << std::format("'{:+#011b}'\n", 123);

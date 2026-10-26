@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.1.1
+ * ver. 2.1.2
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -16,6 +16,7 @@
 #include <vector>
 #include <optional>
 #include <charconv>
+#include <array>
 
 #if defined __has_builtin
 #  if __has_builtin(__builtin_mul_overflow) && __has_builtin(__builtin_add_overflow)
@@ -852,7 +853,7 @@ inline constexpr empty_expr<u8s> eea{};
  * @ru @brief Пустое строковое выражение типа char8_t.
  * @en @brief Empty string expression of type char8_t.
  */
-inline constexpr empty_expr<u8s> eeb{};
+inline constexpr empty_expr<ubs> eeb{};
 /*!
  * @ingroup StrExprs
  * @ru @brief Пустое строковое выражение типа wchar_t.
@@ -1056,7 +1057,7 @@ constexpr expr_literal_join<true, P, (N - 1), A> operator+(T&& s, const A& a) {
  * @tparam S - character, space by default.
  */
 template<typename K, size_t N, size_t S = ' '>
-struct expr_spaces : expr_to_std_string<expr_spaces<K, N>> {
+struct expr_spaces : expr_to_std_string<expr_spaces<K, N, S>> {
     using symb_type = K;
     constexpr size_t length() const noexcept {
         return N;
@@ -2757,7 +2758,7 @@ struct expr_join : expr_to_std_string<expr_join<K, T, I, tail, skip_empty>> {
                 l += len;
             }
         }
-        return l + (tail && I > 0 && (l > 0 || (!skip_empty && s.size() > 0))? I : 0);
+        return l + (tail && I > 0 && (l > 0 || (!skip_empty && std::size(s) > 0))? I : 0);
     }
     constexpr K* place(K* ptr) const noexcept {
         if (s.empty()) {
@@ -2766,14 +2767,14 @@ struct expr_join : expr_to_std_string<expr_join<K, T, I, tail, skip_empty>> {
         K* write = ptr;
         for (const auto& t: s) {
             size_t copyLen = t.length();
-            if (I > 0 && write != ptr && (copyLen || !skip_empty)) {
+            if ((copyLen > 0 || !skip_empty) && I > 0 && write != ptr) {
                 ch_traits<K>::copy(write, delim, I);
                 write += I;
             }
             ch_traits<K>::copy(write, t.data(), copyLen);
             write += copyLen;
         }
-        if (I > 0 && tail && (write != ptr || (!skip_empty && s.size() > 0))) {
+        if (tail && I > 0 && (write != ptr || (!skip_empty && std::size(s) > 0))) {
             ch_traits<K>::copy(write, delim, I);
             write += I;
         }
@@ -3030,7 +3031,7 @@ public:
     // If Base = 0, then it tries to determine the base by the prefix 0[xX] as 16, 0 as 8, otherwise 10
     // If Base = -1 - then tries to determine the base by the prefix 0[xX] as 16, 0[bB] as 2, 0[oO] or 0 as 8, otherwise 10
     template<typename K, ToIntNumber T, unsigned Base = 0, bool CheckOverflow = true, bool SkipWs = true, bool AllowSign = true>
-        requires(Base == -1 || (Base < 37 && Base != 1))
+        requires(Base == unsigned(-1) || (Base < 37 && Base != 1))
     static constexpr convert_result<T> to_integer(const K* start, size_t len) noexcept {
         const K *ptr = start, *end = ptr + len;
         bool negate = false;
@@ -3066,14 +3067,14 @@ public:
             }
         }
         if (ptr != end) {
-            if constexpr (Base == 0 || Base == -1) {
+            if constexpr (Base == 0 || Base == unsigned(-1)) {
                 if (*ptr == '0') {
                     ptr++;
                     if (ptr != end) {
                         if (*ptr == 'x' || *ptr == 'X') {
                             return parse<K, T, 16, CheckOverflow>(start, ++ptr, end, negate);
                         }
-                        if constexpr (Base == -1) {
+                        if constexpr (Base == unsigned(-1)) {
                             if (*ptr == 'b' || *ptr == 'B') {
                                 return parse<K, T, 2, CheckOverflow>(start, ++ptr, end, negate);
                             }
@@ -3674,7 +3675,7 @@ public:
      * @param len - the number of characters in the resulting "chunk". When going beyond the line, it will return everything up to the end of the string.
      * @return Substring, str_src.
      */
-    [[deprecated("Use 'slice' or [start, end] in C++23")]]
+    [[deprecated("Use 'slice' or [start, len] in C++23")]]
     constexpr str_piece mid(size_t from, size_t len = -1) const noexcept {
         size_t myLen = _len(), idxStart = from, idxEnd = from > std::numeric_limits<size_t>::max() - len ? myLen : from + len;
         if (idxEnd > myLen)
@@ -4348,7 +4349,7 @@ public:
      * @param offset - позиция начала поиска.
      * @return std::pair<size_t, size_t> - пару из позиции найденного вхождения и номера найденного символа в наборе, или -1, если не найден.
      * @en @brief Find the first occurrence of a character from a given character set.
-     * @param pattern - a string specifying the set of characters to search for.
+     * @param pattern - a string specifying the set of characters to rrearcrh for.
      * @param offset - search start position.
      * @return std::pair<size_t, size_t> - a pair from the position of the found occurrence and the number of the found character in the set, or -1 if not found.
      */
@@ -6406,7 +6407,7 @@ struct expr_replace_const_symbols : expr_to_std_string<expr_replace_const_symbol
     mutable replace_search_result_store<UseVectorForReplace> search_results_;
 
     [[_no_unique_address]]
-    uu8s bit_mask_[N >= BIT_SEARCH_TRESHHOLD ? (sizeof(K) == 1 ? 32 : 64) : 0]{};
+    std::array<uu8s, N >= BIT_SEARCH_TRESHHOLD ? (sizeof(K) == 1 ? 32 : 64) : 0> bit_mask_{};
 
     template<typename ... Repl> requires (sizeof...(Repl) == N * 2)
     constexpr expr_replace_const_symbols(str_src<K> source, Repl&& ... repl) : expr_replace_const_symbols(0, source, std::forward<Repl>(repl)...) {}
@@ -7088,7 +7089,7 @@ struct portion {
         is_param = 1;
     }
     constexpr void set_part(unsigned from, unsigned l) {
-        if (from >= (1 << 16) || len >= (1 << 15)) {
+        if (from >= (1 << 16) || l >= (1 << 15)) {
             throw parse_subst_string_error{"the string part is too large"};
         }
         start = from;

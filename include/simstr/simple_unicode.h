@@ -1,6 +1,6 @@
 ﻿/*
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
- * ver. 2.1.1
+ * ver. 2.1.2
  */
 
 #pragma once
