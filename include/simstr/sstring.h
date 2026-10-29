@@ -1,5 +1,5 @@
 ﻿/*
-* ver. 2.1.2
+* ver. 2.1.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * Классы для работы со строками
 * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -388,7 +388,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_prefix_iu(str_piece prefix) const {
         if (starts_with_iu(prefix)) {
-            return R{operator()(prefix.length())};
+            return R{d().tail(prefix.length())};
         }
         return {};
     }
@@ -407,7 +407,7 @@ public:
     template<typename R = str_piece>
     constexpr std::optional<R> strip_suffix_iu(str_piece suffix) const {
         if (ends_with_iu(suffix)) {
-            return R{operator()(0, -suffix.length())};
+            return R{d().slice(0, from_end{suffix.length()})};
         }
         return {};
     }

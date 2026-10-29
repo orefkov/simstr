@@ -5,7 +5,7 @@
 
 [Свидетельство о государственной регистрации программы для ЭВМ № 2026686340](https://fips.ru/EGD/d0aceeb7-5012-484e-bf09-90a836006439)
 
-Версия 2.1.2
+Версия 2.1.3
 
 <h2>Ускорь работу со строками в 2-10 раз!</h2>
 
@@ -329,8 +329,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel2.1.2# Укажите нужный релиз
-        FIND_PACKAGE_ARGS NAMES simstr 2.1.2
+        GIT_TAG tags/rel2.1.3# Укажите нужный релиз
+        FIND_PACKAGE_ARGS NAMES simstr 2.1.3
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

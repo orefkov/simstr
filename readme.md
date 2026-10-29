@@ -3,7 +3,7 @@
 
 [![CMake on multiple platforms](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/orefkov/simstr/actions/workflows/cmake-multi-platform.yml)
 
-Version 2.1.2
+Version 2.1.3
 
 <h2>Speed up your work with strings by 2-10 times!</h2>
 
@@ -325,8 +325,8 @@ function(add_simstr)
         simstr
         GIT_REPOSITORY https://github.com/orefkov/simstr.git
         GIT_SHALLOW TRUE
-        GIT_TAG tags/rel2.1.2# Specify the desired release
-        FIND_PACKAGE_ARGS NAMES simstr 2.1.2
+        GIT_TAG tags/rel2.1.3# Specify the desired release
+        FIND_PACKAGE_ARGS NAMES simstr 2.1.3
     )
     FetchContent_MakeAvailable(simstr)
 endfunction()

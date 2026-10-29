@@ -1,5 +1,5 @@
 ﻿/*
- * ver. 2.1.2
+ * ver. 2.1.3
  * (c) Проект "SimStr", Александр Орефков orefkov@gmail.com
  * База для строковых конкатенаций через выражения времени компиляции
  * (c) Project "SimStr", Aleksandr Orefkov orefkov@gmail.com
@@ -3652,18 +3652,32 @@ public:
     }
 #endif
     /*!
-    * @ru @brief Обертка вокруг `slice(0, count)`.
-    * @en @brief Wraps `slice(0, count)`.
+    * @ru @brief Обертка вокруг `slice(0, count)`. Также позволяет задавать границу поисковым способом.
+    * @en @brief Wraps `slice(0, count)`. It also allows you to set the boundary using a search method.
     */
-    constexpr str_piece prefix(size_t count) const noexcept {
+    template<typename E> requires std::is_convertible_v<E, size_t> || is_slice_find<E, K>
+    constexpr str_piece prefix(E count) const noexcept {
         return slice(0, count);
     }
     /*!
-    * @ru @brief Обертка вокруг `slice(from_end(count), to_end)`.
-    * @en @brief Wraps `slice(from_end(count), to_end)`.
+    * @ru @brief Обертка вокруг `slice(count, to_end)`. Также позволяет задавать границу поисковым способом.
+    * @en @brief Wraps `slice(count, to_end)`. It also allows you to set the boundary using a search method.
     */
-    constexpr str_piece suffix(size_t count) const noexcept {
-        return slice(from_end(count), to_end);
+    template<typename E> requires std::is_convertible_v<E, size_t> || is_slice_find<E, K>
+    constexpr str_piece tail(E count) const noexcept {
+        return slice(count, to_end);
+    }
+    /*!
+    * @ru @brief Обертка вокруг `slice(from_end(count), to_end)`. Также позволяет задавать границу поисковым способом.
+    * @en @brief Wraps `slice(from_end(count), to_end)`. It also allows you to set the boundary using a search method.
+    */
+    template<typename E> requires std::is_convertible_v<E, size_t> || is_slice_find<E, K>
+    constexpr str_piece suffix(E count) const noexcept {
+        if constexpr (std::is_convertible_v<E, size_t>) {
+            return slice(from_end(static_cast<size_t>(count)), to_end);
+        } else {
+            return slice(count, to_end);
+        }
     }
     /*!
      * @ru @brief Получить часть строки как "кусок строки".
